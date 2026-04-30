@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 33 28% 98%;
+  --foreground: 24 20% 14%;
+  --card: 0 0% 100%;
+  --card-foreground: 24 20% 14%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 24 20% 14%;
+  --primary: 23 28% 55%;
+  --primary-foreground: 20 25% 97%;
+  --secondary: 30 25% 93%;
+  --secondary-foreground: 24 20% 20%;
+  --muted: 30 20% 94%;
+  --muted-foreground: 24 12% 40%;
+  --accent: 17 32% 90%;
+  --accent-foreground: 24 24% 20%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 24 20% 86%;
+  --input: 24 20% 86%;
+  --ring: 23 28% 55%;
+  --radius: 0.9rem;
+}
+
+body {
+  color: hsl(var(--foreground));
+  background:
+    radial-gradient(circle at 10% 0%, rgba(174, 130, 109, 0.25), transparent 45%),
+    radial-gradient(circle at 85% 15%, rgba(236, 211, 196, 0.35), transparent 30%),
+    linear-gradient(180deg, #fcf8f5 0%, #f7f2ee 52%, #f1e7df 100%);
+  min-height: 100vh;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .glass-card {
+    @apply border border-white/50 bg-white/70 shadow-sm backdrop-blur-md;
+  }
+
+  .notify-enter {
+    animation: notify-enter 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+}
+
+@keyframes notify-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

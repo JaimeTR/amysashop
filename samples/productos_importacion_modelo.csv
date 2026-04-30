@@ -1,0 +1,3 @@
+nombre,codigo,marca,submarca,categoria,subcategoria,precio,precio_anterior,stock,descripcion,foto_principal,galeria,activo
+AMYSA Aroma Dulce 100ml,AMY-001,AMYSA,Signature,Perfumes,Eau de Parfum,89.90,109.90,15,Fragancia floral dulce con notas suaves y elegantes,https://images.unsplash.com/photo-1615634260167-c8cdede054de?q=80&w=1200&auto=format&fit=crop,https://images.unsplash.com/photo-1541643600914-78b084683601?q=80&w=1200&auto=format&fit=crop|https://images.unsplash.com/photo-1594035910387-fea47794261f?q=80&w=1200&auto=format&fit=crop,si
+AMYSA Aroma Fresco 75ml,AMY-002,AMYSA,Signature,Perfumes,Eau de Toilette,74.90,89.90,20,Fragancia fresca para uso diario,https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=1200&auto=format&fit=crop,,si

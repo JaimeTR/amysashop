@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Confirma tu cuenta | AMYSA</title>
+  </head>
+  <body style="margin:0;padding:0;background:#f7f1ec;font-family:Arial,sans-serif;color:#2f2721;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f7f1ec;padding:24px 0;">
+      <tr>
+        <td align="center">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:620px;background:#ffffff;border-radius:18px;overflow:hidden;border:1px solid #eadfd5;">
+            <tr>
+              <td style="background:linear-gradient(135deg,#5c2a1d 0%,#a54d2c 100%);padding:28px 24px;text-align:center;">
+                <p style="margin:0;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#fbe9dc;">AMYSA</p>
+                <h1 style="margin:8px 0 0 0;font-size:26px;line-height:1.2;color:#ffffff;">Confirma tu cuenta</h1>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding:28px 24px 12px 24px;">
+                <p style="margin:0 0 14px 0;font-size:15px;line-height:1.6;">Hola {{ .Email }},</p>
+                <p style="margin:0 0 14px 0;font-size:15px;line-height:1.6;">
+                  Gracias por registrarte en <strong>AMYSA</strong>. Para activar tu cuenta y empezar a comprar, confirma tu correo con el siguiente boton:
+                </p>
+
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:22px 0 18px 0;">
+                  <tr>
+                    <td align="center">
+                      <a
+                        href="{{ .ConfirmationURL }}"
+                        style="display:inline-block;background:#8f3f23;color:#ffffff;text-decoration:none;font-size:15px;font-weight:bold;padding:14px 22px;border-radius:10px;"
+                      >
+                        Confirmar mi correo
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+
+                <p style="margin:0 0 8px 0;font-size:13px;line-height:1.6;color:#6b5b50;">
+                  Si el boton no funciona, copia y pega este enlace en tu navegador:
+                </p>
+                <p style="margin:0 0 18px 0;font-size:12px;line-height:1.6;word-break:break-all;color:#8f3f23;">
+                  {{ .ConfirmationURL }}
+                </p>
+
+                <p style="margin:0 0 8px 0;font-size:13px;line-height:1.6;color:#6b5b50;">
+                  Si no creaste esta cuenta, puedes ignorar este mensaje.
+                </p>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding:14px 24px 24px 24px;border-top:1px solid #f0e8e1;">
+                <p style="margin:0;font-size:12px;line-height:1.6;color:#8a7a6f;">
+                  Este correo fue enviado por AMYSA.
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

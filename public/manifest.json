@@ -1,0 +1,17 @@
+{
+  "name": "AMYSA SHOP",
+  "short_name": "AMYSA",
+  "description": "AMYSA SHOP, tu tienda virtual",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FCF8F5",
+  "theme_color": "#AE826D",
+  "lang": "es-PE",
+  "icons": [
+    {
+      "src": "/logos/amysa-square-primary.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
