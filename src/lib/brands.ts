@@ -14,7 +14,7 @@ export const REGISTERED_BRANDS: Brand[] = [
   {
     id: "amysa",
     name: "AMYSA",
-    logo: "/logos/LOGO AMYSA SHOP.png",
+    logo: "/logos/amysa%20shop.png",
     description: "Línea de productos seleccionados",
     color: "#E74C3C",
   },

@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useMemo, useState } from "react";
 import { Play } from "lucide-react";
+import { DEFAULT_PRODUCT_IMAGE } from "@/lib/product-images";
 
 type Props = {
   images: string[];
@@ -16,7 +17,7 @@ function isVideoSrc(value: string) {
 export function ProductGallery({ images, name }: Props) {
   const gallery = useMemo(
     () =>
-      (images.length > 0 ? images : ["/placeholder-product.svg"]).map((src) => ({
+      (images.length > 0 ? images : [DEFAULT_PRODUCT_IMAGE]).map((src) => ({
         src,
         kind: isVideoSrc(src) ? ("video" as const) : ("image" as const),
       })),

@@ -9,20 +9,30 @@ export function BrandShowcase() {
   const brands = getAllBrands();
 
   return (
-    <section className="w-full py-16">
-      <div className="container mx-auto px-4">
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+    <section
+      id="brands"
+      className="w-full overflow-hidden rounded-3xl border border-white/50 bg-gradient-to-b from-white/55 via-white/35 to-transparent py-5 shadow-sm backdrop-blur-md sm:py-8"
+    >
+      <div className="mx-auto w-full px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-3 gap-x-3 gap-y-4 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3 xl:grid-cols-6">
           {brands.map((brand) => (
             <Link key={brand.id} href={`/tienda?marca=${encodeURIComponent(brand.name)}`}>
-              <div className="group h-full rounded-2xl border-2 border-border bg-card p-4 transition-all hover:border-primary hover:shadow-lg">
-                <div className="mb-4 flex justify-center">
-                  <Image src={brand.logo} alt={brand.name} width={96} height={96} className="h-24 w-24 rounded-[10px] object-contain" unoptimized />
+              <div className="group flex h-full flex-col items-center rounded-none border-0 bg-transparent p-0 shadow-none transition-all sm:rounded-2xl sm:border-2 sm:border-border sm:bg-card sm:p-4 sm:hover:border-primary sm:hover:shadow-lg">
+                <div className="flex justify-center sm:mb-4">
+                  <Image
+                    src={brand.logo}
+                    alt={brand.name}
+                    width={96}
+                    height={96}
+                    className="h-20 w-20 rounded-2xl object-contain sm:h-24 sm:w-24"
+                    unoptimized
+                  />
                 </div>
-                <h3 className="mb-2 text-center text-sm font-semibold group-hover:text-primary">{brand.name}</h3>
+                <h3 className="mt-2 text-center text-[11px] font-semibold leading-tight group-hover:text-primary sm:mb-2 sm:mt-0 sm:text-sm">{brand.name}</h3>
                 {brand.description && (
-                  <p className="mb-4 text-center text-xs text-muted-foreground">{brand.description}</p>
+                  <p className="mb-4 hidden text-center text-xs text-muted-foreground sm:block">{brand.description}</p>
                 )}
-                <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90" variant="default" size="sm">
+                <Button className="hidden w-full bg-primary text-primary-foreground hover:bg-primary/90 sm:inline-flex" variant="default" size="sm">
                   Ver productos
                 </Button>
               </div>

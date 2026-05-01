@@ -8,20 +8,15 @@ import { AddToCartButton } from "@/components/product/add-to-cart-button";
 import { ToggleFavoriteButton } from "@/components/product/toggle-favorite-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { getSafeProductImageSrc } from "@/lib/product-images";
 import type { Product } from "@/lib/types";
 
 type Props = {
   products: Product[];
 };
 
-function isSafeImageSrc(value: string) {
-  const src = String(value || "").trim();
-  return src.startsWith("/") || /^https?:\/\//i.test(src);
-}
-
 function getSafeImageSrc(images: string[]) {
-  const candidate = (images || []).find((value) => isSafeImageSrc(value) && !/\.(mp4|webm|ogg|mov|m4v)(?:$|\?)/i.test(value));
-  return candidate || "/placeholder-product.svg";
+  return getSafeProductImageSrc(images);
 }
 
 export function RelatedProductsCarousel({ products }: Props) {
@@ -119,7 +114,7 @@ export function RelatedProductsCarousel({ products }: Props) {
             <CardContent className="space-y-2 p-3">
               <p className="line-clamp-1 text-xs uppercase tracking-wide text-muted-foreground">{item.category}</p>
               <Link href={`/producto/${item.id}`} className="block">
-                <h3 className="line-clamp-2 text-sm font-semibold text-foreground hover:text-primary">{item.name}</h3>
+                <h3 className="line-clamp-1 truncate text-sm font-semibold text-foreground hover:text-primary">{item.name}</h3>
               </Link>
               <p className="text-base font-semibold text-primary">S/ {item.price.toFixed(2)}</p>
 

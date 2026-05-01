@@ -10,6 +10,8 @@ import { ProductsInventoryTable } from "@/components/admin/products-inventory-ta
 import { requireAdminUser } from "@/lib/admin";
 import { canonicalizeBrandName, getRegisteredBrandNames } from "@/lib/brands";
 
+const DEFAULT_PRODUCT_IMAGE = "/logos/amysa%20shop.png";
+
 type PageProps = {
   searchParams?: {
     ok?: string;
@@ -59,8 +61,6 @@ function appendMetaTags(baseDescription: string, meta: { code: string; brand: st
 
   return [baseDescription, ...tags].filter(Boolean).join("\n\n").trim();
 }
-
-const DEFAULT_PRODUCT_IMAGE = "/logos/amysa-square-primary.png";
 
 function parseCsvLine(line: string, delimiter: string) {
   const values: string[] = [];
@@ -298,7 +298,7 @@ function uniqueLabels(values: string[]) {
   return Array.from(seen.values()).sort((a, b) => a.localeCompare(b, "es"));
 }
 
-function normalizeProductPayload(payload: Record<string, unknown>) {
+function normalizeProductPayload(payload: Record<string, unknown>): Record<string, unknown> {
   return {
     ...payload,
     gender: normalizeProductGender(payload.gender),
@@ -310,7 +310,7 @@ async function safeInsertProduct(
   supabase: NonNullable<ReturnType<typeof getAdminDataClient>>,
   payload: Record<string, unknown>
 ) {
-  const normalizedPayload = normalizeProductPayload(payload);
+  const normalizedPayload = normalizeProductPayload(payload) as Record<string, unknown>;
   let result = await supabase.from("products").insert(normalizedPayload);
 
   if (result.error && isMissingColumnError(result.error, "price_before")) {
@@ -874,6 +874,7 @@ async function cloneProductAction(formData: FormData) {
   const name = String(formData.get("name") || "").trim();
   const code = String(formData.get("code") || "").trim();
   const gender = String(formData.get("gender") || "").trim() || null;
+  const ageGroup = normalizeProductAgeGroup(formData.get("ageGroup"));
   const brand = String(formData.get("brand") || "").trim();
   const subBrand = String(formData.get("subBrand") || "").trim();
   const description = String(formData.get("description") || "").trim();
@@ -1106,18 +1107,25 @@ export default async function AdminProductosPage({ searchParams }: PageProps) {
     const fallbackBrand = String((product as { brand?: string | null }).brand || extractValue(fullDescription, "Marca"));
     const fallbackGender = String((product as { gender?: string | null }).gender || "").trim() || null;
     const fallbackAgeGroup = String((product as { age_group?: string | null }).age_group || "").trim() || null;
-    
+    const fallbackSubBrand = String((product as { sub_brand?: string | null }).sub_brand || extractValue(fullDescription, "Submarca")).trim();
+    const fallbackSubCategory = String(
+      (product as { sub_category?: string | null }).sub_category ||
+        extractValue(fullDescription, "Subcategoría") ||
+        extractValue(fullDescription, "Subcategoria")
+    ).trim();
 
     return {
       id: String(product.id || ""),
       sku: fallbackCode || "",
       name: String(product.name || ""),
       brand: canonicalizeBrandName(fallbackBrand) || fallbackBrand || "",
+      subBrand: fallbackSubBrand || undefined,
       gender: fallbackGender || undefined,
       ageGroup: fallbackAgeGroup || undefined,
-      
+
       category: categoryName ?? "Sin categoría",
-      
+      subCategory: fallbackSubCategory || undefined,
+
       description: stripMeta(fullDescription),
       rawDescription: fullDescription,
       images: Array.isArray((product as { images?: string[] | null }).images)
@@ -1192,7 +1200,38 @@ export default async function AdminProductosPage({ searchParams }: PageProps) {
               rows={inventoryRows}
               categoryOptions={categoryOptions}
               brandOptions={brandOptions}
-                
+              subBrands={
+                subBrandsResult.error
+                  ? []
+                  : (subBrandsResult.data ?? [])
+                      .map((item) => {
+                        const relation = item.brands as { name?: string }[] | { name?: string } | null;
+                        const brandName = Array.isArray(relation)
+                          ? String(relation[0]?.name || "")
+                          : String(relation?.name || "");
+                        return {
+                          name: String(item.name || "").trim(),
+                          brand: canonicalizeBrandName(brandName) || brandName,
+                        };
+                      })
+                      .filter((item) => item.name && item.brand)
+              }
+              subCategories={
+                subCategoriesResult.error
+                  ? []
+                  : (subCategoriesResult.data ?? [])
+                      .map((item) => {
+                        const relation = item.categories as { name?: string }[] | { name?: string } | null;
+                        const categoryName = Array.isArray(relation)
+                          ? String(relation[0]?.name || "")
+                          : String(relation?.name || "");
+                        return {
+                          name: String(item.name || "").trim(),
+                          category: categoryName,
+                        };
+                      })
+                      .filter((item) => item.name && item.category)
+              }
               updateProductAction={updateProductAction}
               cloneProductAction={cloneProductAction}
               deleteProductAction={deleteProductAction}

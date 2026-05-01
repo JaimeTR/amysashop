@@ -46,6 +46,21 @@ body {
   .notify-enter {
     animation: notify-enter 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
   }
+
+  .animate-slide-in-left {
+    animation: slide-in-left 800ms ease-out;
+  }
+}
+
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 @layer base {

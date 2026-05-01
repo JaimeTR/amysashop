@@ -6,6 +6,7 @@ import { Loader2, TicketPercent } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { DEFAULT_PRODUCT_IMAGE } from "@/lib/product-images";
 import { useCartStore } from "@/store/cart-store";
 import { useNotify } from "@/components/feedback/notification-center";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
@@ -693,7 +694,7 @@ export default function CheckoutPage() {
                     <div className="flex gap-3">
                   <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border bg-muted">
                     <Image
-                      src={item.image || "/placeholder-product.svg"}
+                      src={item.image || DEFAULT_PRODUCT_IMAGE}
                       alt={item.name}
                       fill
                       sizes="80px"

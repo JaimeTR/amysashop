@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ProductEditModal } from "@/components/admin/product-edit-modal";
 import { ProductCloneModal } from "@/components/admin/product-clone-modal";
 import { ConfirmDeleteModal } from "@/components/feedback/confirm-delete-modal";
+import { getSafeProductImageSrc } from "@/lib/product-images";
 
 type InventoryRow = {
   id: string;
@@ -16,7 +17,9 @@ type InventoryRow = {
   gender?: string;
   ageGroup?: string;
   brand: string;
+  subBrand?: string;
   category: string;
+  subCategory?: string;
   price: number;
   priceBefore: number | null;
   stock: number;
@@ -55,20 +58,16 @@ function buildProductDetailMeta(rawDescription: string, fallbackDescription: str
   };
 }
 
-function isSafeImageSrc(value: string) {
-  const src = String(value || "").trim();
-  return src.startsWith("/") || /^https?:\/\//i.test(src);
-}
-
 function getSafeImageSrc(images: string[]) {
-  const candidate = (images || []).find(isSafeImageSrc);
-  return candidate || "/placeholder-product.svg";
+  return getSafeProductImageSrc(images);
 }
 
 type Props = {
   rows: InventoryRow[];
   categoryOptions: string[];
   brandOptions: string[];
+  subBrands: Array<{ name: string; brand: string }>;
+  subCategories: Array<{ name: string; category: string }>;
   updateProductAction: (formData: FormData) => Promise<void>;
   cloneProductAction: (formData: FormData) => Promise<void>;
   deleteProductAction: (formData: FormData) => Promise<void>;
@@ -100,6 +99,8 @@ export function ProductsInventoryTable({
   rows,
   categoryOptions,
   brandOptions,
+  subBrands,
+  subCategories,
   updateProductAction,
   cloneProductAction,
   deleteProductAction,
@@ -371,10 +372,13 @@ export function ProductsInventoryTable({
                         gender={row.gender || ""}
                         ageGroup={row.ageGroup || ""}
                         category={row.category}
+                        subCategory={row.subCategory || ""}
                         categories={categoryOptions}
                         brand={row.brand}
+                        subBrand={row.subBrand || ""}
                         brands={brandOptions}
-                        
+                        subBrands={subBrands}
+                        subCategories={subCategories}
                         price={row.price}
                         priceBefore={row.priceBefore}
                         stock={row.stock}

@@ -3,27 +3,22 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Trash2 } from "lucide-react";
+import { Trash2, Eye, ShoppingCart } from "lucide-react";
 import { ToggleFavoriteButton } from "@/components/product/toggle-favorite-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useFavoritesStore } from "@/store/favorites-store";
-
-function isSafeImageSrc(value: string) {
-  const src = String(value || "").trim();
-  return src.startsWith("/") || /^https?:\/\//i.test(src);
-}
+import { useCartStore } from "@/store/cart-store";
+import { DEFAULT_PRODUCT_IMAGE } from "@/lib/product-images";
 
 function getSafeImageSrc(image?: string) {
-  if (image && isSafeImageSrc(image)) {
-    return image;
-  }
-  return "/placeholder-product.svg";
+  return image && String(image || "").trim() ? image : DEFAULT_PRODUCT_IMAGE;
 }
 
 export default function FavoritosPage() {
   const items = useFavoritesStore((state) => state.items);
   const clearFavorites = useFavoritesStore((state) => state.clearFavorites);
+  const addItem = useCartStore((state) => state.addItem);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -64,29 +59,19 @@ export default function FavoritosPage() {
       {hasItems ? (
         <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {items.map((item) => (
-            <article key={item.productId} className="glass-card overflow-hidden rounded-2xl">
-              <Link href={`/producto/${item.productId}`}>
-                <Image
-                  src={getSafeImageSrc(item.image)}
-                  alt={item.name}
-                  width={700}
-                  height={700}
-                  unoptimized
-                  className="h-44 w-full object-cover"
-                />
-              </Link>
-
-              <div className="space-y-2 p-3">
-                {item.category ? <p className="text-xs uppercase tracking-wide text-muted-foreground">{item.category}</p> : null}
-                <Link href={`/producto/${item.productId}`} className="block">
-                  <h2 className="line-clamp-2 text-sm font-semibold">{item.name}</h2>
+            <article key={item.productId} className="glass-card overflow-hidden rounded-2xl transition-transform hover:scale-105">
+              <div className="relative">
+                <Link href={`/producto/${item.productId}`}>
+                  <Image
+                    src={getSafeImageSrc(item.image)}
+                    alt={item.name}
+                    width={700}
+                    height={700}
+                    unoptimized
+                    className="h-44 w-full object-cover"
+                  />
                 </Link>
-                <p className="text-base font-semibold text-primary">S/ {item.price.toFixed(2)}</p>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <Button asChild variant="outline" size="sm">
-                    <Link href={`/producto/${item.productId}`}>Ver producto</Link>
-                  </Button>
+                <div className="absolute right-2 top-2 rounded-full bg-white/90 backdrop-blur-sm p-1 shadow-md">
                   <ToggleFavoriteButton
                     productId={item.productId}
                     name={item.name}
@@ -94,6 +79,39 @@ export default function FavoritosPage() {
                     image={item.image}
                     category={item.category}
                   />
+                </div>
+              </div>
+
+              <div className="space-y-3 p-3">
+                {item.category ? <p className="text-xs uppercase tracking-wide text-muted-foreground">{item.category}</p> : null}
+                <Link href={`/producto/${item.productId}`} className="block">
+                  <h2 className="line-clamp-2 text-sm font-semibold">{item.name}</h2>
+                </Link>
+                <p className="text-base font-bold text-primary">S/ {item.price.toFixed(2)}</p>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <Button asChild variant="outline" size="sm" className="gap-1.5">
+                    <Link href={`/producto/${item.productId}`}>
+                      <Eye className="size-4" />
+                      <span>Ver</span>
+                    </Link>
+                  </Button>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={() =>
+                      addItem({
+                        productId: item.productId,
+                        name: item.name,
+                        price: item.price,
+                        image: item.image,
+                      })
+                    }
+                  >
+                    <ShoppingCart className="size-4" />
+                    <span>Agregar</span>
+                  </Button>
                 </div>
               </div>
             </article>

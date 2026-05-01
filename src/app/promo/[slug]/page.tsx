@@ -3,19 +3,14 @@ import { notFound } from "next/navigation";
 import { AddToCartButton } from "@/components/product/add-to-cart-button";
 import { Button } from "@/components/ui/button";
 import { getActiveLandingBySlug, getProductById } from "@/lib/catalog";
+import { getSafeProductImageSrc } from "@/lib/product-images";
 
 type Props = {
   params: { slug: string };
 };
 
-function isSafeImageSrc(value: string) {
-  const src = String(value || "").trim();
-  return src.startsWith("/") || /^https?:\/\//i.test(src);
-}
-
 function getSafeImageSrc(images: string[]) {
-  const candidate = (images || []).find(isSafeImageSrc);
-  return candidate || "/placeholder-product.svg";
+  return getSafeProductImageSrc(images);
 }
 
 export default async function PromoLandingPage({ params }: Props) {

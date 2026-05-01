@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { DEFAULT_PRODUCT_IMAGE } from "@/lib/product-images";
 
 type ChatBody = {
   sessionId?: string;
@@ -73,7 +74,7 @@ function isSafeImageSrc(value: string) {
 function getSafeImageSrc(images: unknown) {
   const normalized = normalizeImages(images);
   const image = normalized.find(isSafeImageSrc);
-  return image || "/placeholder-product.svg";
+  return image || DEFAULT_PRODUCT_IMAGE;
 }
 
 function normalizeLower(value: string | null | undefined) {

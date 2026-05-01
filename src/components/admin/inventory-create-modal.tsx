@@ -58,6 +58,14 @@ export function InventoryCreateModal({ categories, createProductAction }: Invent
       const formData = new FormData(event.currentTarget);
       await createProductAction(formData);
     } catch (error) {
+      if (
+        error &&
+        typeof error === "object" &&
+        "digest" in error &&
+        String((error as { digest?: unknown }).digest || "").includes("NEXT_REDIRECT")
+      ) {
+        throw error;
+      }
       console.error("Error creando producto:", error);
     } finally {
       setLoading(false);

@@ -30,6 +30,7 @@ import {
   resolveRoleFromContext,
   type AccessRole,
 } from "@/lib/access-control";
+import { DEFAULT_PRODUCT_IMAGE, getSafeProductImageSrc } from "@/lib/product-images";
 import type { NavProduct } from "@/lib/types";
 
 function normalizeLabel(value: string) {
@@ -67,6 +68,7 @@ type AuthUser = {
 
 type MainNavProps = {
   products: NavProduct[];
+  categories?: string[];
 };
 
 type ProfileData = {
@@ -78,8 +80,8 @@ type ProfileData = {
 };
 
 const mobileLinks = [
-  { href: "/", label: "Inicio", icon: Home },
   { href: "/tienda", label: "Tienda", icon: Store },
+  { href: "/favoritos", label: "Favoritos", icon: Heart },
   { href: "/carrito", label: "Carrito", icon: ShoppingCart },
   { href: "/perfil", label: "Perfil", icon: User },
 ];
@@ -117,7 +119,7 @@ function getProductSearchText(product: NavProduct) {
 }
 
 function getProductImage(product: NavProduct) {
-  return product.images[0] || "/placeholder-product.svg";
+  return getSafeProductImageSrc(product.images);
 }
 
 function isMissingColumnError(error: { message?: string } | null | undefined, column: string) {
@@ -171,7 +173,7 @@ function WhatsAppIcon({ className }: { className?: string }) {
   );
 }
 
-export function MainNav({ products }: MainNavProps) {
+export function MainNav({ products, categories = [] }: MainNavProps) {
   const router = useRouter();
   const pathname = usePathname();
   const supabase = useMemo(() => createClient(), []);
@@ -234,9 +236,9 @@ export function MainNav({ products }: MainNavProps) {
     [cartItems]
   );
 
-  const categories = useMemo(
-    () => uniqueLabels(products.map((product) => product.category).filter(Boolean)),
-    [products]
+  const availableCategories = useMemo(
+    () => (categories.length > 0 ? categories : uniqueLabels(products.map((product) => product.category).filter(Boolean))),
+    [categories, products]
   );
 
   const searchResults = useMemo(() => {
@@ -578,11 +580,11 @@ export function MainNav({ products }: MainNavProps) {
                 <span className="font-[var(--font-display)] text-2xl text-primary">AMYSA</span>
               ) : (
                 <Image
-                  src="/logos/amysa-horizontal-primary.png"
+                  src="/logos/LOGO%20OSCURO%20AMYSA%20SHOP.png"
                   alt="AMYSA SHOP"
                   width={190}
                   height={62}
-                  className="h-11 w-auto"
+                  className="h-11 w-auto block"
                   priority
                   onError={() => setLogoError(true)}
                 />
@@ -793,8 +795,8 @@ export function MainNav({ products }: MainNavProps) {
   }
 
   return (
-    <header className="relative z-[120] mb-5 space-y-3 md:mb-6 md:space-y-4">
-      <div className="rounded-[28px] border border-primary/10 bg-[linear-gradient(135deg,#AE826D_0%,#7E5849_50%,#3B271F_100%)] px-4 py-3 text-white shadow-[0_18px_55px_rgba(110,71,49,0.22)] md:px-5 lg:px-6">
+    <>
+      <div className="mb-3 rounded-[28px] border border-primary/10 bg-[linear-gradient(135deg,#AE826D_0%,#7E5849_50%,#3B271F_100%)] px-4 py-3 text-white shadow-[0_18px_55px_rgba(110,71,49,0.22)] md:mb-4 md:px-5 lg:px-6">
         <div className="grid gap-3 md:grid-cols-[1fr_auto_1fr] md:items-center">
           <div className="hidden justify-start md:flex">
             <a
@@ -808,8 +810,8 @@ export function MainNav({ products }: MainNavProps) {
               <span className="text-sm font-semibold tracking-wide">{whatsappDisplayPhone}</span>
             </a>
           </div>
-          <div className="flex justify-center text-center text-xs font-semibold md:text-sm">
-            <span className="w-full rounded-full bg-white/15 px-4 py-1 uppercase tracking-wide transition-all duration-500 md:w-auto">
+          <div className="flex justify-center text-center text-[10px] font-semibold md:text-xs lg:text-sm">
+            <span className="w-full rounded-full bg-white/15 px-2 py-0.5 uppercase tracking-wide transition-all duration-500 md:px-4 md:py-1 md:w-auto animate-slide-in-left">
               {preheaderMessages[preheaderMessageIndex]}
             </span>
           </div>
@@ -842,19 +844,20 @@ export function MainNav({ products }: MainNavProps) {
         </div>
       </div>
 
+      <header className="sticky top-3 md:top-4 z-[180] mb-5 md:mb-6">
       <div className="glass-card relative z-[130] overflow-visible rounded-[28px] border border-white/40 bg-[linear-gradient(135deg,rgba(255,255,255,0.88),rgba(255,248,242,0.9))] px-4 py-4 shadow-[0_18px_55px_rgba(110,71,49,0.08)] backdrop-blur-xl md:px-5 lg:px-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between xl:flex-row xl:items-center xl:justify-between">
+        <div className="flex flex-col gap-0 lg:gap-4 lg:flex-row lg:items-center lg:justify-between xl:flex-row xl:items-center xl:justify-between">
           <div className="flex flex-col items-center gap-3 xl:flex-row xl:items-center">
             <Link href="/" className="inline-flex items-center justify-center">
               {logoError ? (
                 <span className="font-[var(--font-display)] text-2xl text-primary">AMYSA</span>
               ) : (
                 <Image
-                  src="/logos/amysa-horizontal-primary.png"
+                  src="/logos/LOGO%20OSCURO%20AMYSA%20SHOP.png"
                   alt="AMYSA SHOP"
                   width={190}
                   height={62}
-                  className="h-11 w-auto"
+                  className="h-11 w-auto block"
                   priority
                   onError={() => setLogoError(true)}
                 />
@@ -891,8 +894,8 @@ export function MainNav({ products }: MainNavProps) {
                       </button>
                     </div>
                     <div className="grid max-h-72 gap-2 overflow-y-auto pr-1">
-                      {categories.length > 0 ? (
-                        categories.map((category) => (
+                      {availableCategories.length > 0 ? (
+                        availableCategories.map((category) => (
                           <Link
                             key={category}
                             href={`/tienda?categoria=${encodeURIComponent(category)}`}
@@ -943,7 +946,7 @@ export function MainNav({ products }: MainNavProps) {
                             onClick={closeMenus}
                           >
                             <Image
-                              src={item.image || "/placeholder-product.svg"}
+                              src={item.image || DEFAULT_PRODUCT_IMAGE}
                               alt={item.name}
                               width={56}
                               height={56}
@@ -976,9 +979,9 @@ export function MainNav({ products }: MainNavProps) {
             </div>
           </div>
 
-          <div className="flex flex-1 flex-col gap-3 lg:flex-row lg:items-center lg:justify-end xl:flex-row xl:items-center xl:justify-end">
-            <div className="relative z-[250] w-full lg:max-w-[360px] xl:max-w-[420px] xl:flex-1">
-              <div className="relative">
+          <div className="flex flex-1 flex-col gap-3 lg:flex-row lg:items-center lg:justify-end">
+            <div className="relative z-[250] hidden md:flex md:w-[320px] lg:w-[360px] xl:w-[420px]">
+              <div className="relative w-full">
                 <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <input
                   value={searchQuery}
@@ -1151,6 +1154,8 @@ export function MainNav({ products }: MainNavProps) {
           {mobileLinks.map((link) => {
             const Icon = link.icon;
             const isActive = pathname === link.href || pathname.startsWith(`${link.href}/`);
+            const isCarrito = link.href === "/carrito";
+            
             return (
               <Link
                 key={link.href}
@@ -1159,8 +1164,20 @@ export function MainNav({ products }: MainNavProps) {
                   isActive ? "bg-primary/15 text-primary" : "text-foreground/80 hover:bg-primary/10 hover:text-primary"
                 }`}
               >
-                <Icon className="size-4" />
-                <span>{link.label}</span>
+                <div className="relative">
+                  <Icon className="size-4" />
+                  {isCarrito && cartSummary.count > 0 ? (
+                    <span className="absolute -right-2 -top-2 grid size-4 place-content-center rounded-full bg-rose-500 text-[8px] font-bold text-white">
+                      {cartSummary.count}
+                    </span>
+                  ) : null}
+                </div>
+                <div className="flex flex-col items-center">
+                  <span>{link.label}</span>
+                  {isCarrito && cartSummary.total > 0 ? (
+                    <span className="text-[8px] text-primary font-semibold">{formatPrice(cartSummary.total)}</span>
+                  ) : null}
+                </div>
               </Link>
             );
           })}
@@ -1326,6 +1343,7 @@ export function MainNav({ products }: MainNavProps) {
         : null}
 
       {user && role === "cliente" && !isAdminRoute ? <AmysaAssistantWidget userId={user.id} userName={user.user_metadata?.nombre} /> : null}
-    </header>
+      </header>
+    </>
   );
 }

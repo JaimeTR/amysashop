@@ -49,7 +49,7 @@ export function BrandLogo({
   return (
     <div className="flex flex-col items-center gap-2">
       <div
-        className={`${sizeMap[size].container} relative flex items-center justify-center ${bgClass} p-2 shadow-sm ${containerClassName}`}
+        className={`${sizeMap[size].container} relative flex items-center justify-center ${bgClass} shadow-sm ${containerClassName}`}
         style={containerStyle}
       >
         <Image
@@ -57,7 +57,7 @@ export function BrandLogo({
           alt={brand.name}
           width={96}
           height={96}
-          className={`max-h-full max-w-full object-contain rounded-[10px] ${imageClassName}`}
+          className={`h-full w-full object-contain rounded-[10px] ${imageClassName}`}
           unoptimized
         />
       </div>

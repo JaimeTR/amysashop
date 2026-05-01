@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { getSafeProductImageSrc } from "@/lib/product-images";
 import { Loader2, Eye, Pencil, Trash2, X, Search, Filter } from "lucide-react";
 import { InventoryEditModal, type InventoryEditItem } from "@/components/admin/inventory-edit-modal";
 
@@ -43,10 +44,7 @@ type Props = {
 type GenderFilter = "" | "Hombres" | "Mujeres" | "Niños";
 
 function getSafeImageSrc(images?: string[]) {
-  const candidate = (images || []).find(
-    (img) => String(img || "").trim().startsWith("/") || /^https?:\/\//i.test(String(img || ""))
-  );
-  return candidate || "/placeholder-product.svg";
+  return getSafeProductImageSrc(images || []);
 }
 
 function calculateSalePrice(item: Pick<InventoryItem, "cost" | "operating_cost" | "profit_margin">) {
@@ -311,13 +309,12 @@ export function InventoryTable({
                 <th className="px-3 py-2">Nombre</th>
                 <th className="px-3 py-2">Categoría</th>
                 <th className="px-3 py-2">Marca</th>
-                <th className="px-3 py-2">Género</th>
                 <th className="px-3 py-2">Stock</th>
-                <th className="px-3 py-2">Precio Costo</th>
+                <th className="px-3 py-2">P. Costo</th>
                 <th className="px-3 py-2">Costo Op.</th>
                 <th className="px-3 py-2">Margen %</th>
-                <th className="px-3 py-2">Precio Sugerido</th>
-                <th className="px-3 py-2">Precio Venta</th>
+                <th className="px-3 py-2">P. Sugerido</th>
+                <th className="px-3 py-2">P. Venta</th>
                 <th className="px-3 py-2">Acciones</th>
               </tr>
             </thead>
@@ -346,9 +343,7 @@ export function InventoryTable({
                     </button>
                   </td>
                   <td className="px-3 py-2 text-sm">{item.category}</td>
-                  <td className="px-3 py-2 text-sm">{item.category}</td>
                   <td className="px-3 py-2 text-sm">{item.brand || "-"}</td>
-                  <td className="px-3 py-2 text-sm">{item.gender || "-"}</td>
                   <td className="px-3 py-2">
                     <span className="inline-flex rounded-full px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-700">
                       {item.stock}

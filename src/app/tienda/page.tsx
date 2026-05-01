@@ -1,5 +1,5 @@
 import { TiendaClientGrid } from "@/components/store/tienda-client-grid";
-import { getProductsPage } from "@/lib/catalog";
+import { getProductsPage, getRegisteredCategories } from "@/lib/catalog";
 import { canonicalizeBrandName } from "@/lib/brands";
 import Link from "next/link";
 
@@ -14,7 +14,8 @@ type Props = {
 export default async function TiendaPage({ searchParams }: Props) {
   const page = Number.parseInt(String(searchParams?.page || "1"), 10) || 1;
   const pageSize = 20;
-  const { products, total } = await getProductsPage(page, pageSize);
+  const [pageResult, categories] = await Promise.all([getProductsPage(page, pageSize), getRegisteredCategories()]);
+  const { products, total } = pageResult;
   const initialCategory = String(searchParams?.categoria || "").trim() || undefined;
   const initialBrand = canonicalizeBrandName(String(searchParams?.marca || "").trim()) || undefined;
 
@@ -22,8 +23,16 @@ export default async function TiendaPage({ searchParams }: Props) {
 
   return (
     <main className="space-y-5 pb-8">
-      <h1 className="font-[var(--font-display)] text-3xl">Tienda</h1>
-      <TiendaClientGrid products={products} initialCategory={initialCategory} initialBrand={initialBrand} />
+      <div className="flex items-baseline gap-3">
+        <h1 className="font-[var(--font-display)] text-3xl">Tienda</h1>
+        <span className="text-sm font-semibold uppercase text-muted-foreground">({products.length} PRODUCTOS)</span>
+      </div>
+      <TiendaClientGrid
+        products={products}
+        categories={categories}
+        initialCategory={initialCategory}
+        initialBrand={initialBrand}
+      />
 
       <nav className="flex items-center justify-center gap-3">
         <Link

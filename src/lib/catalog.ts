@@ -90,6 +90,30 @@ function mapNavProduct(product: Product): NavProduct {
   };
 }
 
+function normalizeLabel(value: string) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function uniqueLabels(values: string[]) {
+  const seen = new Map<string, string>();
+
+  for (const value of values) {
+    const label = String(value || "").trim();
+    if (!label) continue;
+
+    const key = normalizeLabel(label);
+    if (!seen.has(key)) {
+      seen.set(key, label);
+    }
+  }
+
+  return Array.from(seen.values()).sort((a, b) => a.localeCompare(b, "es"));
+}
+
 export const getActiveProducts = cache(async (): Promise<Product[]> => {
   const supabase = createClient();
   let result: {
@@ -134,6 +158,23 @@ export const getActiveProductsForNav = cache(async (): Promise<NavProduct[]> => 
   }
 
   return (data as ProductRow[]).map(mapProductRow).map(mapNavProduct);
+});
+
+export const getRegisteredCategories = cache(async (): Promise<string[]> => {
+  const supabase = createClient();
+  const { data, error } = await supabase.from("categories").select("id,name").order("name", { ascending: true });
+
+  if (!error && data) {
+    const categories = uniqueLabels(
+      (data as Array<{ id: string; name: string | null }>).map((item) => String(item.name || "").trim()).filter(Boolean)
+    );
+
+    if (categories.length > 0) {
+      return categories;
+    }
+  }
+
+  return uniqueLabels(productSamples.map((item) => item.category).filter(Boolean));
 });
 
 export async function getProductsPage(

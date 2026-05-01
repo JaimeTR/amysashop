@@ -177,7 +177,7 @@ function IncomeEditModal({ income, products, sellers, paymentMethods, onClose, o
                     className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-accent"
                   >
                     <Image
-                      src={product.imageUrl || "/logos/amysa-square-primary.png"}
+                      src={product.imageUrl || "/logos/amysa%20shop.png"}
                       alt={product.name}
                       width={36}
                       height={36}
@@ -199,7 +199,7 @@ function IncomeEditModal({ income, products, sellers, paymentMethods, onClose, o
             <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">Vista previa</p>
             <div className="flex items-center gap-3">
               <Image
-                src={selectedProduct.imageUrl || "/logos/amysa-square-primary.png"}
+                src={selectedProduct.imageUrl || "/logos/amysa%20shop.png"}
                 alt={selectedProduct.name}
                 width={64}
                 height={64}
@@ -449,7 +449,7 @@ export function CashRegisterPanel({
                           className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-accent"
                         >
                           <Image
-                            src={product.imageUrl || "/logos/amysa-square-primary.png"}
+                            src={product.imageUrl || "/logos/amysa%20shop.png"}
                             alt={product.name}
                             width={36}
                             height={36}
@@ -471,7 +471,7 @@ export function CashRegisterPanel({
                   <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">Vista previa</p>
                   <div className="flex items-center gap-3">
                     <Image
-                      src={selectedProduct.imageUrl || "/logos/amysa-square-primary.png"}
+                      src={selectedProduct.imageUrl || "/logos/amysa%20shop.png"}
                       alt={selectedProduct.name}
                       width={64}
                       height={64}

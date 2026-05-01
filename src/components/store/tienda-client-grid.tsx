@@ -4,18 +4,22 @@ import Image from "next/image";
 import Link from "next/link";
 import { Search, ShoppingBag, Filter } from "lucide-react";
 import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
+import { useSearchParams } from "next/navigation";
 import { AddToCartButton } from "@/components/product/add-to-cart-button";
 import { ToggleFavoriteButton } from "@/components/product/toggle-favorite-button";
 import { BrandLogo } from "@/components/store/brand-logo";
+import DiscountSlider from "@/components/store/discount-slider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { canonicalizeBrandName, getRegisteredBrandNames } from "@/lib/brands";
+import { getSafeProductImageSrc } from "@/lib/product-images";
 import { useRegisteredTaxonomies } from "@/lib/use-registered-taxonomies";
 import type { Product } from "@/lib/types";
 
 type Props = {
   products: Product[];
+  categories?: string[];
   initialCategory?: string;
   initialBrand?: string;
 };
@@ -46,14 +50,8 @@ function parsePriceValue(raw: string) {
   return Number.isFinite(value) ? value : null;
 }
 
-function isSafeImageSrc(value: string) {
-  const src = String(value || "").trim();
-  return src.startsWith("/") || /^https?:\/\//i.test(src);
-}
-
 function getSafeImageSrc(images: string[]) {
-  const candidate = (images || []).find(isSafeImageSrc);
-  return candidate || "/placeholder-product.svg";
+  return getSafeProductImageSrc(images);
 }
 
 function normalizeLabel(value: string) {
@@ -99,7 +97,8 @@ function normalizeAgeGroup(value: string) {
   return String(value || "").trim();
 }
 
-export function TiendaClientGrid({ products, initialCategory, initialBrand }: Props) {
+export function TiendaClientGrid({ products, categories = [], initialCategory, initialBrand }: Props) {
+  const searchParams = useSearchParams();
   const [query, setQuery] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>(initialCategory ? [initialCategory] : []);
   const canonicalInitialBrand = canonicalizeBrandName(initialBrand || "");
@@ -114,6 +113,13 @@ export function TiendaClientGrid({ products, initialCategory, initialBrand }: Pr
   const [packOnly, setPackOnly] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>("recent");
   const { genderOptions, ageGroupOptions } = useRegisteredTaxonomies();
+
+  // Activar filtro de descuentos si viene del parámetro URL
+  useEffect(() => {
+    if (searchParams?.get("descuento") === "true") {
+      setDiscountOnly(true);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     setSelectedCategories(initialCategory ? [initialCategory] : []);
@@ -202,9 +208,10 @@ export function TiendaClientGrid({ products, initialCategory, initialBrand }: Pr
   }, [products]);
 
 
-  const categories = useMemo(() => {
-    return uniqueLabels(products.map((item) => item.category).filter(Boolean));
-  }, [products]);
+  const availableCategories = useMemo(
+    () => (categories.length > 0 ? categories : uniqueLabels(products.map((item) => item.category).filter(Boolean))),
+    [categories, products]
+  );
 
   // Calcular precio máximo basado en todos los productos
   const maxPrice = useMemo(() => {
@@ -331,6 +338,24 @@ export function TiendaClientGrid({ products, initialCategory, initialBrand }: Pr
     productMetaById,
   ]);
 
+  const discountedProducts = useMemo(() => {
+    const list = [] as any[];
+    for (const p of products) {
+      const meta = productMetaById.get(p.id);
+      if (meta?.hasDiscount) {
+        list.push({
+          id: p.id,
+          name: p.name,
+          images: p.images,
+          price: p.price,
+          priceBefore: meta?.oldPriceValue ?? null,
+          category: p.category,
+        });
+      }
+    }
+    return list;
+  }, [products, productMetaById]);
+
   function toggleSelection(value: string, setState: Dispatch<SetStateAction<string[]>>) {
     setState((current) => {
       if (current.includes(value)) {
@@ -357,7 +382,7 @@ export function TiendaClientGrid({ products, initialCategory, initialBrand }: Pr
 
         <div className="mt-5 space-y-3">
           <p className="text-sm font-semibold">Categorías</p>
-          {categories.map((category) => {
+          {availableCategories.map((category) => {
             const checked = selectedCategories.includes(category);
             const count = categoryProductCount.get(normalizeLabel(category)) || 0;
             return (
@@ -452,55 +477,114 @@ export function TiendaClientGrid({ products, initialCategory, initialBrand }: Pr
         <div className="mt-5 space-y-3">
           <p className="text-sm font-semibold">Rango de precio</p>
           <div className="space-y-3 rounded-lg border border-[#e3d7cd] bg-white/50 p-3">
-            {/* Sliders para rango de precio */}
+            {/* Slider dual para rango de precio */}
+            <style>{`
+              .price-slider-track {
+                position: relative;
+                width: 100%;
+                height: 0.5rem;
+                background: #e3d7cd;
+                border-radius: 0.5rem;
+                outline: none;
+              }
+              .price-slider-track input {
+                position: absolute;
+                width: 100%;
+                height: 0.5rem;
+                top: 0;
+                left: 0;
+                margin: 0;
+                padding: 0;
+                border: none;
+                border-radius: 0.5rem;
+                background: none;
+                pointer-events: none;
+                appearance: none;
+                -webkit-appearance: none;
+              }
+              .price-slider-track input::-webkit-slider-thumb {
+                appearance: none;
+                -webkit-appearance: none;
+                width: 1.1rem;
+                height: 1.1rem;
+                border-radius: 50%;
+                background: linear-gradient(135deg, #6b4a38 0%, #4f3526 50%, #3d281a 100%);
+                cursor: pointer;
+                pointer-events: auto;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25), 0 0 0 2px rgba(255, 255, 255, 0.8), inset 0 1px 2px rgba(255, 255, 255, 0.4);
+                border: 2px solid rgba(79, 53, 38, 0.5);
+                transition: transform 0.2s, box-shadow 0.2s;
+              }
+              .price-slider-track input::-webkit-slider-thumb:hover {
+                transform: scale(1.15);
+                box-shadow: 0 6px 12px rgba(0, 0, 0, 0.35), 0 0 0 2px rgba(255, 255, 255, 1), inset 0 1px 2px rgba(255, 255, 255, 0.5);
+              }
+              .price-slider-track input::-webkit-slider-thumb:active {
+                transform: scale(1.2);
+              }
+              .price-slider-track input::-moz-range-thumb {
+                width: 1.1rem;
+                height: 1.1rem;
+                border-radius: 50%;
+                background: linear-gradient(135deg, #6b4a38 0%, #4f3526 50%, #3d281a 100%);
+                cursor: pointer;
+                pointer-events: auto;
+                border: 2px solid rgba(79, 53, 38, 0.5);
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25), 0 0 0 2px rgba(255, 255, 255, 0.8), inset 0 1px 2px rgba(255, 255, 255, 0.4);
+                transition: transform 0.2s, box-shadow 0.2s;
+              }
+              .price-slider-track input::-moz-range-thumb:hover {
+                transform: scale(1.15);
+                box-shadow: 0 6px 12px rgba(0, 0, 0, 0.35), 0 0 0 2px rgba(255, 255, 255, 1), inset 0 1px 2px rgba(255, 255, 255, 0.5);
+              }
+              .price-slider-track input::-moz-range-thumb:active {
+                transform: scale(1.2);
+              }
+              .price-slider-min {
+                z-index: 5;
+              }
+              .price-slider-max {
+                z-index: 6;
+              }
+            `}</style>
             <div className="space-y-2">
               <label className="block text-xs font-medium text-muted-foreground">
-                Mínimo: S/ {priceMin || "0"}
+                Rango: S/ {priceMin || "0"} - S/ {priceMax || maxPrice}
               </label>
-              <input
-                type="range"
-                min="0"
-                max={maxPrice}
-                step="1"
-                value={priceMin || 0}
-                onChange={(event) => {
-                  const value = event.target.value;
-                  const numValue = Number(value);
-                  const maxValue = Number(priceMax || maxPrice);
-                  if (numValue <= maxValue) {
-                    setPriceMin(value);
-                  }
-                }}
-                className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-gradient-to-r from-primary/30 to-primary/10 accent-primary"
-                style={{
-                  background: `linear-gradient(to right, var(--primary) 0%, var(--primary) ${((Number(priceMin || 0) / maxPrice) * 100).toFixed(0)}%, #e3d7cd ${((Number(priceMin || 0) / maxPrice) * 100).toFixed(0)}%, #e3d7cd 100%)`,
-                }}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-xs font-medium text-muted-foreground">
-                Máximo: S/ {priceMax || maxPrice}
-              </label>
-              <input
-                type="range"
-                min="0"
-                max={maxPrice}
-                step="1"
-                value={priceMax || maxPrice}
-                onChange={(event) => {
-                  const value = event.target.value;
-                  const numValue = Number(value);
-                  const minValue = Number(priceMin || 0);
-                  if (numValue >= minValue) {
-                    setPriceMax(value);
-                  }
-                }}
-                className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-gradient-to-r from-primary/30 to-primary/10 accent-primary"
-                style={{
-                  background: `linear-gradient(to right, #e3d7cd 0%, #e3d7cd ${((Number(priceMax || maxPrice) / maxPrice) * 100).toFixed(0)}%, var(--primary) ${((Number(priceMax || maxPrice) / maxPrice) * 100).toFixed(0)}%, var(--primary) 100%)`,
-                }}
-              />
+              <div className="price-slider-track">
+                {/* Input para el mínimo */}
+                <input
+                  type="range"
+                  min="0"
+                  max={maxPrice}
+                  step="1"
+                  value={priceMin || 0}
+                  onChange={(event) => {
+                    const newMin = Number(event.target.value);
+                    const currentMax = Number(priceMax || maxPrice);
+                    if (newMin <= currentMax) {
+                      setPriceMin(String(newMin));
+                    }
+                  }}
+                  className="price-slider-min"
+                />
+                {/* Input para el máximo */}
+                <input
+                  type="range"
+                  min="0"
+                  max={maxPrice}
+                  step="1"
+                  value={priceMax || maxPrice}
+                  onChange={(event) => {
+                    const newMax = Number(event.target.value);
+                    const currentMin = Number(priceMin || 0);
+                    if (newMax >= currentMin) {
+                      setPriceMax(String(newMax));
+                    }
+                  }}
+                  className="price-slider-max"
+                />
+              </div>
             </div>
 
             {/* Display del rango */}
@@ -536,24 +620,30 @@ export function TiendaClientGrid({ products, initialCategory, initialBrand }: Pr
       <section className="space-y-4">
         <div className="glass-card rounded-2xl p-3">
           <div className="relative">
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                className="h-10 w-10 shrink-0 rounded-xl p-0"
-                onClick={() => setShowQuickFilters((current) => !current)}
-                aria-label="Abrir filtros"
-              >
-                <Filter className="size-4" />
-              </Button>
-              <div className="relative flex-1">
-                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Buscar producto"
-                  className="h-10 w-full rounded-xl border border-input bg-white/80 pl-10 pr-3 text-sm outline-none focus:border-primary/40"
-                />
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 w-full md:w-auto">
+                <div className="relative w-full sm:w-[320px] md:w-[360px]">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder="Buscar producto"
+                    className="h-10 w-full rounded-xl border border-input bg-white/80 pl-10 pr-3 text-sm outline-none focus:border-primary/40"
+                  />
+                </div>
+              </div>
+
+              <div className="flex-shrink-0">
+                <select
+                  value={sortBy}
+                  onChange={(event) => setSortBy(event.target.value as SortOption)}
+                  className="h-10 rounded-xl border border-input bg-white/80 px-3 text-sm outline-none focus:border-primary/40"
+                >
+                  <option value="recent">Ordenar: recientes</option>
+                  <option value="price-asc">Precio: menor a mayor</option>
+                  <option value="price-desc">Precio: mayor a menor</option>
+                  <option value="name-asc">Nombre: A-Z</option>
+                </select>
               </div>
             </div>
 
@@ -600,7 +690,7 @@ export function TiendaClientGrid({ products, initialCategory, initialBrand }: Pr
                       className="h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground"
                     >
                       <option value="">Todas</option>
-                      {categories.map((option) => (
+                      {availableCategories.map((option) => (
                         <option key={option} value={option}>
                           {option}
                         </option>
@@ -647,26 +737,12 @@ export function TiendaClientGrid({ products, initialCategory, initialBrand }: Pr
             ) : null}
           </div>
 
-          <div className="mt-3 flex items-center justify-between gap-3">
-            <p className="text-sm font-semibold text-muted-foreground">
-              {filteredProducts.length} producto{filteredProducts.length === 1 ? "" : "s"}
-            </p>
-            <select
-              value={sortBy}
-              onChange={(event) => setSortBy(event.target.value as SortOption)}
-              className="h-10 rounded-xl border border-input bg-white/80 px-3 text-sm outline-none focus:border-primary/40"
-            >
-              <option value="recent">Ordenar: recientes</option>
-              <option value="price-asc">Precio: menor a mayor</option>
-              <option value="price-desc">Precio: mayor a menor</option>
-              <option value="name-asc">Nombre: A-Z</option>
-            </select>
-          </div>
+          
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {filteredProducts.map((product) => (
-            <Card key={product.id} className="glass-card overflow-hidden transition hover:scale-[1.01]">
+            <Card key={product.id} className="glass-card overflow-hidden group">
               <div className="relative">
                 <Link href={`/producto/${product.id}`}>
                   <Image
@@ -675,7 +751,7 @@ export function TiendaClientGrid({ products, initialCategory, initialBrand }: Pr
                     width={800}
                     height={800}
                     unoptimized
-                    className="h-40 w-full object-cover"
+                    className="h-40 w-full object-cover transition-transform duration-300 transform group-hover:scale-105"
                   />
                 </Link>
                 {(() => {
@@ -702,7 +778,7 @@ export function TiendaClientGrid({ products, initialCategory, initialBrand }: Pr
                   {marketingLabel ? <Badge className="bg-primary/10 text-primary">{marketingLabel}</Badge> : null}
                 </div>
                 <Link href={`/producto/${product.id}`} className="block">
-                  <h2 className="line-clamp-2 font-semibold text-foreground hover:text-primary">{product.name}</h2>
+                  <h2 className="line-clamp-1 truncate font-semibold text-foreground hover:text-primary">{product.name}</h2>
                 </Link>
                 <p className="line-clamp-2 text-xs text-muted-foreground">{product.description}</p>
                 <div className="space-y-0.5">

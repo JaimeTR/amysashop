@@ -3,6 +3,7 @@ import { ProductDetailPurchase } from "@/components/product/product-detail-purch
 import { ProductGallery } from "@/components/product/product-gallery";
 import { RelatedProductsCarousel } from "@/components/product/related-products-carousel";
 import { getActiveProducts, getProductById } from "@/lib/catalog";
+import { getSafeProductImageSrc } from "@/lib/product-images";
 
 type Props = {
   params: { id: string };
@@ -44,19 +45,12 @@ function removeMetadataTags(description: string) {
   return description.replace(/\[[^\]]+?:\s*[^\]]*\]/g, "").replace(/\s{2,}/g, " ").trim();
 }
 
-function isSafeImageSrc(value: string) {
-  const src = String(value || "").trim();
-  return src.startsWith("/") || /^https?:\/\//i.test(src);
-}
-
 function getSafeImageSrc(images: string[]) {
-  const candidate = (images || []).find(isSafeImageSrc);
-  return candidate || "/placeholder-product.svg";
+  return getSafeProductImageSrc(images);
 }
 
 function getPrimaryPhoto(images: string[]) {
-  const candidate = (images || []).find((value) => isSafeImageSrc(value) && !/\.(mp4|webm|ogg|mov|m4v)(?:$|\?)/i.test(value));
-  return candidate || getSafeImageSrc(images);
+  return getSafeImageSrc(images);
 }
 
 export default async function ProductoPage({ params }: Props) {
@@ -95,7 +89,6 @@ export default async function ProductoPage({ params }: Props) {
       let score = 0;
       if (item.category === product.category) score += 4;
       if (product.brand && item.brand === product.brand) score += 2;
-      if (product.subCategory && item.subCategory === product.subCategory) score += 2;
       return { item, score };
     })
     .filter((entry) => entry.score > 0)

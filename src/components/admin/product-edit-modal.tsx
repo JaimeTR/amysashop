@@ -1,10 +1,11 @@
 "use client";
 
 import { createPortal } from "react-dom";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { canonicalizeBrandName } from "@/lib/brands";
 import { useRegisteredTaxonomies } from "@/lib/use-registered-taxonomies";
 
 type Props = {
@@ -14,9 +15,13 @@ type Props = {
   gender: string;
   ageGroup: string;
   category: string;
+  subCategory?: string;
   categories: string[];
   brand: string;
+  subBrand?: string;
   brands: string[];
+  subBrands?: Array<{ name: string; brand: string }>;
+  subCategories?: Array<{ name: string; category: string }>;
   price: number;
   priceBefore: number | null;
   stock: number;
@@ -36,9 +41,13 @@ export function ProductEditModal({
   gender,
   ageGroup,
   category,
+  subCategory,
   categories,
   brand,
+  subBrand,
   brands,
+  subBrands,
+  subCategories,
   price,
   priceBefore,
   stock,
@@ -67,10 +76,63 @@ export function ProductEditModal({
   const galleryFileInputRef = useRef<HTMLInputElement>(null);
   const { genderOptions, ageGroupOptions } = useRegisteredTaxonomies();
 
+  const [selectedCategory, setSelectedCategory] = useState<string>(category || "");
+  const [selectedBrand, setSelectedBrand] = useState<string>(brand || "");
+  const [selectedSubCategory, setSelectedSubCategory] = useState<string>(subCategory || "");
+  const [selectedSubBrand, setSelectedSubBrand] = useState<string>(subBrand || "");
+
+    function normalizeLabel(value: string) {
+      return String(value || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  }
+
+    const availableSubCategories = useMemo(() => {
+      if (!selectedCategory || !Array.isArray(subCategories)) return [] as string[];
+
+      const selectedKey = normalizeLabel(selectedCategory);
+      const seen = new Map<string, string>();
+
+      for (const item of subCategories) {
+        const categoryKey = normalizeLabel(item.category);
+        const name = String(item.name || "").trim();
+        if (!name || categoryKey !== selectedKey) continue;
+        const key = normalizeLabel(name);
+        if (!seen.has(key)) seen.set(key, name);
+      }
+
+      return Array.from(seen.values()).sort((a, b) => a.localeCompare(b, "es"));
+    }, [selectedCategory, subCategories]);
+
+    const availableSubBrands = useMemo(() => {
+      if (!selectedBrand || !Array.isArray(subBrands)) return [] as string[];
+
+      const canonicalBrand = canonicalizeBrandName(selectedBrand) || selectedBrand;
+      const selectedKey = normalizeLabel(canonicalBrand);
+      const seen = new Map<string, string>();
+
+      for (const item of subBrands) {
+        const itemBrand = canonicalizeBrandName(item.brand) || item.brand;
+        const brandKey = normalizeLabel(itemBrand);
+        const name = String(item.name || "").trim();
+        if (!name || brandKey !== selectedKey) continue;
+        const key = normalizeLabel(name);
+        if (!seen.has(key)) seen.set(key, name);
+      }
+
+      return Array.from(seen.values()).sort((a, b) => a.localeCompare(b, "es"));
+    }, [selectedBrand, subBrands]);
+
   useEffect(() => {
     setMounted(true);
     return () => setMounted(false);
   }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    setSelectedCategory(category || "");
+    setSelectedBrand(brand || "");
+    setSelectedSubCategory(subCategory || "");
+    setSelectedSubBrand(subBrand || "");
+  }, [open, category, brand, subCategory, subBrand]);
 
   const baseInputClass =
     "h-10 w-full rounded-lg border border-[#e3d7cd] bg-white/95 px-3 text-sm text-black placeholder-black/40 focus:outline-none focus:ring-2 focus:ring-primary/25";
@@ -195,44 +257,17 @@ export function ProductEditModal({
 
           <div className="grid gap-3 md:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-semibold text-black">Género</label>
-                <select name="gender" defaultValue={gender} className={selectInputClass}>
-                  <option value="">Seleccionar género</option>
-                  {genderOptions.map((g) => (
-                    <option key={g} value={g.toLowerCase()}>{g}</option>
-                  ))}
-                </select>
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-semibold text-black">Edad</label>
-                <select name="ageGroup" defaultValue={ageGroup} required className={selectInputClass}>
-                  <option value="">Seleccionar edad</option>
-                  {ageGroupOptions.map((a) => (
-                    <option key={a} value={a.toLowerCase()}>{a}</option>
-                  ))}
-                </select>
-            </div>
-          </div>
-
-          <div className="grid gap-3 md:grid-cols-2">
-            <div>
-              <label className="mb-1 block text-xs font-semibold text-black">Marca</label>
-              <select name="brand" defaultValue={brand} required className={selectInputClass}>
-                <option value="">Seleccionar marca</option>
-                {brands.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div />
-          </div>
-
-          <div className="grid gap-3 md:grid-cols-2">
-            <div>
               <label className="mb-1 block text-xs font-semibold text-black">Categoría</label>
-              <select name="category" defaultValue={category} required className={selectInputClass}>
+              <select
+                name="category"
+                value={selectedCategory}
+                onChange={(e) => {
+                  setSelectedCategory(e.target.value);
+                  setSelectedSubCategory("");
+                }}
+                required
+                className={selectInputClass}
+              >
                 <option value="">Seleccionar categoría</option>
                 {categories.map((item) => (
                   <option key={item} value={item}>
@@ -241,7 +276,96 @@ export function ProductEditModal({
                 ))}
               </select>
             </div>
-            <div />
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-black">Marca</label>
+              <select
+                name="brand"
+                value={selectedBrand}
+                onChange={(e) => {
+                  setSelectedBrand(e.target.value);
+                  setSelectedSubBrand("");
+                }}
+                required
+                className={selectInputClass}
+              >
+                <option value="">Seleccionar marca</option>
+                {brands.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-black">Subcategoría</label>
+              <select
+                name="subCategory"
+                value={selectedSubCategory}
+                onChange={(e) => setSelectedSubCategory(e.target.value)}
+                className={selectInputClass}
+                disabled={!selectedCategory || availableSubCategories.length === 0}
+              >
+                <option value="">
+                  {!selectedCategory
+                    ? "Selecciona categoría primero"
+                    : availableSubCategories.length === 0
+                    ? "Sin subcategorías registradas"
+                    : "Seleccionar subcategoría"}
+                </option>
+                {availableSubCategories.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-black">Submarca</label>
+              <select
+                name="subBrand"
+                value={selectedSubBrand}
+                onChange={(e) => setSelectedSubBrand(e.target.value)}
+                className={selectInputClass}
+                disabled={!selectedBrand || availableSubBrands.length === 0}
+              >
+                <option value="">
+                  {!selectedBrand
+                    ? "Selecciona marca primero"
+                    : availableSubBrands.length === 0
+                    ? "Sin submarcas registradas"
+                    : "Seleccionar submarca"}
+                </option>
+                {availableSubBrands.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-black">Género</label>
+              <select name="gender" defaultValue={gender} className={selectInputClass}>
+                <option value="">Seleccionar género</option>
+                {genderOptions.map((g) => (
+                  <option key={g} value={g.toLowerCase()}>{g}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-black">Edad</label>
+              <select name="ageGroup" defaultValue={ageGroup} className={selectInputClass}>
+                <option value="">Seleccionar edad</option>
+                {ageGroupOptions.map((a) => (
+                  <option key={a} value={a.toLowerCase()}>{a}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="grid gap-3 md:grid-cols-3">
@@ -260,7 +384,7 @@ export function ProductEditModal({
               <p className="mt-1 text-[11px] text-black/55">Se define automaticamente en Inventario</p>
             </div>
             <div>
-              <label className="mb-1 block text-xs font-semibold text-black">Precio sugerido (opcional)</label>
+              <label className="mb-1 block text-xs font-semibold text-black">Precio sugerido</label>
               <input name="priceBefore" type="number" step="0.01" min="0" defaultValue={priceBefore || ""} placeholder="Referencia visual para marketing" className={baseInputClass} />
             </div>
             <div>

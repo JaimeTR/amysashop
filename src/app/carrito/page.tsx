@@ -10,6 +10,7 @@ import { deliveryOptions, getDeliveryFee, getDeliveryLabel, type DeliveryMethod 
 import { useCartStore } from "@/store/cart-store";
 import { useNotify } from "@/components/feedback/notification-center";
 import { createClient } from "@/lib/supabase/client";
+import { DEFAULT_PRODUCT_IMAGE } from "@/lib/product-images";
 
 type CouponRow = {
   code: string;
@@ -218,7 +219,7 @@ export default function CarritoPage() {
               return (
               <article key={item.id} className="glass-card grid gap-3 rounded-2xl p-4 md:grid-cols-[88px_minmax(0,1fr)_auto] md:items-center">
                 <Image
-                  src={item.image || "/placeholder-product.svg"}
+                  src={item.image || DEFAULT_PRODUCT_IMAGE}
                   alt={item.name}
                   width={88}
                   height={88}

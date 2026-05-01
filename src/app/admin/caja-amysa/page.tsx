@@ -481,7 +481,8 @@ export default async function AdminCajaAmysaPage({ searchParams }: PageProps) {
     }))
     .filter((item, index, arr) => arr.findIndex((candidate) => candidate.id === item.id) === index)) as SellerOption[];
 
-  const incomes = ((incomesResult.data || []) as IncomeDbRow[]).map((row) => ({
+  const incomesData = !incomesResult.error && Array.isArray(incomesResult.data) ? (incomesResult.data as unknown as IncomeDbRow[]) : [];
+  const incomes = incomesData.map((row) => ({
     id: row.id,
     productId: String(row.product_id || ""),
     productName: row.product_name,
@@ -497,7 +498,8 @@ export default async function AdminCajaAmysaPage({ searchParams }: PageProps) {
     createdAt: row.created_at,
   }));
 
-  const expenses = ((expensesResult.data || []) as ExpenseDbRow[]).map((row) => ({
+  const expensesData = !expensesResult.error && Array.isArray(expensesResult.data) ? (expensesResult.data as unknown as ExpenseDbRow[]) : [];
+  const expenses = expensesData.map((row) => ({
     id: row.id,
     concept: row.concept,
     expenseType: row.expense_type,

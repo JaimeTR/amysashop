@@ -45,6 +45,14 @@ export function InventoryImportModal({ importInventoryAction }: Props) {
         }
       }, 1200);
     } catch (error) {
+      if (
+        error &&
+        typeof error === "object" &&
+        "digest" in error &&
+        String((error as { digest?: unknown }).digest || "").includes("NEXT_REDIRECT")
+      ) {
+        throw error;
+      }
       setNotification({
         type: "error",
         message: error instanceof Error ? error.message : "No se pudo importar el archivo CSV",

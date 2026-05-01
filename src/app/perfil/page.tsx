@@ -43,7 +43,7 @@ export default async function PerfilPage() {
 
   return (
     <main className="space-y-4 pb-8">
-      <h1 className="font-[var(--font-display)] text-3xl">Perfil</h1>
+      <h1 className="font-[var(--font-display)] text-3xl">Mi cuenta</h1>
       <Card className="rounded-3xl border-2 border-primary/30 bg-gradient-to-br from-primary/10 via-white to-primary/5 shadow-lg shadow-primary/10">
         <CardHeader>
           <CardTitle className="text-primary">Datos de cuenta</CardTitle>

@@ -1,12 +1,15 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, ShoppingBag, Sparkles, Star, Tag } from "lucide-react";
+import { ArrowRight, Droplets, Gem, Package, Palette, ShoppingBag, Sparkles, Star, Tag, Store } from "lucide-react";
 import { AddToCartButton } from "@/components/product/add-to-cart-button";
 import { BrandShowcase } from "@/components/store/brand-showcase";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ToggleFavoriteButton } from "@/components/product/toggle-favorite-button";
-import { getActiveProducts } from "@/lib/catalog";
+import { getActiveProducts, getRegisteredCategories } from "@/lib/catalog";
+import { DiscountCarouselClient } from "@/components/store/discount-carousel-client";
+import { HomeHeroTypingSlogan } from "@/components/store/home-hero-typing-slogan";
+import { getSafeProductImageSrc } from "@/lib/product-images";
 
 function extractTagValue(description: string, key: string) {
   const regex = new RegExp(`\\[${key}:\\s*(.*?)\\]`, "i");
@@ -64,6 +67,36 @@ function getPaletteClass(key: string) {
   return palette[hash % palette.length];
 }
 
+function getCategoryIcon(category: string) {
+  const normalized = normalizeLabel(category);
+
+  if (normalized.includes("perf") || normalized.includes("frag") || normalized.includes("arom")) {
+    return Sparkles;
+  }
+
+  if (normalized.includes("maqu") || normalized.includes("make")) {
+    return Palette;
+  }
+
+  if (normalized.includes("acces") || normalized.includes("joy") || normalized.includes("bijou")) {
+    return Gem;
+  }
+
+  if (normalized.includes("cuidado") || normalized.includes("piel") || normalized.includes("corporal") || normalized.includes("hidra")) {
+    return Droplets;
+  }
+
+  if (normalized.includes("promo") || normalized.includes("ofert") || normalized.includes("descuento") || normalized.includes("sale")) {
+    return Tag;
+  }
+
+  if (normalized.includes("catal") || normalized.includes("pack") || normalized.includes("combo")) {
+    return Package;
+  }
+
+  return ShoppingBag;
+}
+
 function getInitials(text: string) {
   const words = text
     .trim()
@@ -74,14 +107,8 @@ function getInitials(text: string) {
   return `${words[0][0] || ""}${words[1][0] || ""}`.toUpperCase();
 }
 
-function isSafeImageSrc(value: string) {
-  const src = String(value || "").trim();
-  return src.startsWith("/") || /^https?:\/\//i.test(src);
-}
-
 function getSafeImageSrc(images: string[]) {
-  const candidate = (images || []).find((value) => isSafeImageSrc(value) && !/\.(mp4|webm|ogg|mov|m4v)(?:$|\?)/i.test(value));
-  return candidate || "/placeholder-product.svg";
+  return getSafeProductImageSrc(images);
 }
 
 function getDiscountPercent(priceBefore: number | null | undefined, price: number) {
@@ -96,130 +123,116 @@ function getDiscountPercent(priceBefore: number | null | undefined, price: numbe
 }
 
 export default async function Home() {
-  const products = await getActiveProducts();
+  const [products, categories] = await Promise.all([getActiveProducts(), getRegisteredCategories()]);
   const featuredProducts = products.slice(0, 10);
 
   const discountedProducts = products
     .filter((product) => Number(product.priceBefore || 0) > Number(product.price || 0))
-    .slice(0, 8);
-
-  const categories = uniqueLabels(products.map((item) => item.category).filter(Boolean));
+    .sort((a, b) => getDiscountPercent(b.priceBefore, b.price) - getDiscountPercent(a.priceBefore, a.price));
 
   return (
     <main className="space-y-8 pb-10 pt-2">
-      <section className="glass-card animate-in fade-in duration-700 rounded-3xl p-6">
+      <section className="glass-card animate-in fade-in duration-700 rounded-3xl p-6 text-center md:text-left">
         <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">AMYSA SHOP</p>
-        <h1 className="font-[var(--font-display)] text-4xl leading-tight text-foreground">
+
+        {/* Desktop: título grande (visible en md+) */}
+        <h1 className="hidden md:block font-[var(--font-display)] text-4xl leading-tight text-foreground">
           AMYSA SHOP,
-          <span className="block text-primary">tu tienda virtual.</span>
+          <HomeHeroTypingSlogan />
         </h1>
-        <p className="mt-3 text-sm text-muted-foreground">
-          Explora el catálogo de productos disponibles y compra por WhatsApp con mensaje personalizado.
+
+        {/* Mobile: mostrar solo texto en movimiento en tamaño más pequeño */}
+        <h1 className="block md:hidden">
+          <span className="sr-only">AMYSA SHOP</span>
+          <span className="block text-primary text-xl md:text-2xl lg:text-3xl mx-auto font-normal whitespace-normal break-words min-h-[3rem] md:min-h-0 leading-tight">
+            <HomeHeroTypingSlogan />
+          </span>
+        </h1>
+
+        <p className="mt-3 text-sm text-muted-foreground text-center md:text-left mx-auto md:mx-0 max-w-xl">
+          Explora el catálogo de productos seleccionados por AMYSA.
         </p>
-        <div className="mt-5 flex items-center gap-3">
-          <Button asChild>
-            <Link href="/tienda">
-              Ir a tienda <ArrowRight className="ml-2 size-4" />
-            </Link>
-          </Button>
-          <Button variant="outline" asChild>
-            <Link href="/favoritos">
-              <Star className="mr-2 size-4" /> Favoritos
-            </Link>
-          </Button>
+
+        <div className="mt-5 flex flex-col md:flex-row items-center md:items-center gap-3">
+          <div className="w-full md:w-auto">
+            <Button asChild className="w-full">
+              <Link href="/tienda" className="inline-flex items-center justify-center w-full uppercase font-light md:font-semibold">
+                VER TIENDA <Store className="ml-2 size-4" />
+              </Link>
+            </Button>
+          </div>
+
+          <div className="w-full md:w-auto">
+            <Button variant="outline" asChild className="w-full">
+              <Link href="/favoritos" className="inline-flex items-center justify-center w-full uppercase font-light md:font-semibold">
+                FAVORITOS <Star className="ml-2 size-4" />
+              </Link>
+            </Button>
+          </div>
         </div>
+
       </section>
+
+      {/* Flecha indicadora solo en móvil, fuera del contenedor hero: desplaza hacia la sección de marcas */}
+      <div className="-mt-2 flex justify-center md:hidden">
+        <a href="#brands" className="inline-flex items-center justify-center rounded-full bg-white/10 p-2 text-primary shadow-sm">
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </a>
+      </div>
 
       <BrandShowcase />
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="font-[var(--font-display)] text-2xl">Productos con descuento y oferta</h2>
-          <Link href="/tienda" className="text-sm font-semibold text-primary">
-            Ver todo
+          <h2 className="w-full text-center font-[var(--font-display)] text-2xl md:w-auto md:text-left">Descuentos y ofertas</h2>
+          <Link href="/tienda?descuento=true" className="hidden items-center gap-2 text-sm font-semibold text-primary hover:underline md:inline-flex">
+            Ver más descuentos <ArrowRight className="size-4" />
           </Link>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {(discountedProducts.length > 0 ? discountedProducts : products.slice(0, 4)).map((product) => (
-            <article key={product.id} className="glass-card overflow-hidden rounded-2xl transition hover:scale-[1.01]">
-              <Link href={`/producto/${product.id}`}>
-                <Image
-                  src={getSafeImageSrc(product.images)}
-                  alt={product.name}
-                  width={500}
-                  height={500}
-                  className="h-44 w-full object-cover"
-                />
-              </Link>
-              <div className="space-y-2 p-3">
-                {(() => {
-                  const discountPercent = getDiscountPercent(product.priceBefore, product.price);
-
-                  return (
-                    <>
-                      <div className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-xs font-semibold text-primary">
-                        <Tag className="size-3" /> Oferta {discountPercent > 0 ? `-${discountPercent}%` : ""}
-                      </div>
-                      <Link href={`/producto/${product.id}`}>
-                        <h3 className="line-clamp-2 font-semibold text-foreground">{product.name}</h3>
-                      </Link>
-                      <p className="text-xs text-muted-foreground">{product.category}</p>
-                      <div className="space-y-0.5">
-                        {product.priceBefore && product.priceBefore > product.price ? (
-                          <p className="text-xs text-muted-foreground line-through">S/ {Number(product.priceBefore).toFixed(2)}</p>
-                        ) : null}
-                        <p className="text-lg font-bold text-primary">S/ {product.price.toFixed(2)}</p>
-                      </div>
-
-                      <div className="grid grid-cols-[1fr_auto] gap-2">
-                        <AddToCartButton
-                          productId={product.id}
-                          name={product.name}
-                          price={product.price}
-                          priceBefore={product.priceBefore}
-                          image={getSafeImageSrc(product.images)}
-                          buttonLabel="Agregar"
-                        />
-                        <ToggleFavoriteButton
-                          productId={product.id}
-                          name={product.name}
-                          price={product.price}
-                          image={getSafeImageSrc(product.images)}
-                          category={product.category}
-                        />
-                      </div>
-                    </>
-                  );
-                })()}
-              </div>
-            </article>
-          ))}
+        <DiscountCarouselClient products={discountedProducts} />
+        <div className="flex justify-center md:justify-start">
+          <Link
+            href="/tienda?descuento=true"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline md:hidden"
+          >
+            Ver más descuentos <ArrowRight className="size-4" />
+          </Link>
         </div>
       </section>
 
       <section className="space-y-3">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-center gap-2 md:justify-start">
           <Sparkles className="size-5 text-primary" />
           <h2 className="font-[var(--font-display)] text-2xl">Categorías</h2>
         </div>
         <div className="glass-card rounded-3xl p-4">
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-            {categories.slice(0, 15).map((category) => (
-              <Link
-                key={category}
-                href={`/tienda?categoria=${encodeURIComponent(category)}`}
-                className="group flex flex-col items-center gap-2 rounded-2xl border border-transparent px-2 py-2 transition hover:border-primary/30 hover:bg-white/50"
-              >
-                <span
-                  className={`flex h-14 w-14 items-center justify-center rounded-full border border-white/70 bg-gradient-to-br text-xs font-bold uppercase shadow-sm transition group-hover:scale-105 ${getPaletteClass(
-                    category
-                  )}`}
-                >
-                  {getInitials(category)}
-                </span>
-                <span className="line-clamp-2 text-center text-xs font-semibold text-foreground">{category}</span>
-              </Link>
-            ))}
+          <div className="flex gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-3 md:gap-4 lg:grid-cols-5">
+            {categories.length > 0 ? (
+              categories.map((category) => {
+                const CategoryIcon = getCategoryIcon(category);
+
+                return (
+                  <Link
+                    key={category}
+                    href={`/tienda?categoria=${encodeURIComponent(category)}`}
+                    className="group flex min-w-[4.5rem] shrink-0 flex-col items-center gap-2 rounded-2xl border border-transparent px-2 py-2 transition hover:border-primary/30 hover:bg-white/50 md:min-w-0 md:px-2 md:py-3"
+                  >
+                    <span
+                      className={`flex h-12 w-12 items-center justify-center rounded-full border border-white/70 bg-gradient-to-br shadow-sm transition group-hover:scale-105 md:h-14 md:w-14 ${getPaletteClass(category)}`}
+                    >
+                      <CategoryIcon className="size-5 md:size-6" />
+                    </span>
+                    <span className="hidden line-clamp-2 text-center text-xs font-semibold text-foreground md:block">{category}</span>
+                  </Link>
+                );
+              })
+            ) : (
+              <div className="col-span-full rounded-2xl border border-dashed border-border/70 px-4 py-6 text-center text-sm text-muted-foreground">
+                Aún no hay categorías registradas en tienda.
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -234,7 +247,7 @@ export default async function Home() {
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
           {featuredProducts.map((product) => (
-            <article key={product.id} className="glass-card overflow-hidden rounded-2xl">
+            <article key={product.id} className="glass-card overflow-hidden rounded-2xl group transition-transform duration-300 hover:scale-102 hover:shadow-lg">
               {(() => {
                 const discountPercent = getDiscountPercent(product.priceBefore, product.price);
 
@@ -246,14 +259,14 @@ export default async function Home() {
                   alt={product.name}
                   width={600}
                   height={600}
-                  className="h-40 w-full object-cover"
+                  className="h-40 w-full object-cover transition-transform duration-300 transform group-hover:scale-105"
                 />
               </Link>
 
               <div className="space-y-2 p-3">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">{product.category}</p>
                 <Link href={`/producto/${product.id}`} className="block">
-                  <h3 className="line-clamp-2 font-semibold text-foreground hover:text-primary">{product.name}</h3>
+                  <h3 className="line-clamp-1 truncate font-semibold text-foreground hover:text-primary">{product.name}</h3>
                 </Link>
 
                 <div className="space-y-0.5">

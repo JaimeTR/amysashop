@@ -1,10 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Manrope, Playfair_Display } from "next/font/google";
 import "./globals.css";
-import { MainNav } from "@/components/layout/main-nav";
 import { DevServiceWorkerCleanup } from "@/components/pwa/dev-service-worker-cleanup";
 import { NotificationProvider } from "@/components/feedback/notification-center";
-import { getActiveProductsForNav } from "@/lib/catalog";
+import { getActiveProductsForNav, getRegisteredCategories } from "@/lib/catalog";
+import { LayoutWrapper } from "@/components/layout/layout-wrapper";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -38,17 +38,16 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const products = await getActiveProductsForNav();
+  const [products, categories] = await Promise.all([getActiveProductsForNav(), getRegisteredCategories()]);
 
   return (
     <html lang="es">
-      <body className={`${manrope.variable} ${playfair.variable} min-h-screen antialiased`}>
+      <body className={`${manrope.variable} ${playfair.variable} min-h-screen flex flex-col antialiased`}>
         <DevServiceWorkerCleanup />
         <NotificationProvider>
-          <div className="mx-auto w-full max-w-[1920px] px-3 pb-24 pt-4 sm:px-4 md:px-6 md:pb-10 lg:px-8 xl:px-10 2xl:px-12">
-            <MainNav products={products} />
+          <LayoutWrapper products={products} categories={categories}>
             {children}
-          </div>
+          </LayoutWrapper>
         </NotificationProvider>
       </body>
     </html>
