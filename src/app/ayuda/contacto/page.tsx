@@ -1,5 +1,6 @@
 import ContactForm from '../../../components/ayuda/contact-form';
 import { Phone, Mail } from 'lucide-react';
+import { DEFAULT_WHATSAPP_DISPLAY_PHONE, DEFAULT_WHATSAPP_PHONE } from '@/lib/whatsapp';
 
 export default function ContactoPage() {
   return (
@@ -26,7 +27,7 @@ export default function ContactoPage() {
               </div>
               <div>
                 <p className="text-sm font-medium">Teléfono</p>
-                <a href="tel:+51965312386" className="text-sm text-primary">965 312 386</a>
+                <a href={`tel:+${DEFAULT_WHATSAPP_PHONE}`} className="text-sm text-primary">{DEFAULT_WHATSAPP_DISPLAY_PHONE}</a>
               </div>
             </div>
 

@@ -124,7 +124,7 @@ function getDiscountPercent(priceBefore: number | null | undefined, price: numbe
 
 export default async function Home() {
   const [products, categories] = await Promise.all([getActiveProducts(), getRegisteredCategories()]);
-  const featuredProducts = products.slice(0, 10);
+  const featuredProducts = products.slice(0, 12);
 
   const discountedProducts = products
     .filter((product) => Number(product.priceBefore || 0) > Number(product.price || 0))
@@ -133,44 +133,72 @@ export default async function Home() {
   return (
     <main className="space-y-8 pb-10 pt-2">
       <section className="glass-card animate-in fade-in duration-700 rounded-3xl p-6 text-center md:text-left">
-        <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">AMYSA SHOP</p>
+        <div className="flex flex-col md:flex-row items-center md:items-center justify-between gap-8">
+          {/* Contenido de texto */}
+          <div className="flex-1">
+            <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">AMYSA SHOP</p>
 
-        {/* Desktop: título grande (visible en md+) */}
-        <h1 className="hidden md:block font-[var(--font-display)] text-4xl leading-tight text-foreground">
-          AMYSA SHOP,
-          <HomeHeroTypingSlogan />
-        </h1>
+            {/* Desktop: título grande (visible en md+) */}
+            <h1 className="hidden md:block font-[var(--font-display)] text-4xl leading-tight text-foreground">
+              AMYSA SHOP,
+              <HomeHeroTypingSlogan />
+            </h1>
 
-        {/* Mobile: mostrar solo texto en movimiento en tamaño más pequeño */}
-        <h1 className="block md:hidden">
-          <span className="sr-only">AMYSA SHOP</span>
-          <span className="block text-primary text-xl md:text-2xl lg:text-3xl mx-auto font-normal whitespace-normal break-words min-h-[3rem] md:min-h-0 leading-tight">
-            <HomeHeroTypingSlogan />
-          </span>
-        </h1>
+            {/* Mobile: mostrar solo texto en movimiento en tamaño más pequeño */}
+            <h1 className="block md:hidden">
+              <span className="sr-only">AMYSA SHOP</span>
+              <span className="block text-primary text-xl md:text-2xl lg:text-3xl mx-auto font-normal whitespace-normal break-words leading-tight">
+                <HomeHeroTypingSlogan />
+              </span>
+            </h1>
 
-        <p className="mt-3 text-sm text-muted-foreground text-center md:text-left mx-auto md:mx-0 max-w-xl">
-          Explora el catálogo de productos seleccionados por AMYSA.
-        </p>
+            {/* Imagen en móvil, antes del párrafo descriptivo */}
+            <div className="flex md:hidden justify-center mt-4 mb-4 flex-shrink-0">
+              <Image
+                src="/logos/tiendaaperturasinfondo.png"
+                alt="Tienda AMYSA"
+                width={200}
+                height={200}
+                className="object-contain w-40 h-40"
+                priority
+              />
+            </div>
 
-        <div className="mt-5 flex flex-col md:flex-row items-center md:items-center gap-3">
-          <div className="w-full md:w-auto">
-            <Button asChild className="w-full">
-              <Link href="/tienda" className="inline-flex items-center justify-center w-full uppercase font-light md:font-semibold">
-                VER TIENDA <Store className="ml-2 size-4" />
-              </Link>
-            </Button>
+            <p className="mt-3 text-sm text-muted-foreground text-center md:text-left mx-auto md:mx-0 max-w-xl">
+              Explora el catálogo de productos seleccionados por AMYSA.
+            </p>
+
+            <div className="mt-5 flex flex-col md:flex-row items-center md:items-center gap-3">
+              <div className="w-full md:w-auto">
+                <Button asChild className="w-full">
+                  <Link href="/tienda" className="inline-flex items-center justify-center w-full uppercase font-light md:font-semibold">
+                    VER TIENDA <Store className="ml-2 size-4" />
+                  </Link>
+                </Button>
+              </div>
+
+              <div className="w-full md:w-auto">
+                <Button variant="outline" asChild className="w-full">
+                  <Link href="/favoritos" className="inline-flex items-center justify-center w-full uppercase font-light md:font-semibold">
+                    FAVORITOS <Star className="ml-2 size-4" />
+                  </Link>
+                </Button>
+              </div>
+            </div>
           </div>
 
-          <div className="w-full md:w-auto">
-            <Button variant="outline" asChild className="w-full">
-              <Link href="/favoritos" className="inline-flex items-center justify-center w-full uppercase font-light md:font-semibold">
-                FAVORITOS <Star className="ml-2 size-4" />
-              </Link>
-            </Button>
+          {/* Imagen al lado derecho en desktop */}
+          <div className="hidden md:flex justify-end flex-shrink-0">
+            <Image
+              src="/logos/tiendaaperturasinfondo.png"
+              alt="Tienda AMYSA"
+              width={200}
+              height={200}
+              className="object-contain w-80 h-80"
+              priority
+            />
           </div>
         </div>
-
       </section>
 
       {/* Flecha indicadora solo en móvil, fuera del contenedor hero: desplaza hacia la sección de marcas */}
@@ -237,15 +265,17 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
+      <section className="space-y-3 px-3 sm:px-0">
+        <div className="flex items-center justify-between gap-3">
           <h2 className="font-[var(--font-display)] text-2xl">Destacados</h2>
-          <Link href="/tienda" className="inline-flex items-center text-sm font-semibold text-primary">
-            Explorar más <ArrowRight className="ml-1 size-4" />
-          </Link>
+          {products.length > featuredProducts.length ? (
+            <Link href="/tienda?destacados=true" className="inline-flex items-center text-sm font-semibold text-primary">
+              Ver más productos <ArrowRight className="ml-1 size-4" />
+            </Link>
+          ) : null}
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {featuredProducts.map((product) => (
             <article key={product.id} className="glass-card overflow-hidden rounded-2xl group transition-transform duration-300 hover:scale-102 hover:shadow-lg">
               {(() => {

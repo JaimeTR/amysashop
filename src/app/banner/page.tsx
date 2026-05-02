@@ -2,6 +2,7 @@ import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Phone } from "lucide-react";
+import { DEFAULT_WHATSAPP_DISPLAY_PHONE, DEFAULT_WHATSAPP_PHONE } from "@/lib/whatsapp";
 
 export default function BannerPage() {
   return (
@@ -43,10 +44,40 @@ export default function BannerPage() {
 
           {/* Animated text */}
           <div className="text-center">
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">
+            <h1 className="text-5xl md:text-6xl font-bold text-white leading-none tracking-tight mb-0">
               TU FILTRO DE TENDENCIAS
             </h1>
             <div className="h-1 w-32 bg-gradient-to-r from-white to-white/60 mx-auto rounded-full animate-pulse"></div>
+
+            {/* Social icons shown under title on mobile */}
+            <div className="flex items-center justify-center gap-6 mt-4 md:hidden">
+              <a
+                href="https://www.instagram.com/amysa.shop/"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Instagram"
+                className="text-white hover:opacity-90"
+              >
+                <svg viewBox="0 0 24 24" fill="none" className="text-white" aria-hidden="true" width="28" height="28">
+                  <rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" strokeWidth="2"></rect>
+                  <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="2"></circle>
+                  <circle cx="17.2" cy="6.8" r="1.1" fill="currentColor"></circle>
+                </svg>
+              </a>
+
+              <a
+                href="https://www.tiktok.com/@amysa.shop"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="TikTok"
+                className="text-white hover:opacity-90"
+              >
+                <svg viewBox="0 0 24 24" fill="none" className="text-white" aria-hidden="true" width="28" height="28">
+                  <path d="M14 3v9.2a4.8 4.8 0 1 1-4.2-4.75" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
+                  <path d="M14 3c.7 2.5 2.4 4 5 4v3.3c-2.1 0-3.9-.7-5-1.7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
+                </svg>
+              </a>
+            </div>
           </div>
 
           {/* Animated typing text */}
@@ -118,10 +149,10 @@ export default function BannerPage() {
 
             {/* Contact Number - Simple */}
             <Link
-              href="https://wa.me/34965312386"
+              href={`https://wa.me/${DEFAULT_WHATSAPP_PHONE}`}
               className="inline-block text-4xl md:text-5xl font-bold text-white hover:text-white/80 transition-colors"
             >
-              965 312 386
+              {DEFAULT_WHATSAPP_DISPLAY_PHONE}
             </Link>
           </div>
 

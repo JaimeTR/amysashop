@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { DEFAULT_PRODUCT_IMAGE } from "@/lib/product-images";
 import { useCartStore } from "@/store/cart-store";
 import { useNotify } from "@/components/feedback/notification-center";
-import { buildWhatsAppUrl } from "@/lib/whatsapp";
+import { DEFAULT_WHATSAPP_PHONE, buildWhatsAppUrl } from "@/lib/whatsapp";
 import { createClient } from "@/lib/supabase/client";
 import { deliveryOptions, getDeliveryFee, getDeliveryLabel, type DeliveryMethod } from "@/lib/delivery-options";
 import { getHalomDepartments } from "@/lib/shipping-halom";
@@ -386,7 +386,7 @@ export default function CheckoutPage() {
       }
 
       const orderId = payload.orderId ? String(payload.orderId) : "";
-      const whatsappPhone = process.env.NEXT_PUBLIC_WHATSAPP_PHONE || "51975646074";
+      const whatsappPhone = process.env.NEXT_PUBLIC_WHATSAPP_PHONE || DEFAULT_WHATSAPP_PHONE;
       const fullAddress = [
         department ? `Departamento: ${department}` : "",
         province ? `Provincia: ${province}` : "",

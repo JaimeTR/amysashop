@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Loader2, Minus, Plus, TicketPercent, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { buildCartWhatsAppMessage, buildWhatsAppUrl } from "@/lib/whatsapp";
+import { DEFAULT_WHATSAPP_PHONE, buildCartWhatsAppMessage, buildWhatsAppUrl } from "@/lib/whatsapp";
 import { deliveryOptions, getDeliveryFee, getDeliveryLabel, type DeliveryMethod } from "@/lib/delivery-options";
 import { useCartStore } from "@/store/cart-store";
 import { useNotify } from "@/components/feedback/notification-center";
@@ -54,7 +54,7 @@ export default function CarritoPage() {
   const totalSavings = productDiscount + couponDiscount;
   const shippingCost = getDeliveryFee(deliveryMethod);
   const total = Math.max(0, subtotal - couponDiscount + shippingCost);
-  const whatsappPhone = process.env.NEXT_PUBLIC_WHATSAPP_PHONE || "51975646074";
+  const whatsappPhone = process.env.NEXT_PUBLIC_WHATSAPP_PHONE || DEFAULT_WHATSAPP_PHONE;
   const waMessage = buildCartWhatsAppMessage(items);
   const waUrl = buildWhatsAppUrl(whatsappPhone, waMessage);
   const checkoutQuery = useMemo(() => {

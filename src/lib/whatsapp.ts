@@ -1,5 +1,8 @@
 import { CartItem } from "@/lib/types";
 
+export const DEFAULT_WHATSAPP_PHONE = "51965312386";
+export const DEFAULT_WHATSAPP_DISPLAY_PHONE = "965 312 386";
+
 const moneyFormatter = new Intl.NumberFormat("es-PE", {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,

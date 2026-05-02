@@ -4,6 +4,7 @@ import { ProductGallery } from "@/components/product/product-gallery";
 import { RelatedProductsCarousel } from "@/components/product/related-products-carousel";
 import { getActiveProducts, getProductById } from "@/lib/catalog";
 import { getSafeProductImageSrc } from "@/lib/product-images";
+import { DEFAULT_WHATSAPP_PHONE } from "@/lib/whatsapp";
 
 type Props = {
   params: { id: string };
@@ -60,7 +61,7 @@ export default async function ProductoPage({ params }: Props) {
     notFound();
   }
 
-  const whatsappPhone = process.env.NEXT_PUBLIC_WHATSAPP_PHONE || "51975646074";
+  const whatsappPhone = process.env.NEXT_PUBLIC_WHATSAPP_PHONE || DEFAULT_WHATSAPP_PHONE;
   const mainImage = getPrimaryPhoto(product.images);
   const rawDescription = product.description || "";
   const descriptionClean = removeMetadataTags(rawDescription) || "Sin descripcion";

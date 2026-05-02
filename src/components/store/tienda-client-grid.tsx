@@ -740,7 +740,7 @@ export function TiendaClientGrid({ products, categories = [], initialCategory, i
           
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-3 px-3 sm:grid-cols-2 sm:px-0 xl:grid-cols-4">
           {filteredProducts.map((product) => (
             <Card key={product.id} className="glass-card overflow-hidden group">
               <div className="relative">

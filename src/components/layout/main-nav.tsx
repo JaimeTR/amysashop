@@ -21,6 +21,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { AmysaAssistantWidget } from "@/components/chat/amysa-assistant-widget";
+import { DEFAULT_WHATSAPP_DISPLAY_PHONE, DEFAULT_WHATSAPP_PHONE } from "@/lib/whatsapp";
 import { useCartStore } from "@/store/cart-store";
 import { useFavoritesStore } from "@/store/favorites-store";
 import {
@@ -177,8 +178,8 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
   const router = useRouter();
   const pathname = usePathname();
   const supabase = useMemo(() => createClient(), []);
-  const whatsappPhone = process.env.NEXT_PUBLIC_WHATSAPP_PHONE || "51975646074";
-  const whatsappDisplayPhone = process.env.NEXT_PUBLIC_WHATSAPP_DISPLAY_PHONE || "965 312 386";
+  const whatsappPhone = process.env.NEXT_PUBLIC_WHATSAPP_PHONE || DEFAULT_WHATSAPP_PHONE;
+  const whatsappDisplayPhone = process.env.NEXT_PUBLIC_WHATSAPP_DISPLAY_PHONE || DEFAULT_WHATSAPP_DISPLAY_PHONE;
   const instagramUrl = process.env.NEXT_PUBLIC_INSTAGRAM_URL || "https://www.instagram.com/amysa.shop/";
   const tiktokUrl = process.env.NEXT_PUBLIC_TIKTOK_URL || "http://tiktok.com/@amysa.shop";
   const [user, setUser] = useState<AuthUser | null>(null);
