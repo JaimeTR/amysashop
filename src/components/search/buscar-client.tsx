@@ -6,6 +6,7 @@ import { Filter, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { canonicalizeBrandName, getRegisteredBrandNames } from "@/lib/brands";
+import { useBrandNamesFromDB } from "@/lib/use-db-taxonomies";
 import { useRegisteredTaxonomies } from "@/lib/use-registered-taxonomies";
 import { Product } from "@/lib/types";
 
@@ -44,16 +45,18 @@ export function BuscarClient({ products }: Props) {
   const [selectedBrand, setSelectedBrand] = useState("");
   const [showQuickFilters, setShowQuickFilters] = useState(false);
   const { genderOptions } = useRegisteredTaxonomies();
+  const { brandNames } = useBrandNamesFromDB();
 
   const categories = useMemo(() => uniqueLabels(products.map((product) => product.category).filter(Boolean)), [products]);
-  const brands = useMemo(() => getRegisteredBrandNames(), []);
+  const brands = useMemo(() => brandNames, [brandNames]);
 
   function normalizeGender(value: string) {
     const normalized = String(value || "").trim().toLowerCase();
     if (!normalized) return "";
-    if (normalized.startsWith("hom")) return "Hombres";
-    if (normalized.startsWith("muj") || normalized.startsWith("fem")) return "Mujeres";
-    if (normalized.startsWith("niñ") || normalized.startsWith("nin") || normalized.includes("child")) return "Niños";
+    if (normalized.startsWith("hom") || normalized.startsWith("masc") || normalized === "male" || normalized === "man") return "Hombre";
+    if (normalized.startsWith("muj") || normalized.startsWith("fem") || normalized === "female" || normalized === "woman") return "Mujer";
+    if (normalized.startsWith("uni")) return "Unisex";
+    if (normalized.startsWith("niñ") || normalized.startsWith("nin") || normalized.includes("child")) return "Unisex";
     return String(value || "").trim();
   }
 

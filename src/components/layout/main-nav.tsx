@@ -226,7 +226,7 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
     superAdminEmail: allowedAdminEmail,
   });
   const accessLevels = getPermissionsForRole(role).map((permission) => getPermissionLabel(permission));
-  const profileAvatarUrl = (profileData.avatar_url || profileDraft.avatar_url || "").trim();
+  const profileAvatarUrl = (avatarPreview || profileDraft.avatar_url || profileData.avatar_url || "").trim();
   const editingAvatarUrl = (avatarPreview || profileDraft.avatar_url || profileData.avatar_url || "").trim();
 
   const cartSummary = useMemo(
@@ -393,6 +393,41 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
   }, [supabase, user?.id, user?.user_metadata?.nombre]);
 
   useEffect(() => {
+    function onAvatarUpdated(e: any) {
+      const url = e?.detail?.avatar_url;
+      console.debug("[MainNav] onAvatarUpdated", url);
+      if (url) {
+        setProfileDraft((prev) => ({ ...prev, avatar_url: String(url) }));
+        setProfileData((prev) => ({ ...prev, avatar_url: String(url) }));
+      }
+    }
+
+    function onProfileUpdated(e: any) {
+      const d = e?.detail;
+      console.debug("[MainNav] onProfileUpdated", d);
+      if (d) {
+        const updated: ProfileData = {
+          nombre: String(d.nombre || ""),
+          telefono: String(d.telefono || ""),
+          direccion: String(d.direccion || ""),
+          gender: String(d.gender || ""),
+          avatar_url: String(d.avatar_url || ""),
+        };
+        setProfileData(updated);
+        setProfileDraft(updated);
+      }
+    }
+
+    window.addEventListener("amysa:avatar-updated", onAvatarUpdated as EventListener);
+    window.addEventListener("amysa:profile-updated", onProfileUpdated as EventListener);
+
+    return () => {
+      window.removeEventListener("amysa:avatar-updated", onAvatarUpdated as EventListener);
+      window.removeEventListener("amysa:profile-updated", onProfileUpdated as EventListener);
+    };
+  }, []);
+
+  useEffect(() => {
     if (isAdminRoute) return;
 
     let active = true;
@@ -492,6 +527,8 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
       setProfileData(updated);
       setProfileDraft(updated);
       setEditingProfile(false);
+      setProfileOpen(false);
+      router.refresh();
     }
 
     setSavingProfile(false);
@@ -560,12 +597,27 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
         return;
       }
 
-      setProfileDraft((prev) => ({ ...prev, avatar_url: data.publicUrl }));
+      const avatarUrl = data.publicUrl;
+      let saveResult = await supabase.from("profiles").update({ avatar_url: avatarUrl }).eq("id", user.id);
+
+      if (saveResult.error && isMissingColumnError(saveResult.error, "avatar_url")) {
+        saveResult = await supabase.from("profiles").update({}).eq("id", user.id);
+      }
+
+      if (saveResult.error) {
+        throw saveResult.error;
+      }
+
+      setProfileData((prev) => ({ ...prev, avatar_url: avatarUrl }));
+      setProfileDraft((prev) => ({ ...prev, avatar_url: avatarUrl }));
       setSelectedAvatarFile(null);
       if (avatarPreview) {
         URL.revokeObjectURL(avatarPreview);
       }
       setAvatarPreview("");
+      setEditingProfile(false);
+      setProfileOpen(false);
+      router.refresh();
     } finally {
       setUploadingAvatar(false);
     }
@@ -611,12 +663,10 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
                   className="border border-primary/20 bg-primary/10 hover:bg-primary/20"
                 >
                   {profileAvatarUrl ? (
-                    <Image
+                    <img
                       src={profileAvatarUrl}
                       alt="Perfil"
-                      width={28}
-                      height={28}
-                      unoptimized
+                      key={profileAvatarUrl}
                       className="size-7 rounded-full object-cover"
                     />
                   ) : (
@@ -1203,12 +1253,10 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
                   <div className="space-y-3 text-sm">
                     <div className="flex items-center gap-3">
                       {editingAvatarUrl ? (
-                        <Image
+                        <img
                           src={editingAvatarUrl}
                           alt="Foto de perfil"
-                          width={72}
-                          height={72}
-                          unoptimized
+                          key={editingAvatarUrl}
                           className="size-[72px] rounded-full border border-primary/20 object-cover"
                         />
                       ) : (

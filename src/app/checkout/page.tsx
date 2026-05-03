@@ -571,9 +571,12 @@ export default function CheckoutPage() {
                       Escanea el QR de {paymentMethodLabel(paymentMethod)} para pagar. Luego marca &quot;Confirmar pago&quot;.
                     </p>
                     {(paymentMethod === "yape" && yapeQrUrl) || (paymentMethod === "plin" && plinQrUrl) ? (
-                      <img
+                      <Image
                         src={paymentMethod === "yape" ? yapeQrUrl : plinQrUrl}
                         alt={`QR ${paymentMethodLabel(paymentMethod)}`}
+                        width={192}
+                        height={192}
+                        unoptimized
                         className="h-48 w-48 rounded-xl border bg-white object-cover"
                       />
                     ) : (

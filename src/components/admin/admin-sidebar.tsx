@@ -88,13 +88,6 @@ export function AdminSidebar({ role, collapsed, mobileOpen, onToggleCollapse, on
         <div className={`mb-3 flex items-center gap-2 ${collapsed ? "justify-center" : "justify-between"}`}>
           {collapsed ? null : (
             <div className="flex items-center gap-2">
-              <Image
-                src="/logos/amysa-square-primary.png"
-                alt="AMYSA"
-                width={28}
-                height={28}
-                className="size-7 rounded-md"
-              />
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Administración</p>
             </div>
           )}

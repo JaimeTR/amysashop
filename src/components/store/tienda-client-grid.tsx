@@ -15,10 +15,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { canonicalizeBrandName, getRegisteredBrandNames } from "@/lib/brands";
 import { getSafeProductImageSrc } from "@/lib/product-images";
 import { useRegisteredTaxonomies } from "@/lib/use-registered-taxonomies";
+import { useHierarchicalTaxonomies } from "@/lib/use-hierarchical-taxonomies";
+import { useBrandNamesFromDB } from "@/lib/use-db-taxonomies";
 import type { Product } from "@/lib/types";
 
 type Props = {
   products: Product[];
+  allProducts?: Product[]; // Todos los productos (para contar géneros, marcas, etc)
   categories?: string[];
   initialCategory?: string;
   initialBrand?: string;
@@ -81,10 +84,10 @@ function uniqueLabels(values: string[]) {
 function normalizeGender(value: string) {
   const normalized = String(value || "").trim().toLowerCase();
   if (!normalized) return "";
-  if (normalized.startsWith("hom")) return "Hombres";
-  if (normalized.startsWith("muj") || normalized.startsWith("fem")) return "Mujeres";
+  if (normalized.startsWith("hom") || normalized.startsWith("masc") || normalized === "male" || normalized === "man") return "Hombre";
+  if (normalized.startsWith("muj") || normalized.startsWith("fem") || normalized === "female" || normalized === "woman") return "Mujer";
   if (normalized.startsWith("uni")) return "Unisex";
-  if (normalized.startsWith("niñ") || normalized.startsWith("nin") || normalized.includes("child")) return "Niños";
+  if (normalized.startsWith("niñ") || normalized.startsWith("nin") || normalized.includes("child")) return "Unisex";
   return String(value || "").trim();
 }
 
@@ -97,12 +100,14 @@ function normalizeAgeGroup(value: string) {
   return String(value || "").trim();
 }
 
-export function TiendaClientGrid({ products, categories = [], initialCategory, initialBrand }: Props) {
+export function TiendaClientGrid({ products, allProducts, categories = [], initialCategory, initialBrand }: Props) {
   const searchParams = useSearchParams();
   const [query, setQuery] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>(initialCategory ? [initialCategory] : []);
   const canonicalInitialBrand = canonicalizeBrandName(initialBrand || "");
   const [selectedBrands, setSelectedBrands] = useState<string[]>(canonicalInitialBrand ? [canonicalInitialBrand] : []);
+  const [selectedSubcategories, setSelectedSubcategories] = useState<string[]>([]);
+  const [selectedSubbrands, setSelectedSubbrands] = useState<string[]>([]);
   const [selectedGender, setSelectedGender] = useState<GenderFilter>("");
   const [selectedAgeGroup, setSelectedAgeGroup] = useState<AgeFilter>("");
   const [showQuickFilters, setShowQuickFilters] = useState(false);
@@ -113,6 +118,8 @@ export function TiendaClientGrid({ products, categories = [], initialCategory, i
   const [packOnly, setPackOnly] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>("recent");
   const { genderOptions, ageGroupOptions } = useRegisteredTaxonomies();
+  const { subcategories, subbrands, loadSubcategoriesForCategory, loadSubbrandsForBrand } = useHierarchicalTaxonomies();
+  const { brandNames: brandsFromDB } = useBrandNamesFromDB();
 
   // Activar filtro de descuentos si viene del parámetro URL
   useEffect(() => {
@@ -123,12 +130,39 @@ export function TiendaClientGrid({ products, categories = [], initialCategory, i
 
   useEffect(() => {
     setSelectedCategories(initialCategory ? [initialCategory] : []);
+    // Limpiar subcategorías cuando cambia categoría inicial
+    setSelectedSubcategories([]);
   }, [initialCategory]);
 
   useEffect(() => {
     const nextBrand = canonicalizeBrandName(initialBrand || "");
     setSelectedBrands(nextBrand ? [nextBrand] : []);
+    // Limpiar submarcas cuando cambia marca inicial
+    setSelectedSubbrands([]);
   }, [initialBrand]);
+
+  // Cargar subcategorías cuando se selecciona una categoría
+  useEffect(() => {
+    if (selectedCategories.length === 1) {
+      loadSubcategoriesForCategory(selectedCategories[0]);
+    } else {
+      setSelectedSubcategories([]);
+    }
+  }, [selectedCategories, loadSubcategoriesForCategory]);
+
+  // Cargar submarcas cuando se selecciona una marca
+  useEffect(() => {
+    if (selectedBrands.length === 1) {
+      loadSubbrandsForBrand(selectedBrands[0]);
+    } else {
+      setSelectedSubbrands([]);
+    }
+  }, [selectedBrands, loadSubbrandsForBrand]);
+
+  const productsForMeta = useMemo(
+    () => ((allProducts && allProducts.length > 0 ? allProducts : products) || []),
+    [products, allProducts]
+  );
 
   const productMetaById = useMemo(() => {
     const map = new Map<
@@ -143,7 +177,7 @@ export function TiendaClientGrid({ products, categories = [], initialCategory, i
       }
     >();
 
-    for (const product of products) {
+    for (const product of productsForMeta) {
       const description = String(product.description || "");
       // Prioriza el campo brand del producto, si no existe extrae de las etiquetas
       const brand = canonicalizeBrandName(String(product.brand || "").trim() || extractTagValue(description, ["Marca"]));
@@ -187,17 +221,35 @@ export function TiendaClientGrid({ products, categories = [], initialCategory, i
     }
 
     return map;
-  }, [products]);
+  }, [productsForMeta]);
 
   const brands = useMemo(() => {
-    return getRegisteredBrandNames();
-  }, []);
+    const fromProducts = uniqueLabels(
+      productsForMeta
+        .map((product) => {
+          const directBrand = canonicalizeBrandName(String(product.brand || "").trim());
+          if (directBrand) return directBrand;
+          const meta = productMetaById.get(product.id);
+          return canonicalizeBrandName(String(meta?.brand || "").trim());
+        })
+        .filter(Boolean)
+    );
+
+    const merged = uniqueLabels([
+      ...brandsFromDB,
+      ...fromProducts,
+      ...getRegisteredBrandNames(),
+    ]);
+
+    return merged;
+  }, [brandsFromDB, productMetaById, productsForMeta]);
 
   // No usamos submarcas ni subcategorías en la tienda cliente: solo marca y categoría
 
   const genderProductCount = useMemo(() => {
     const map = new Map<string, number>();
-    for (const product of products) {
+    const productsToCount = allProducts && allProducts.length > 0 ? allProducts : products;
+    for (const product of productsToCount) {
       const g = normalizeGender(String(product.gender || ""));
       if (!g) continue;
       const key = normalizeLabel(g);
@@ -205,35 +257,38 @@ export function TiendaClientGrid({ products, categories = [], initialCategory, i
       map.set(key, count + 1);
     }
     return map;
-  }, [products]);
+  }, [products, allProducts]);
 
 
   const availableCategories = useMemo(
-    () => (categories.length > 0 ? categories : uniqueLabels(products.map((item) => item.category).filter(Boolean))),
-    [categories, products]
+    () => (categories.length > 0 ? categories : uniqueLabels((allProducts && allProducts.length > 0 ? allProducts : products).map((item) => item.category).filter(Boolean))),
+    [categories, products, allProducts]
   );
 
   // Calcular precio máximo basado en todos los productos
   const maxPrice = useMemo(() => {
-    if (products.length === 0) return 100;
-    const max = Math.max(...products.map((p) => p.price));
+    const productsToCount = allProducts && allProducts.length > 0 ? allProducts : products;
+    if (productsToCount.length === 0) return 100;
+    const max = Math.max(...productsToCount.map((p) => p.price));
     return Math.ceil(max * 1.1); // Agregar 10% de margen
-  }, [products]);
+  }, [products, allProducts]);
 
   // Contadores: cuántos productos hay en cada filtro
   const categoryProductCount = useMemo(() => {
     const map = new Map<string, number>();
-    for (const product of products) {
+    const productsToCount = allProducts && allProducts.length > 0 ? allProducts : products;
+    for (const product of productsToCount) {
       const key = normalizeLabel(product.category);
       const count = map.get(key) || 0;
       map.set(key, count + 1);
     }
     return map;
-  }, [products]);
+  }, [products, allProducts]);
 
   const brandProductCount = useMemo(() => {
     const map = new Map<string, number>();
-    for (const product of products) {
+    const productsToCount = allProducts && allProducts.length > 0 ? allProducts : products;
+    for (const product of productsToCount) {
       const meta = productMetaById.get(product.id);
       if (meta?.brand) {
         const key = normalizeLabel(meta.brand);
@@ -242,12 +297,35 @@ export function TiendaClientGrid({ products, categories = [], initialCategory, i
       }
     }
     return map;
-  }, [products, productMetaById]);
+  }, [products, allProducts, productMetaById]);
 
   // No hay contadores para submarcas/subcategorías
 
   const brandOptions = useMemo(() => brands, [brands]);
   const normalizedGenderOptions: GenderFilter[] = useMemo(() => genderOptions, [genderOptions]);
+
+  // Contadores para subcategorías y submarcas
+  const subcategoryProductCount = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const product of products) {
+      // Este campo podría estar en product o extraerse de los metadatos
+      if (selectedCategories.length === 1) {
+        // Solo contar subcategorías que pertenecen a la categoría seleccionada
+        map.set(selectedCategories[0], (map.get(selectedCategories[0]) || 0) + 1);
+      }
+    }
+    return map;
+  }, [products, selectedCategories]);
+
+  const subbrandProductCount = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const product of products) {
+      if (selectedBrands.length === 1) {
+        map.set(selectedBrands[0], (map.get(selectedBrands[0]) || 0) + 1);
+      }
+    }
+    return map;
+  }, [products, selectedBrands]);
 
   const filteredProducts = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -273,7 +351,15 @@ export function TiendaClientGrid({ products, categories = [], initialCategory, i
         !normalizedAgeGroup || normalizeAgeGroup(String(item.ageGroup || meta.ageGroup || "")) === normalizedAgeGroup;
       const matchesBrandInitial = !canonicalInitialBrand || normalizeLabel(meta.brand) === normalizeLabel(canonicalInitialBrand);
       const matchesBrand = selectedBrandKeys.length === 0 || selectedBrandKeys.includes(normalizeLabel(meta.brand));
-      // No usamos submarcas ni subcategorías
+      
+      // Verificar subcategorías: si hay subcategorías seleccionadas, el producto debe pertenecer a una de ellas
+      // (o podría estar mapeado directamente en el producto si existe un campo sub_category)
+      const matchesSubcategory = selectedSubcategories.length === 0 || 
+        selectedSubcategories.includes(String(item.category || "").trim());
+      
+      // Verificar submarcas: si hay submarcas seleccionadas, el producto debe pertenecer a una de ellas
+      const matchesSubbrand = selectedSubbrands.length === 0 || 
+        selectedSubbrands.includes(meta.brand);
 
       const min = priceMin ? Number(priceMin) : null;
       const max = priceMax ? Number(priceMax) : null;
@@ -289,6 +375,8 @@ export function TiendaClientGrid({ products, categories = [], initialCategory, i
         matchesCategory &&
         matchesBrandInitial &&
         matchesBrand &&
+        matchesSubcategory &&
+        matchesSubbrand &&
         matchesGender &&
         matchesAgeGroup &&
         matchesPriceMin &&
@@ -327,6 +415,8 @@ export function TiendaClientGrid({ products, categories = [], initialCategory, i
     query,
     selectedCategories,
     selectedBrands,
+    selectedSubcategories,
+    selectedSubbrands,
     priceMin,
     priceMax,
     discountOnly,
@@ -402,7 +492,37 @@ export function TiendaClientGrid({ products, categories = [], initialCategory, i
           })}
         </div>
 
-        {/* Subcategorías: removidas del UI - usamos solo categoría principal */}
+        {/* Subcategorías: mostrar cuando una categoría está seleccionada */}
+        {subcategories.length > 0 && selectedCategories.length === 1 && (
+          <div className="mt-5 space-y-3">
+            <p className="text-sm font-semibold">Subcategorías</p>
+            <div className="space-y-2 border-l-2 border-[#e3d7cd] pl-3">
+              {subcategories.map((subcat) => {
+                const checked = selectedSubcategories.includes(subcat.name);
+                return (
+                  <label key={subcat.id} className="flex items-center justify-between gap-2 text-sm">
+                    <span className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => {
+                          setSelectedSubcategories((current) => {
+                            if (current.includes(subcat.name)) {
+                              return current.filter((item) => item !== subcat.name);
+                            }
+                            return [...current, subcat.name];
+                          });
+                        }}
+                        className="size-4 rounded border-input"
+                      />
+                      <span>{subcat.name}</span>
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <div className="mt-5 space-y-3">
           <p className="text-sm font-semibold">Marcas</p>
@@ -435,7 +555,37 @@ export function TiendaClientGrid({ products, categories = [], initialCategory, i
           </div>
         </div>
 
-        {/* Submarcas: removidas del UI - usamos solo marca principal */}
+        {/* Submarcas: mostrar cuando una marca está seleccionada */}
+        {subbrands.length > 0 && selectedBrands.length === 1 && (
+          <div className="mt-5 space-y-3">
+            <p className="text-sm font-semibold">Submarcas</p>
+            <div className="space-y-2 border-l-2 border-[#e3d7cd] pl-3">
+              {subbrands.map((subbrand) => {
+                const checked = selectedSubbrands.includes(subbrand.name);
+                return (
+                  <label key={subbrand.id} className="flex items-center justify-between gap-2 text-sm">
+                    <span className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => {
+                          setSelectedSubbrands((current) => {
+                            if (current.includes(subbrand.name)) {
+                              return current.filter((item) => item !== subbrand.name);
+                            }
+                            return [...current, subbrand.name];
+                          });
+                        }}
+                        className="size-4 rounded border-input"
+                      />
+                      <span>{subbrand.name}</span>
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <div className="mt-5 space-y-3">
           <p className="text-sm font-semibold">Género</p>
@@ -451,7 +601,7 @@ export function TiendaClientGrid({ products, categories = [], initialCategory, i
               />
               <span>Todos</span>
             </span>
-            <span className="text-xs text-muted-foreground">({products.length})</span>
+            <span className="text-xs text-muted-foreground">({(allProducts && allProducts.length > 0 ? allProducts : products).length})</span>
           </label>
           {normalizedGenderOptions.map((g) => {
             const checked = selectedGender === g;

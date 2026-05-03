@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import Link from "next/link";
 import { MessageCircleMore, UserRound } from "lucide-react";
@@ -261,7 +262,7 @@ export default async function AdminChatsPage({ searchParams }: PageProps) {
                   <div className="mb-3 flex items-start gap-3">
                     <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#e3d7cd] bg-[#f7f1ec] text-[#7d5a44]">
                       {hasAvatar ? (
-                        <img src={avatarUrl} alt={displayName} className="h-full w-full object-cover" />
+                        <Image src={avatarUrl} alt={displayName} width={44} height={44} unoptimized className="h-full w-full object-cover" />
                       ) : (
                         <span className="flex items-center justify-center">
                           {displayName === "Cliente" ? <UserRound className="size-5" /> : <span className="text-xs font-semibold">{getInitials(displayName)}</span>}

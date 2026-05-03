@@ -3,12 +3,13 @@
 import { createPortal } from "react-dom";
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import { Copy, Eye, Filter, Pencil, Search, Trash2, X } from "lucide-react";
+import { Eye, Filter, Pencil, Search, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { canonicalizeBrandName } from "@/lib/brands";
 import { ProductEditModal } from "@/components/admin/product-edit-modal";
-import { ProductCloneModal } from "@/components/admin/product-clone-modal";
 import { ConfirmDeleteModal } from "@/components/feedback/confirm-delete-modal";
 import { getSafeProductImageSrc } from "@/lib/product-images";
+import { useRegisteredTaxonomies } from "@/lib/use-registered-taxonomies";
 
 type InventoryRow = {
   id: string;
@@ -76,14 +77,15 @@ type Props = {
   totalCount?: number;
 };
 
-type GenderFilter = "" | "Hombres" | "Mujeres" | "Niños";
+type GenderFilter = "" | "Hombre" | "Mujer" | "Unisex";
 
 function normalizeGender(value: string) {
   const normalized = String(value || "").trim().toLowerCase();
   if (!normalized) return "";
-  if (normalized.startsWith("hom")) return "Hombres";
-  if (normalized.startsWith("muj") || normalized.startsWith("fem")) return "Mujeres";
-  if (normalized.startsWith("niñ") || normalized.startsWith("nin") || normalized.includes("child")) return "Niños";
+  if (normalized.startsWith("hom") || normalized.startsWith("masc") || normalized === "male" || normalized === "man") return "Hombre";
+  if (normalized.startsWith("muj") || normalized.startsWith("fem") || normalized === "female" || normalized === "woman") return "Mujer";
+  if (normalized.startsWith("uni")) return "Unisex";
+  if (normalized.startsWith("niñ") || normalized.startsWith("nin") || normalized.includes("child")) return "Unisex";
   return String(value || "").trim();
 }
 
@@ -94,6 +96,17 @@ function normalizeLabel(value: string) {
     .normalize("NFD")
     .replace(/[00-\u036f]/g, "");
 }
+
+type SavedProductFilters = {
+  selectedGender: GenderFilter;
+  selectedAgeGroup: string;
+  selectedCategory: string;
+  selectedSubCategory: string;
+  selectedBrand: string;
+  selectedSubBrand: string;
+};
+
+const PRODUCTS_FILTERS_STORAGE_KEY = "admin.products.inventory.filters";
 
 export function ProductsInventoryTable({
   rows,
@@ -110,13 +123,17 @@ export function ProductsInventoryTable({
 }: Props) {
   const [query, setQuery] = useState("");
   const [selectedGender, setSelectedGender] = useState<GenderFilter>("");
+  const [selectedAgeGroup, setSelectedAgeGroup] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedSubCategory, setSelectedSubCategory] = useState("");
   const [selectedBrand, setSelectedBrand] = useState("");
+  const [selectedSubBrand, setSelectedSubBrand] = useState("");
   const [showQuickFilters, setShowQuickFilters] = useState(false);
   const [previewProductId, setPreviewProductId] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const { genderOptions, ageGroupOptions } = useRegisteredTaxonomies();
 
   useEffect(() => {
     setMounted(true);
@@ -128,6 +145,114 @@ export function ProductsInventoryTable({
     () => (previewProduct ? buildProductDetailMeta(previewProduct.rawDescription || "", previewProduct.description || "") : null),
     [previewProduct]
   );
+
+  useEffect(() => {
+    try {
+      const rawValue = window.localStorage.getItem(PRODUCTS_FILTERS_STORAGE_KEY);
+      if (!rawValue) return;
+
+      const saved = JSON.parse(rawValue) as Partial<SavedProductFilters>;
+
+      if (saved.selectedGender) setSelectedGender(saved.selectedGender);
+      if (saved.selectedAgeGroup) setSelectedAgeGroup(saved.selectedAgeGroup);
+      if (saved.selectedCategory) setSelectedCategory(saved.selectedCategory);
+      if (saved.selectedSubCategory) setSelectedSubCategory(saved.selectedSubCategory);
+      if (saved.selectedBrand) setSelectedBrand(saved.selectedBrand);
+      if (saved.selectedSubBrand) setSelectedSubBrand(saved.selectedSubBrand);
+    } catch {
+      // Si el valor guardado está corrupto, se ignora.
+    }
+  }, []);
+
+  const availableSubCategories = useMemo(() => {
+    if (!selectedCategory) return [];
+
+    const selectedKey = normalizeLabel(selectedCategory);
+    const seen = new Map<string, string>();
+
+    for (const item of subCategories) {
+      const categoryKey = normalizeLabel(item.category);
+      const name = String(item.name || "").trim();
+
+      if (!name || categoryKey !== selectedKey) continue;
+
+      const key = normalizeLabel(name);
+      if (!seen.has(key)) {
+        seen.set(key, name);
+      }
+    }
+
+    return Array.from(seen.values()).sort((a, b) => a.localeCompare(b, "es"));
+  }, [selectedCategory, subCategories]);
+
+  const availableSubBrands = useMemo(() => {
+    if (!selectedBrand) return [];
+
+    const canonicalBrand = canonicalizeBrandName(selectedBrand) || selectedBrand;
+    const selectedKey = normalizeLabel(canonicalBrand);
+    const seen = new Map<string, string>();
+
+    for (const item of subBrands) {
+      const itemBrand = canonicalizeBrandName(item.brand) || item.brand;
+      const brandKey = normalizeLabel(itemBrand);
+      const name = String(item.name || "").trim();
+
+      if (!name || brandKey !== selectedKey) continue;
+
+      const key = normalizeLabel(name);
+      if (!seen.has(key)) {
+        seen.set(key, name);
+      }
+    }
+
+    return Array.from(seen.values()).sort((a, b) => a.localeCompare(b, "es"));
+  }, [selectedBrand, subBrands]);
+
+  useEffect(() => {
+    if (selectedSubCategory && !availableSubCategories.some((item) => normalizeLabel(item) === normalizeLabel(selectedSubCategory))) {
+      setSelectedSubCategory("");
+    }
+  }, [availableSubCategories, selectedSubCategory]);
+
+  useEffect(() => {
+    if (selectedSubBrand && !availableSubBrands.some((item) => normalizeLabel(item) === normalizeLabel(selectedSubBrand))) {
+      setSelectedSubBrand("");
+    }
+  }, [availableSubBrands, selectedSubBrand]);
+
+  const handleSaveFilters = () => {
+    const payload: SavedProductFilters = {
+      selectedGender,
+      selectedAgeGroup,
+      selectedCategory,
+      selectedSubCategory,
+      selectedBrand,
+      selectedSubBrand,
+    };
+
+    try {
+      window.localStorage.setItem(PRODUCTS_FILTERS_STORAGE_KEY, JSON.stringify(payload));
+    } catch {
+      // Si localStorage no está disponible, el filtrado sigue funcionando en memoria.
+    }
+
+    setShowQuickFilters(false);
+  };
+
+  const handleClearFilters = () => {
+    setSelectedGender("");
+    setSelectedAgeGroup("");
+    setSelectedCategory("");
+    setSelectedSubCategory("");
+    setSelectedBrand("");
+    setSelectedSubBrand("");
+
+    try {
+      window.localStorage.removeItem(PRODUCTS_FILTERS_STORAGE_KEY);
+    } catch {
+      // Ignorar si localStorage no está disponible.
+    }
+  };
 
   const deleteConfirmProduct = useMemo(() => rows.find((row) => row.id === deleteConfirmId) ?? null, [rows, deleteConfirmId]);
   const normalizedGender = normalizeGender(selectedGender);
@@ -154,30 +279,43 @@ export function ProductsInventoryTable({
   const filteredRows = useMemo(() => {
     const term = query.trim().toLowerCase();
     const normalizedCategory = normalizeLabel(selectedCategory || "");
+    const normalizedSubCategory = normalizeLabel(selectedSubCategory || "");
     const normalizedBrand = normalizeLabel(selectedBrand || "");
+    const normalizedSubBrand = normalizeLabel(selectedSubBrand || "");
+    const normalizedAgeGroup = normalizeLabel(selectedAgeGroup || "");
+    const selectedGenderLabel = normalizeLabel(selectedGender || "");
 
     return rows.filter((row) => {
       const rowGender = normalizeGender(String(row.gender || ""));
-        const searchable = [
-          row.sku,
-          row.name,
-          row.brand,
-          row.category,
-          String(row.price),
-          String(row.stock),
-          row.active ? "si" : "no",
-        ]
+      const rowGenderLabel = normalizeLabel(rowGender);
+      const rowAgeGroup = normalizeLabel(String(row.ageGroup || ""));
+      const searchable = [
+        row.sku,
+        row.name,
+        row.brand,
+        row.subBrand,
+        row.category,
+        row.subCategory,
+        row.gender,
+        row.ageGroup,
+        String(row.price),
+        String(row.stock),
+        row.active ? "si" : "no",
+      ]
         .join(" ")
         .toLowerCase();
 
       const matchesText = !term || searchable.includes(term);
-      const matchesGender = !normalizedGender || rowGender === normalizedGender;
+      const matchesGender = !selectedGenderLabel || rowGenderLabel === selectedGenderLabel;
+      const matchesAgeGroup = !normalizedAgeGroup || rowAgeGroup === normalizedAgeGroup;
       const matchesCategory = !normalizedCategory || normalizeLabel(String(row.category || "")) === normalizedCategory;
+      const matchesSubCategory = !normalizedSubCategory || normalizeLabel(String(row.subCategory || "")) === normalizedSubCategory;
       const matchesBrand = !normalizedBrand || normalizeLabel(String(row.brand || "")) === normalizedBrand;
+      const matchesSubBrand = !normalizedSubBrand || normalizeLabel(String(row.subBrand || "")) === normalizedSubBrand;
 
-      return matchesText && matchesGender && matchesCategory && matchesBrand;
+      return matchesText && matchesGender && matchesAgeGroup && matchesCategory && matchesSubCategory && matchesBrand && matchesSubBrand;
     });
-  }, [rows, query, selectedCategory, selectedBrand, normalizedGender]);
+  }, [rows, query, selectedCategory, selectedSubCategory, selectedBrand, selectedSubBrand, selectedAgeGroup, selectedGender]);
 
   return (
     <div className="space-y-3">
@@ -206,75 +344,158 @@ export function ProductsInventoryTable({
           </div>
 
           {showQuickFilters ? (
-            <div className="absolute right-0 top-[calc(100%+0.5rem)] z-20 w-full rounded-xl border border-[#e3d7cd] bg-white p-3 shadow-lg sm:w-[360px]">
-              <div className="grid gap-3">
-                <label className="grid gap-1 text-xs font-medium text-muted-foreground">
-                  Género
-                  <select
-                    value={selectedGender}
-                    onChange={(event) => setSelectedGender(event.target.value as GenderFilter)}
-                    className="h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground"
-                  >
-                    <option value="">Todos</option>
-                    {(["Hombres", "Mujeres", "Niños"] as GenderFilter[]).map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+            <>
+              <div
+                className="fixed inset-0 z-20 cursor-default bg-transparent"
+                onClick={() => setShowQuickFilters(false)}
+                aria-hidden="true"
+              />
+              <div
+                className="absolute right-0 top-[calc(100%+0.5rem)] z-30 w-full rounded-xl border border-[#e3d7cd] bg-white p-3 shadow-lg sm:w-[520px]"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="grid gap-3">
+                <div className="grid gap-3 md:grid-cols-2">
+                  <label className="grid gap-1 text-xs font-medium text-muted-foreground">
+                    Categoría
+                    <select
+                      value={selectedCategory}
+                      onChange={(event) => {
+                        setSelectedCategory(event.target.value);
+                        setSelectedSubCategory("");
+                      }}
+                      className="h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground"
+                    >
+                      <option value="">Todas</option>
+                      {categoryOptions.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
 
-                <label className="grid gap-1 text-xs font-medium text-muted-foreground">
-                  Categoría
-                  <select
-                    value={selectedCategory}
-                    onChange={(event) => setSelectedCategory(event.target.value)}
-                    className="h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground"
-                  >
-                    <option value="">Todas</option>
-                    {categoryOptions.map((option) => (
-                      <option key={option} value={normalizeLabel(option)}>
-                        {option}
+                  <label className="grid gap-1 text-xs font-medium text-muted-foreground">
+                    Subcategoría
+                    <select
+                      value={selectedSubCategory}
+                      onChange={(event) => setSelectedSubCategory(event.target.value)}
+                      className="h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground"
+                      disabled={!selectedCategory || availableSubCategories.length === 0}
+                    >
+                      <option value="">
+                        {!selectedCategory
+                          ? "Primero categoría"
+                          : availableSubCategories.length === 0
+                          ? "Sin subcategorías"
+                          : "Todas"}
                       </option>
-                    ))}
-                  </select>
-                </label>
+                      {availableSubCategories.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
 
-                <label className="grid gap-1 text-xs font-medium text-muted-foreground">
-                  Marca
-                  <select
-                    value={selectedBrand}
-                    onChange={(event) => setSelectedBrand(event.target.value)}
-                    className="h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground"
-                  >
-                    <option value="">Todas</option>
-                    {brandOptions.map((option) => (
-                      <option key={option} value={normalizeLabel(option)}>
-                        {option}
+                <div className="grid gap-3 md:grid-cols-2">
+                  <label className="grid gap-1 text-xs font-medium text-muted-foreground">
+                    Marca
+                    <select
+                      value={selectedBrand}
+                      onChange={(event) => {
+                        setSelectedBrand(event.target.value);
+                        setSelectedSubBrand("");
+                      }}
+                      className="h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground"
+                    >
+                      <option value="">Todas</option>
+                      {brandOptions.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="grid gap-1 text-xs font-medium text-muted-foreground">
+                    Submarca
+                    <select
+                      value={selectedSubBrand}
+                      onChange={(event) => setSelectedSubBrand(event.target.value)}
+                      className="h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground"
+                      disabled={!selectedBrand || availableSubBrands.length === 0}
+                    >
+                      <option value="">
+                        {!selectedBrand
+                          ? "Primero marca"
+                          : availableSubBrands.length === 0
+                          ? "Sin submarcas"
+                          : "Todas"}
                       </option>
-                    ))}
-                  </select>
-                </label>
+                      {availableSubBrands.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  <label className="grid gap-1 text-xs font-medium text-muted-foreground">
+                    Género
+                    <select
+                      value={selectedGender}
+                      onChange={(event) => setSelectedGender(event.target.value as GenderFilter)}
+                      className="h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground"
+                    >
+                      <option value="">Todos</option>
+                      {genderOptions.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="grid gap-1 text-xs font-medium text-muted-foreground">
+                    Edad
+                    <select
+                      value={selectedAgeGroup}
+                      onChange={(event) => setSelectedAgeGroup(event.target.value)}
+                      className="h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground"
+                    >
+                      <option value="">Todas</option>
+                      {ageGroupOptions.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
 
                 <div className="flex justify-end gap-2 pt-1">
                   <Button
                     type="button"
                     variant="ghost"
                     className="h-8 px-2 text-sm"
-                    onClick={() => {
-                      setSelectedGender("");
-                      setSelectedCategory("");
-                      setSelectedBrand("");
-                    }}
+                    onClick={handleClearFilters}
                   >
                     Limpiar
+                  </Button>
+                  <Button type="button" className="h-8 px-2 text-sm" onClick={handleSaveFilters}>
+                    Guardar filtro
                   </Button>
                   <Button type="button" variant="outline" className="h-8 px-2 text-sm" onClick={() => setShowQuickFilters(false)}>
                     Cerrar
                   </Button>
                 </div>
               </div>
-            </div>
+              </div>
+            </>
           ) : null}
         </div>
       </div>
@@ -390,26 +611,6 @@ export function ProductsInventoryTable({
                         triggerIcon={<Pencil className="size-4" />}
                         triggerAriaLabel="Editar"
                       />
-                      <ProductCloneModal
-                        productId={row.id}
-                        name={row.name}
-                        code={row.sku}
-                        category={row.category}
-                        categories={categoryOptions}
-                        brand={row.brand}
-                        brands={brandOptions}
-                        
-                        price={row.price}
-                        priceBefore={row.priceBefore}
-                        stock={row.stock}
-                        description={row.description}
-                        images={row.images}
-                        active={row.active}
-                        cloneProductAction={cloneProductAction}
-                        triggerMode="icon"
-                        triggerIcon={<Copy className="size-4" />}
-                        triggerAriaLabel="Clonar"
-                      />
                       <Button
                         type="button"
                         size="icon"
@@ -503,14 +704,24 @@ export function ProductsInventoryTable({
                 <p className="text-sm text-foreground">{previewMeta.shortDescription}</p>
 
                 <div className="grid gap-2 rounded-2xl border border-[#e3d7cd] bg-white/80 p-3 text-sm">
-                  
-                  {previewProduct.ageGroup ? (
-                    <p>
-                      <span className="font-semibold">Edad:</span> {previewProduct.ageGroup}
-                    </p>
-                  ) : null}
                   <p>
-                    <span className="font-semibold">Stock:</span> {previewProduct.stock}
+                    <span className="font-semibold">Subcategoría:</span> {previewProduct.subCategory || "-"}
+                  </p>
+
+                  <p>
+                    <span className="font-semibold">Submarca:</span> {previewProduct.subBrand || "-"}
+                  </p>
+
+                  <p>
+                    <span className="font-semibold">Género:</span> {previewProduct.gender || "-"}
+                  </p>
+
+                  <p>
+                    <span className="font-semibold">Edad:</span> {previewProduct.ageGroup || "-"}
+                  </p>
+
+                  <p>
+                    <span className="font-semibold">Stock:</span> {previewProduct.stock ?? "-"}
                   </p>
                 </div>
 

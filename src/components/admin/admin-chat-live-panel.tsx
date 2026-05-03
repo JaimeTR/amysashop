@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { createPortal } from "react-dom";
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Bot, MessageCircleMore, Send, UserRound } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Badge } from "@/components/ui/badge";
@@ -52,7 +52,7 @@ export function AdminChatLivePanel({ sessionId, initialMessages, initiallyJoined
     return () => setMounted(false);
   }, []);
 
-  async function refreshJoinStateForCurrentUser(userId: string) {
+  const refreshJoinStateForCurrentUser = useCallback(async (userId: string) => {
     if (!sessionId || !userId) {
       setJoined(false);
       return;
@@ -66,7 +66,7 @@ export function AdminChatLivePanel({ sessionId, initialMessages, initiallyJoined
 
     const joinedBy = String((data as { joined_by_admin_id?: string | null } | null)?.joined_by_admin_id || "").trim();
     setJoined(Boolean(joinedBy) && joinedBy === userId);
-  }
+  }, [sessionId, supabase]);
 
   function resolveAdvisorLabel(value: unknown) {
     const normalized = String(value || "").trim().toLowerCase();
@@ -82,7 +82,7 @@ export function AdminChatLivePanel({ sessionId, initialMessages, initiallyJoined
     return "asesor" as const;
   }
 
-  async function refreshMessages() {
+  const refreshMessages = useCallback(async () => {
     if (!sessionId) return;
 
     const { data, error } = await supabase
@@ -104,7 +104,7 @@ export function AdminChatLivePanel({ sessionId, initialMessages, initiallyJoined
       }
       return parsed;
     });
-  }
+  }, [sessionId, supabase]);
 
   useEffect(() => {
     setMessages(initialMessages);
@@ -124,7 +124,7 @@ export function AdminChatLivePanel({ sessionId, initialMessages, initiallyJoined
     }
 
     refreshJoinStateForCurrentUser(currentUserId);
-  }, [sessionId, currentUserId, initiallyJoined]);
+  }, [sessionId, currentUserId, initiallyJoined, refreshJoinStateForCurrentUser]);
 
   useEffect(() => {
     let active = true;
@@ -195,7 +195,7 @@ export function AdminChatLivePanel({ sessionId, initialMessages, initiallyJoined
     return () => {
       active = false;
     };
-  }, [supabase]);
+  }, [supabase, refreshJoinStateForCurrentUser]);
 
   useEffect(() => {
     let active = true;
@@ -290,7 +290,7 @@ export function AdminChatLivePanel({ sessionId, initialMessages, initiallyJoined
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [sessionId, supabase, currentUserId]);
+  }, [sessionId, supabase, currentUserId, refreshMessages]);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -308,7 +308,7 @@ export function AdminChatLivePanel({ sessionId, initialMessages, initiallyJoined
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [sessionId]);
+  }, [sessionId, refreshMessages]);
 
   async function handleJoin() {
     if (!sessionId || !currentUserId) return;

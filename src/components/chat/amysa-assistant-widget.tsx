@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Loader2, Send, Sparkles, UserRound, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -97,7 +97,7 @@ export function AmysaAssistantWidget({ userId, userName }: Props) {
   const sendLockRef = useRef(false);
   const storageKey = `amysa-ai-session:${userId}`;
 
-  async function refreshSessionMessages(targetSessionId: string) {
+  const refreshSessionMessages = useCallback(async (targetSessionId: string) => {
     if (!targetSessionId) return;
 
     const { data } = await supabase
@@ -129,7 +129,7 @@ export function AmysaAssistantWidget({ userId, userName }: Props) {
     } else {
       setAdvisorInControl(false);
     }
-  }
+  }, [supabase]);
 
   useEffect(() => {
     const saved = localStorage.getItem(storageKey);
@@ -138,7 +138,7 @@ export function AmysaAssistantWidget({ userId, userName }: Props) {
     setSessionId(saved);
 
     refreshSessionMessages(saved);
-  }, [storageKey, supabase]);
+  }, [storageKey, refreshSessionMessages]);
 
   useEffect(() => {
     let active = true;
@@ -251,7 +251,7 @@ export function AmysaAssistantWidget({ userId, userName }: Props) {
     return () => {
       window.clearInterval(pollId);
     };
-  }, [sessionId, advisorInControl]);
+  }, [sessionId, advisorInControl, refreshSessionMessages]);
 
   useEffect(() => {
     setShowHelpNudge(false);

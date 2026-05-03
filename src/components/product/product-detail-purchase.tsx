@@ -79,7 +79,7 @@ export function ProductDetailPurchase({
     ]);
 
     return buildWhatsAppUrl(whatsappPhone, message);
-  }, [composedVariant, image, name, personalizationText, price, productId, quantity, ringMode, whatsappPhone]);
+  }, [composedVariant, image, name, personalizationText, price, priceBefore, productId, quantity, ringMode, whatsappPhone]);
 
   function openWhatsApp() {
     notify.query("Consulta abierta", "Te llevamos a WhatsApp para confirmar el pedido.");

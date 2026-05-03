@@ -4,8 +4,8 @@ import { createPortal } from "react-dom";
 import { useEffect, useState } from "react";
 import { Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getRegisteredBrandNames } from "@/lib/brands";
 import { useRegisteredTaxonomies } from "@/lib/use-registered-taxonomies";
+import { useBrandNamesFromDB } from "@/lib/use-db-taxonomies";
 
 type InventoryCreateModalProps = {
   categories: Array<{ id: string; name: string }>;
@@ -47,7 +47,7 @@ export function InventoryCreateModal({ categories, createProductAction }: Invent
   }, []);
 
   const categoryOptions = uniqueCategories(categories);
-  const brands = getRegisteredBrandNames();
+  const { brandNames } = useBrandNamesFromDB();
   const { genderOptions, ageGroupOptions } = useRegisteredTaxonomies();
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -125,7 +125,7 @@ export function InventoryCreateModal({ categories, createProductAction }: Invent
                 >
                   <option value="">Seleccionar género</option>
                   {genderOptions.map((g) => (
-                    <option key={g} value={g.toLowerCase()}>{g}</option>
+                    <option key={g} value={g}>{g}</option>
                   ))}
                 </select>
               </div>
@@ -138,7 +138,7 @@ export function InventoryCreateModal({ categories, createProductAction }: Invent
                 >
                   <option value="">Seleccionar edad</option>
                   {ageGroupOptions.map((a) => (
-                    <option key={a} value={a.toLowerCase()}>{a}</option>
+                    <option key={a} value={a}>{a}</option>
                   ))}
                 </select>
               </div>
@@ -166,7 +166,7 @@ export function InventoryCreateModal({ categories, createProductAction }: Invent
                   className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
                 >
                   <option value="">Seleccionar marca</option>
-                  {brands.map((b) => (
+                  {brandNames.map((b) => (
                     <option key={b} value={b}>
                       {b}
                     </option>

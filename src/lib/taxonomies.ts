@@ -1,5 +1,5 @@
-export const FALLBACK_GENDERS = ["Hombres", "Mujeres", "Niños"];
-export const FALLBACK_AGE_GROUPS = ["Adultos", "Niños", "Bebés"];
+export const FALLBACK_GENDERS = ["Hombre", "Mujer", "Unisex"];
+export const FALLBACK_AGE_GROUPS = ["Adultos", "Jóvenes", "Niños"];
 
 function normalizeLabel(value: string) {
   return String(value || "")
@@ -26,10 +26,18 @@ export function normalizeTaxonomyOptions(values: string[], fallback: string[]) {
   return normalized.length > 0 ? normalized : fallback;
 }
 
+/**
+ * @deprecated: Usar el hook useRegisteredTaxonomies() en componentes cliente en su lugar.
+ * Las opciones de género y edad ahora se cargan desde BD mediante /api/taxonomies
+ */
 export function getRegisteredGenders(): string[] {
   return FALLBACK_GENDERS;
 }
 
+/**
+ * @deprecated: Usar el hook useRegisteredTaxonomies() en componentes cliente en su lugar.
+ * Las opciones de género y edad ahora se cargan desde BD mediante /api/taxonomies
+ */
 export function getRegisteredAgeGroups(): string[] {
   return FALLBACK_AGE_GROUPS;
 }

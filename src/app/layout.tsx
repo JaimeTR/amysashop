@@ -6,6 +6,9 @@ import { NotificationProvider } from "@/components/feedback/notification-center"
 import { getActiveProductsForNav, getRegisteredCategories } from "@/lib/catalog";
 import { LayoutWrapper } from "@/components/layout/layout-wrapper";
 
+const APP_VERSION = "0.1.1";
+const APP_ICON = "/logos/amysa shop.png";
+
 const manrope = Manrope({
   subsets: ["latin"],
   variable: "--font-body",
@@ -17,15 +20,24 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
+  applicationName: "AMYSA SHOP",
   title: "AMYSA SHOP",
   description: "AMYSA SHOP, tu tienda virtual",
   manifest: "/manifest.json",
   icons: {
     icon: [
-      { url: "/logos/amysa-square-primary.png", type: "image/png" },
-      { url: "/logos/amysa-square-black.png", type: "image/png" },
+      { url: APP_ICON, sizes: "192x192", type: "image/png" },
+      { url: APP_ICON, sizes: "512x512", type: "image/png" },
     ],
-    apple: "/logos/amysa-square-primary.png",
+    apple: [{ url: APP_ICON, sizes: "180x180", type: "image/png" }],
+  },
+  appleWebApp: {
+    capable: true,
+    title: "AMYSA SHOP",
+    statusBarStyle: "default",
+  },
+  other: {
+    version: APP_VERSION,
   },
 };
 

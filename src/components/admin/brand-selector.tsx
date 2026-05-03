@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { BrandLogo } from "@/components/store/brand-logo";
-import { getAllBrands } from "@/lib/brands";
+import { useBrandObjectsFromDB } from "@/lib/use-db-taxonomies";
 import { Button } from "@/components/ui/button";
 
 type BrandSelectorProps = {
@@ -13,7 +13,7 @@ type BrandSelectorProps = {
 
 export function BrandSelector({ value, onChange, label = "Marca" }: BrandSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const brands = getAllBrands();
+  const { brands } = useBrandObjectsFromDB();
 
   return (
     <div className="space-y-2">

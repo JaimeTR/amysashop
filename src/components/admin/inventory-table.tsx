@@ -41,7 +41,7 @@ type Props = {
   totalCount?: number;
 };
 
-type GenderFilter = "" | "Hombres" | "Mujeres" | "Niños";
+type GenderFilter = "" | "Hombre" | "Mujer" | "Unisex";
 
 function getSafeImageSrc(images?: string[]) {
   return getSafeProductImageSrc(images || []);
@@ -65,9 +65,10 @@ function calculateSalePrice(item: Pick<InventoryItem, "cost" | "operating_cost" 
 function normalizeGender(value: string) {
   const normalized = String(value || "").trim().toLowerCase();
   if (!normalized) return "";
-  if (normalized.startsWith("hom")) return "Hombres";
-  if (normalized.startsWith("muj") || normalized.startsWith("fem")) return "Mujeres";
-  if (normalized.startsWith("niñ") || normalized.startsWith("nin") || normalized.includes("child")) return "Niños";
+  if (normalized.startsWith("hom") || normalized.startsWith("masc") || normalized === "male" || normalized === "man") return "Hombre";
+  if (normalized.startsWith("muj") || normalized.startsWith("fem") || normalized === "female" || normalized === "woman") return "Mujer";
+  if (normalized.startsWith("uni")) return "Unisex";
+  if (normalized.startsWith("niñ") || normalized.startsWith("nin") || normalized.includes("child")) return "Unisex";
   return String(value || "").trim();
 }
 
@@ -188,7 +189,7 @@ export function InventoryTable({
   const previewItem = useMemo(() => items.find((item) => item.id === previewId) || null, [items, previewId]);
   const brandOptions = useMemo(() => uniqueLabels(items.map((item) => String(item.brand || "").trim()).filter(Boolean)), [items]);
   // Subcategorías/submarcas no usadas en la tabla: usamos sólo `brand` y `category` registrados
-  const genderOptions: GenderFilter[] = ["Hombres", "Mujeres", "Niños"];
+  const genderOptions: GenderFilter[] = ["Hombre", "Mujer", "Unisex"];
 
   const totalCountLocal = totalCount ?? items.length;
   const totalPages = Math.max(1, Math.ceil(totalCountLocal / pageSize));

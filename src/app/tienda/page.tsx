@@ -16,14 +16,19 @@ export default async function TiendaPage({ searchParams }: Props) {
   const showFeaturedCatalog = String(searchParams?.destacados || "").toLowerCase() === "true";
   const page = Number.parseInt(String(searchParams?.page || "1"), 10) || 1;
   const pageSize = 20;
-  const [pageResult, featuredProducts, categories] = await Promise.all([
+  
+  // Obtener todos los productos (para contar géneros, marcas, etc) Y los de la página
+  const [pageResult, featuredProducts, categories, allProducts] = await Promise.all([
     showFeaturedCatalog ? Promise.resolve(null) : getProductsPage(page, pageSize),
     showFeaturedCatalog ? getActiveProducts() : Promise.resolve([]),
     getRegisteredCategories(),
+    showFeaturedCatalog ? Promise.resolve([]) : getActiveProducts(), // Todos los productos activos
   ]);
+  
   const { products, total } = showFeaturedCatalog
     ? { products: featuredProducts, total: featuredProducts.length }
     : pageResult!;
+  
   const initialCategory = String(searchParams?.categoria || "").trim() || undefined;
   const initialBrand = canonicalizeBrandName(String(searchParams?.marca || "").trim()) || undefined;
 
@@ -33,10 +38,10 @@ export default async function TiendaPage({ searchParams }: Props) {
     <main className="space-y-5 pb-8">
       <div className="flex items-baseline gap-3 px-3 sm:px-0">
         <h1 className="font-[var(--font-display)] text-3xl">{showFeaturedCatalog ? "Destacados" : "Tienda"}</h1>
-        <span className="text-sm font-semibold uppercase text-muted-foreground">({products.length} PRODUCTOS)</span>
       </div>
       <TiendaClientGrid
         products={products}
+        allProducts={showFeaturedCatalog ? featuredProducts : allProducts}
         categories={categories}
         initialCategory={initialCategory}
         initialBrand={initialBrand}

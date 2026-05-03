@@ -1,11 +1,11 @@
 "use client";
 
-import { getAllBrands } from "@/lib/brands";
+import { useBrandObjectsFromDB } from "@/lib/use-db-taxonomies";
 import { BrandLogo } from "@/components/store/brand-logo";
 import { Badge } from "@/components/ui/badge";
 
 export function BrandManagementPanel() {
-  const brands = getAllBrands();
+  const { brands } = useBrandObjectsFromDB();
 
   return (
     <div className="space-y-6">
@@ -27,12 +27,6 @@ export function BrandManagementPanel() {
             </div>
             
             <h3 className="mb-2 text-center text-lg font-semibold">{brand.name}</h3>
-            
-            {brand.description && (
-              <p className="mb-4 text-center text-sm text-muted-foreground">
-                {brand.description}
-              </p>
-            )}
 
             {brand.color && (
               <div className="mb-4 flex items-center justify-center gap-2">

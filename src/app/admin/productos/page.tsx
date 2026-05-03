@@ -8,7 +8,7 @@ import { ProductCreateModal } from "@/components/admin/product-create-modal";
 import { ProductImportModal } from "@/components/admin/product-import-modal";
 import { ProductsInventoryTable } from "@/components/admin/products-inventory-table";
 import { requireAdminUser } from "@/lib/admin";
-import { canonicalizeBrandName, getRegisteredBrandNames } from "@/lib/brands";
+import { canonicalizeBrandName } from "@/lib/brands";
 
 const DEFAULT_PRODUCT_IMAGE = "/logos/amysa%20shop.png";
 
@@ -229,19 +229,19 @@ function normalizeProductGender(value: unknown) {
   }
 
   if (["hombres", "hombre", "male", "masculino", "man"].includes(normalized)) {
-    return "hombre";
+    return "Hombre";
   }
 
   if (["mujeres", "mujer", "female", "femenino", "woman"].includes(normalized)) {
-    return "mujer";
+    return "Mujer";
   }
 
   if (normalized.startsWith("niñ") || normalized.startsWith("nin") || normalized.includes("child")) {
-    return "ninos";
+    return "Unisex";
   }
 
   if (normalized.startsWith("uni")) {
-    return "unisex";
+    return "Unisex";
   }
 
   return raw;
@@ -256,19 +256,23 @@ function normalizeProductAgeGroup(value: unknown) {
   }
 
   if (normalized.startsWith("adult")) {
-    return "adultos";
+    return "Adultos";
   }
 
   if (normalized.startsWith("niñ") || normalized.startsWith("nin") || normalized.includes("child")) {
-    return "ninos";
+    return "Niños";
   }
 
   if (normalized.startsWith("beb") || normalized.startsWith("inf")) {
-    return "bebes";
+    return "Bebés";
+  }
+
+  if (normalized.startsWith("jov") || normalized.includes("teen") || normalized.includes("adole")) {
+    return "Jóvenes";
   }
 
   if (normalized.startsWith("uni")) {
-    return "unisex";
+    return "Unisex";
   }
 
   return raw;
@@ -1037,8 +1041,9 @@ export default async function AdminProductosPage({ searchParams }: PageProps) {
     );
   }
 
-  const [categoriesResult, subBrandsResult, subCategoriesResult] = await Promise.all([
+  const [categoriesResult, brandsResult, subBrandsResult, subCategoriesResult] = await Promise.all([
     supabase.from("categories").select("id,name").order("name", { ascending: true }),
+    supabase.from("brands").select("id,name").order("name", { ascending: true }),
     supabase.from("sub_brands").select("name,brands(name)").order("name", { ascending: true }),
     supabase.from("sub_categories").select("name,categories(name)").order("name", { ascending: true }),
   ]);
@@ -1071,10 +1076,12 @@ export default async function AdminProductosPage({ searchParams }: PageProps) {
   const productsError = productsResult.error;
   const totalCount = Number(productsResult.count || products.length || 0);
 
-  // Si las tablas maestras no existen aún, usar arrays vacíos
-  const brandOptions = getRegisteredBrandNames();
+  // Usar datos de BD para todas las opciones
+  const brandOptions = uniqueLabels(
+    (brandsResult.error ? [] : brandsResult.data ?? []).map((item: any) => item.name || "")
+  );
 
-  const categoryOptions = uniqueLabels((categoriesResult.error ? [] : categories).map((item) => item.name));
+  const categoryOptions = uniqueLabels((categoriesResult.error ? [] : (categoriesResult.data ?? [])).map((item: any) => item.name || ""));
 
   const subBrandOptions = uniqueLabels([
     ...(subBrandsResult.error ? [] : (subBrandsResult.data ?? [])).map((item) => item.name),

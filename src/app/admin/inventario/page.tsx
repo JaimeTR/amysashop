@@ -45,43 +45,48 @@ function normalizeProductGender(value: unknown) {
   }
 
   if (["hombres", "hombre", "male", "masculino", "man"].includes(normalized)) {
-    return "hombre";
+    return "Hombre";
   }
 
   if (["mujeres", "mujer", "female", "femenino", "woman"].includes(normalized)) {
-    return "mujer";
+    return "Mujer";
+  }
+
+  if (normalized.startsWith("uni")) {
+    return "Unisex";
   }
 
   if (normalized.startsWith("niñ") || normalized.startsWith("nin") || normalized.includes("child")) {
-    return "ninos";
+    return "Unisex";
   }
 
-  return null;
+  return String(value || "").trim();
 }
 
 function normalizeProductAgeGroup(value: unknown) {
-  const normalized = String(value || "").trim().toLowerCase();
+  const raw = String(value || "").trim();
+  const normalized = raw.toLowerCase();
   if (!normalized) {
     return null;
   }
 
   if (normalized.startsWith("adult")) {
-    return "adultos";
+    return "Adultos";
   }
 
   if (normalized.startsWith("niñ") || normalized.startsWith("nin") || normalized.includes("child")) {
-    return "ninos";
+    return "Niños";
   }
 
   if (normalized.startsWith("beb") || normalized.startsWith("inf")) {
-    return "bebes";
+    return "Bebés";
   }
 
-  if (normalized.startsWith("uni")) {
-    return null;
+  if (normalized.startsWith("jov") || normalized.includes("teen") || normalized.includes("adole")) {
+    return "Jóvenes";
   }
 
-  return null;
+  return raw;
 }
 
 function normalizeLabel(value: string) {

@@ -77,6 +77,13 @@ const quickLinks: QuickLink[] = [
     icon: Megaphone,
     permission: "store.manage",
   },
+  {
+    href: "/admin/usuarios",
+    title: "Gestión de usuarios",
+    description: "Administra cuentas de usuarios y permisos de acceso al sistema.",
+    icon: Users2,
+    permission: "store.manage",
+  },
 ];
 
 async function safeCount(table: string, supabase: Awaited<ReturnType<typeof requireAdminUser>>["supabase"]) {

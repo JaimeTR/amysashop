@@ -2,7 +2,7 @@
 
 import { createPortal } from "react-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { X, Upload } from "lucide-react";
+import { X, Upload, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { canonicalizeBrandName } from "@/lib/brands";
 import { useRegisteredTaxonomies } from "@/lib/use-registered-taxonomies";
@@ -200,7 +200,7 @@ export function ProductCreateModal({ categories, brands, subBrands, subCategorie
   return (
     <>
       <Button type="button" onClick={() => setOpen(true)} className="bg-primary text-white hover:bg-primary/90">
-        Crear nuevo producto
+        <Plus className="mr-2 size-4" />Agregar nuevo producto
       </Button>
 
       {open && mounted
@@ -347,7 +347,7 @@ export function ProductCreateModal({ categories, brands, subBrands, subCategorie
               <select name="gender" className={selectInputClass}>
                 <option value="">Seleccionar género</option>
                 {genderOptions.map((g) => (
-                  <option key={g} value={g.toLowerCase()}>{g}</option>
+                  <option key={g} value={g}>{g}</option>
                 ))}
               </select>
             </div>
@@ -356,7 +356,7 @@ export function ProductCreateModal({ categories, brands, subBrands, subCategorie
               <select name="ageGroup" className={selectInputClass}>
                 <option value="">Seleccionar edad</option>
                 {ageGroupOptions.map((a) => (
-                  <option key={a} value={a.toLowerCase()}>{a}</option>
+                  <option key={a} value={a}>{a}</option>
                 ))}
               </select>
             </div>

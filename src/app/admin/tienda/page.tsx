@@ -517,6 +517,7 @@ export default async function AdminTiendaPage({ searchParams }: PageProps) {
       </section>
 
       <section className="grid gap-4 xl:grid-cols-2">
+        {/* COLUMNA IZQUIERDA: CATEGORÍAS */}
         <Card className="glass-card">
           <CardHeader>
             <CardTitle>Nueva categoría</CardTitle>
@@ -574,155 +575,7 @@ export default async function AdminTiendaPage({ searchParams }: PageProps) {
           </CardContent>
         </Card>
 
-        <Card className="glass-card">
-          <CardHeader>
-            <CardTitle>Nueva marca</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <form action={createBrandAction} className="flex flex-col gap-3 md:flex-row md:items-center">
-              <input
-                name="name"
-                placeholder="Nombre de marca"
-                className="h-10 flex-1 rounded-md border border-input bg-background px-3 text-sm"
-                required
-              />
-              <Button type="submit">Crear marca</Button>
-            </form>
-
-            <div className="space-y-2">
-              {brands.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No hay marcas registradas.</p>
-              ) : (
-                brands.map((brand) => (
-                  <article id={`brand-${brand.id}`} key={brand.id} className="rounded-xl border bg-white/70 p-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="rounded-full border bg-white/80 px-3 py-1 text-sm font-medium">{brand.name}</span>
-                      <div className="flex items-center gap-1">
-                        <details className="group" key={`${brand.id}-${searchParams?.ok || ""}-${searchParams?.error || ""}-${searchParams?.t || ""}`}>
-                          <summary className="list-none cursor-pointer rounded-md border border-input bg-white px-2 py-1 text-xs font-medium text-foreground hover:bg-accent group-open:hidden">
-                            <span className="inline-flex items-center gap-1">
-                              <Pencil className="size-3.5" />
-                              Editar
-                            </span>
-                          </summary>
-                          <form action={updateBrandAction} className="mt-2 flex items-center gap-2">
-                            <input type="hidden" name="id" value={brand.id} />
-                            <input
-                              name="name"
-                              defaultValue={brand.name}
-                              className="h-8 rounded-md border border-input bg-background px-2 text-xs"
-                              required
-                            />
-                            <Button type="submit" size="sm" className="h-8 px-2 text-xs">Guardar</Button>
-                          </form>
-                        </details>
-                        <form action={deleteBrandAction}>
-                          <input type="hidden" name="id" value={brand.id} />
-                          <Button type="submit" size="icon" variant="ghost" className="h-8 w-8 text-rose-700 hover:bg-rose-50" aria-label="Eliminar marca">
-                            <X className="size-4" />
-                          </Button>
-                        </form>
-                      </div>
-                    </div>
-                  </article>
-                ))
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </section>
-
-      <section className="grid gap-4 xl:grid-cols-2">
-        <Card className="glass-card">
-          <CardHeader>
-            <CardTitle>Géneros</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <form action={createGenderAction} className="flex gap-2">
-              <input name="name" placeholder="Nombre de género" className="h-10 flex-1 rounded-md border border-input bg-background px-3 text-sm" required />
-              <Button type="submit">Crear</Button>
-            </form>
-
-            <div className="space-y-2">
-              {genders.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No hay géneros registrados.</p>
-              ) : (
-                genders.map((g) => (
-                  <article id={`gender-${g.id}`} key={g.id} className="rounded-xl border bg-white/70 p-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="rounded-full border bg-white/80 px-3 py-1 text-sm font-medium">{g.name}</span>
-                      <div className="flex items-center gap-1">
-                        <details className="group">
-                          <summary className="list-none cursor-pointer rounded-md border border-input bg-white px-2 py-1 text-xs font-medium text-foreground hover:bg-accent group-open:hidden">
-                            <span className="inline-flex items-center gap-1"><Pencil className="size-3.5"/> Editar</span>
-                          </summary>
-                          <form action={updateGenderAction} className="mt-2 flex items-center gap-2">
-                            <input type="hidden" name="id" value={g.id} />
-                            <input name="name" defaultValue={g.name} className="h-8 rounded-md border border-input bg-background px-2 text-xs" required />
-                            <Button type="submit" size="sm" className="h-8 px-2 text-xs">Guardar</Button>
-                          </form>
-                        </details>
-                        <form action={deleteGenderAction}>
-                          <input type="hidden" name="id" value={g.id} />
-                          <Button type="submit" size="icon" variant="ghost" className="h-8 w-8 text-rose-700 hover:bg-rose-50" aria-label="Eliminar género">
-                            <X className="size-4" />
-                          </Button>
-                        </form>
-                      </div>
-                    </div>
-                  </article>
-                ))
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="glass-card">
-          <CardHeader>
-            <CardTitle>Grupos de Edad</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <form action={createAgeGroupAction} className="flex gap-2">
-              <input name="name" placeholder="Nombre de grupo de edad" className="h-10 flex-1 rounded-md border border-input bg-background px-3 text-sm" required />
-              <Button type="submit">Crear</Button>
-            </form>
-
-            <div className="space-y-2">
-              {ageGroups.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No hay grupos de edad registrados.</p>
-              ) : (
-                ageGroups.map((a) => (
-                  <article id={`agegroup-${a.id}`} key={a.id} className="rounded-xl border bg-white/70 p-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="rounded-full border bg-white/80 px-3 py-1 text-sm font-medium">{a.name}</span>
-                      <div className="flex items-center gap-1">
-                        <details className="group">
-                          <summary className="list-none cursor-pointer rounded-md border border-input bg-white px-2 py-1 text-xs font-medium text-foreground hover:bg-accent group-open:hidden">
-                            <span className="inline-flex items-center gap-1"><Pencil className="size-3.5"/> Editar</span>
-                          </summary>
-                          <form action={updateAgeGroupAction} className="mt-2 flex items-center gap-2">
-                            <input type="hidden" name="id" value={a.id} />
-                            <input name="name" defaultValue={a.name} className="h-8 rounded-md border border-input bg-background px-2 text-xs" required />
-                            <Button type="submit" size="sm" className="h-8 px-2 text-xs">Guardar</Button>
-                          </form>
-                        </details>
-                        <form action={deleteAgeGroupAction}>
-                          <input type="hidden" name="id" value={a.id} />
-                          <Button type="submit" size="icon" variant="ghost" className="h-8 w-8 text-rose-700 hover:bg-rose-50" aria-label="Eliminar grupo de edad">
-                            <X className="size-4" />
-                          </Button>
-                        </form>
-                      </div>
-                    </div>
-                  </article>
-                ))
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </section>
-
-      <section className="grid gap-4 xl:grid-cols-2">
+        {/* COLUMNA DERECHA: SUBCATEGORÍAS */}
         <Card className="glass-card">
           <CardHeader>
             <CardTitle>Subcategoría bajo categoría padre</CardTitle>
@@ -808,7 +661,68 @@ export default async function AdminTiendaPage({ searchParams }: PageProps) {
             </div>
           </CardContent>
         </Card>
+      </section>
 
+      <section className="grid gap-4 xl:grid-cols-2">
+        {/* COLUMNA IZQUIERDA: MARCAS */}
+        <Card className="glass-card">
+          <CardHeader>
+            <CardTitle>Nueva marca</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <form action={createBrandAction} className="flex flex-col gap-3 md:flex-row md:items-center">
+              <input
+                name="name"
+                placeholder="Nombre de marca"
+                className="h-10 flex-1 rounded-md border border-input bg-background px-3 text-sm"
+                required
+              />
+              <Button type="submit">Crear marca</Button>
+            </form>
+
+            <div className="space-y-2">
+              {brands.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No hay marcas registradas.</p>
+              ) : (
+                brands.map((brand) => (
+                  <article id={`brand-${brand.id}`} key={brand.id} className="rounded-xl border bg-white/70 p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="rounded-full border bg-white/80 px-3 py-1 text-sm font-medium">{brand.name}</span>
+                      <div className="flex items-center gap-1">
+                        <details className="group" key={`${brand.id}-${searchParams?.ok || ""}-${searchParams?.error || ""}-${searchParams?.t || ""}`}>
+                          <summary className="list-none cursor-pointer rounded-md border border-input bg-white px-2 py-1 text-xs font-medium text-foreground hover:bg-accent group-open:hidden">
+                            <span className="inline-flex items-center gap-1">
+                              <Pencil className="size-3.5" />
+                              Editar
+                            </span>
+                          </summary>
+                          <form action={updateBrandAction} className="mt-2 flex items-center gap-2">
+                            <input type="hidden" name="id" value={brand.id} />
+                            <input
+                              name="name"
+                              defaultValue={brand.name}
+                              className="h-8 rounded-md border border-input bg-background px-2 text-xs"
+                              required
+                            />
+                            <Button type="submit" size="sm" className="h-8 px-2 text-xs">Guardar</Button>
+                          </form>
+                        </details>
+                        <form action={deleteBrandAction}>
+                          <input type="hidden" name="id" value={brand.id} />
+                          <Button type="submit" size="icon" variant="ghost" className="h-8 w-8 text-rose-700 hover:bg-rose-50" aria-label="Eliminar marca">
+                            <X className="size-4" />
+                          </Button>
+                        </form>
+                      </div>
+                    </div>
+                  </article>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* COLUMNA DERECHA: SUBMARCAS */}
         <Card className="glass-card">
           <CardHeader>
             <CardTitle>Submarca bajo marca padre</CardTitle>
@@ -890,6 +804,98 @@ export default async function AdminTiendaPage({ searchParams }: PageProps) {
                     </article>
                   );
                 })
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-2">
+        {/* COLUMNA IZQUIERDA: GÉNEROS */}
+        <Card className="glass-card">
+          <CardHeader>
+            <CardTitle>Géneros</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <form action={createGenderAction} className="flex gap-2">
+              <input name="name" placeholder="Nombre de género" className="h-10 flex-1 rounded-md border border-input bg-background px-3 text-sm" required />
+              <Button type="submit">Crear</Button>
+            </form>
+
+            <div className="space-y-2">
+              {genders.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No hay géneros registrados.</p>
+              ) : (
+                genders.map((g) => (
+                  <article id={`gender-${g.id}`} key={g.id} className="rounded-xl border bg-white/70 p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="rounded-full border bg-white/80 px-3 py-1 text-sm font-medium">{g.name}</span>
+                      <div className="flex items-center gap-1">
+                        <details className="group">
+                          <summary className="list-none cursor-pointer rounded-md border border-input bg-white px-2 py-1 text-xs font-medium text-foreground hover:bg-accent group-open:hidden">
+                            <span className="inline-flex items-center gap-1"><Pencil className="size-3.5"/> Editar</span>
+                          </summary>
+                          <form action={updateGenderAction} className="mt-2 flex items-center gap-2">
+                            <input type="hidden" name="id" value={g.id} />
+                            <input name="name" defaultValue={g.name} className="h-8 rounded-md border border-input bg-background px-2 text-xs" required />
+                            <Button type="submit" size="sm" className="h-8 px-2 text-xs">Guardar</Button>
+                          </form>
+                        </details>
+                        <form action={deleteGenderAction}>
+                          <input type="hidden" name="id" value={g.id} />
+                          <Button type="submit" size="icon" variant="ghost" className="h-8 w-8 text-rose-700 hover:bg-rose-50" aria-label="Eliminar género">
+                            <X className="size-4" />
+                          </Button>
+                        </form>
+                      </div>
+                    </div>
+                  </article>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* COLUMNA DERECHA: GRUPOS DE EDAD */}
+        <Card className="glass-card">
+          <CardHeader>
+            <CardTitle>Grupos de Edad</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <form action={createAgeGroupAction} className="flex gap-2">
+              <input name="name" placeholder="Nombre de grupo de edad" className="h-10 flex-1 rounded-md border border-input bg-background px-3 text-sm" required />
+              <Button type="submit">Crear</Button>
+            </form>
+
+            <div className="space-y-2">
+              {ageGroups.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No hay grupos de edad registrados.</p>
+              ) : (
+                ageGroups.map((a) => (
+                  <article id={`agegroup-${a.id}`} key={a.id} className="rounded-xl border bg-white/70 p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="rounded-full border bg-white/80 px-3 py-1 text-sm font-medium">{a.name}</span>
+                      <div className="flex items-center gap-1">
+                        <details className="group">
+                          <summary className="list-none cursor-pointer rounded-md border border-input bg-white px-2 py-1 text-xs font-medium text-foreground hover:bg-accent group-open:hidden">
+                            <span className="inline-flex items-center gap-1"><Pencil className="size-3.5"/> Editar</span>
+                          </summary>
+                          <form action={updateAgeGroupAction} className="mt-2 flex items-center gap-2">
+                            <input type="hidden" name="id" value={a.id} />
+                            <input name="name" defaultValue={a.name} className="h-8 rounded-md border border-input bg-background px-2 text-xs" required />
+                            <Button type="submit" size="sm" className="h-8 px-2 text-xs">Guardar</Button>
+                          </form>
+                        </details>
+                        <form action={deleteAgeGroupAction}>
+                          <input type="hidden" name="id" value={a.id} />
+                          <Button type="submit" size="icon" variant="ghost" className="h-8 w-8 text-rose-700 hover:bg-rose-50" aria-label="Eliminar grupo de edad">
+                            <X className="size-4" />
+                          </Button>
+                        </form>
+                      </div>
+                    </div>
+                  </article>
+                ))
               )}
             </div>
           </CardContent>

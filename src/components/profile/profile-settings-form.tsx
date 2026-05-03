@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import { Loader2, UploadCloud } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -117,8 +116,24 @@ export function ProfileSettingsForm({ userId, email, initialProfile }: ProfileSe
         throw new Error("No se pudo generar la URL pública del avatar.");
       }
 
-      setDraft((prev) => ({ ...prev, avatar_url: data.publicUrl }));
+      const avatarUrl = data.publicUrl;
+      const saveResult = await supabase.from("profiles").upsert(
+        { id: userId, avatar_url: avatarUrl },
+        { onConflict: "id" }
+      );
+
+      if (saveResult.error) {
+        throw saveResult.error;
+      }
+
+      setDraft((prev) => ({ ...prev, avatar_url: avatarUrl }));
       setSelectedFile(null);
+      try {
+        console.debug("[ProfileSettingsForm] dispatching amysa:avatar-updated", { url: avatarUrl });
+        window.dispatchEvent(new CustomEvent("amysa:avatar-updated", { detail: { avatar_url: avatarUrl } }));
+      } catch (err) {
+        console.debug("[ProfileSettingsForm] failed dispatching avatar event", err);
+      }
       notify.success("Imagen subida", "Tu nueva foto de perfil está lista para guardar.");
     } catch (error) {
       notify.error("Error al subir", String((error as { message?: string })?.message || "No se pudo subir la imagen."));
@@ -152,6 +167,20 @@ export function ProfileSettingsForm({ userId, email, initialProfile }: ProfileSe
       }
 
       notify.success("Perfil actualizado", "Tus datos se guardaron correctamente.");
+      try {
+        const avatarUrl = String(payload.avatar_url || "").trim();
+        const updated = {
+          nombre: payload.nombre,
+          telefono: payload.telefono,
+          direccion: payload.direccion,
+          gender: String(payload.gender || ""),
+          avatar_url: avatarUrl ? `${avatarUrl}${avatarUrl.includes("?") ? "&" : "?"}v=${Date.now()}` : "",
+        };
+        console.debug("[ProfileSettingsForm] dispatching amysa:profile-updated", updated);
+        window.dispatchEvent(new CustomEvent("amysa:profile-updated", { detail: updated }));
+      } catch (err) {
+        console.debug("[ProfileSettingsForm] failed dispatching profile event", err);
+      }
     } catch (error) {
       notify.error("No se pudo guardar", String((error as { message?: string })?.message || "Intenta nuevamente."));
     } finally {
@@ -164,12 +193,10 @@ export function ProfileSettingsForm({ userId, email, initialProfile }: ProfileSe
   return (
     <div className="space-y-4 text-sm">
       <div className="flex items-center gap-3">
-        <Image
+        <img
           src={avatarSrc}
           alt="Foto de perfil"
-          width={84}
-          height={84}
-          unoptimized
+          key={avatarSrc}
           className="size-[84px] rounded-full border border-primary/20 object-cover"
         />
         <div className="space-y-2">

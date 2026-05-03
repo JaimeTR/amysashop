@@ -63,6 +63,12 @@ export function ProductEditModal({
   const firstImage = images.find((item) => item && !isVideoMedia(item)) || "";
   const galleryItems = images.filter((item) => item && item !== firstImage);
 
+  const parseMediaList = (value: string) =>
+    String(value || "")
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -72,6 +78,8 @@ export function ProductEditModal({
   const [galleryImageUrls, setGalleryImageUrls] = useState(galleryItems.join(", "));
   const [mainUploadedFiles, setMainUploadedFiles] = useState<File[]>([]);
   const [galleryUploadedFiles, setGalleryUploadedFiles] = useState<File[]>([]);
+  const [mainPreviewUrl, setMainPreviewUrl] = useState<string>(firstImage);
+  const [galleryPreviewUrls, setGalleryPreviewUrls] = useState<string[]>(galleryItems);
   const mainFileInputRef = useRef<HTMLInputElement>(null);
   const galleryFileInputRef = useRef<HTMLInputElement>(null);
   const { genderOptions, ageGroupOptions } = useRegisteredTaxonomies();
@@ -132,7 +140,33 @@ export function ProductEditModal({
     setSelectedBrand(brand || "");
     setSelectedSubCategory(subCategory || "");
     setSelectedSubBrand(subBrand || "");
+    setMainImageUrls(firstImage);
+    setGalleryImageUrls(galleryItems.join(", "));
+    setMainPreviewUrl(firstImage);
+    setGalleryPreviewUrls(galleryItems);
   }, [open, category, brand, subCategory, subBrand]);
+
+  useEffect(() => {
+    if (mainUploadedFiles.length > 0) {
+      const nextUrl = URL.createObjectURL(mainUploadedFiles[0]);
+      setMainPreviewUrl(nextUrl);
+
+      return () => URL.revokeObjectURL(nextUrl);
+    }
+
+    setMainPreviewUrl(mainImageUrls.trim() || firstImage);
+    return undefined;
+  }, [mainUploadedFiles, mainImageUrls, firstImage]);
+
+  useEffect(() => {
+    const previewUrls = parseMediaList(galleryImageUrls);
+    const fileUrls = galleryUploadedFiles.map((file) => URL.createObjectURL(file));
+    setGalleryPreviewUrls([...previewUrls, ...fileUrls]);
+
+    return () => {
+      fileUrls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [galleryImageUrls, galleryUploadedFiles]);
 
   const baseInputClass =
     "h-10 w-full rounded-lg border border-[#e3d7cd] bg-white/95 px-3 text-sm text-black placeholder-black/40 focus:outline-none focus:ring-2 focus:ring-primary/25";
@@ -155,6 +189,42 @@ export function ProductEditModal({
   const removeGalleryUploadedFile = (index: number) => {
     setGalleryUploadedFiles((prev) => prev.filter((_, i) => i !== index));
   };
+
+  const removeGalleryPreviewItem = (index: number) => {
+    const textItems = parseMediaList(galleryImageUrls);
+    const textCount = textItems.length;
+
+    if (index < textCount) {
+      textItems.splice(index, 1);
+      setGalleryImageUrls(textItems.join(", "));
+      return;
+    }
+
+    const fileIndex = index - textCount;
+    setGalleryUploadedFiles((prev) => prev.filter((_, i) => i !== fileIndex));
+  };
+
+  const removeMainPreviewImage = () => {
+    setMainImageUrls("");
+    setMainUploadedFiles([]);
+    if (mainFileInputRef.current) {
+      mainFileInputRef.current.value = "";
+    }
+  };
+
+  const renderPreviewThumbnail = (src: string, alt: string, onRemove: () => void) => (
+    <div className="relative overflow-hidden rounded-xl border border-[#e3d7cd] bg-white shadow-sm">
+      <button
+        type="button"
+        onClick={onRemove}
+        className="absolute right-1 top-1 z-10 inline-flex h-6 w-6 items-center justify-center rounded-full bg-black/70 text-white transition hover:bg-rose-600"
+        aria-label={`Eliminar ${alt}`}
+      >
+        <X className="size-3.5" />
+      </button>
+      <img src={src} alt={alt} className="h-24 w-24 object-cover" />
+    </div>
+  );
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -353,7 +423,7 @@ export function ProductEditModal({
               <select name="gender" defaultValue={gender} className={selectInputClass}>
                 <option value="">Seleccionar género</option>
                 {genderOptions.map((g) => (
-                  <option key={g} value={g.toLowerCase()}>{g}</option>
+                  <option key={g} value={g}>{g}</option>
                 ))}
               </select>
             </div>
@@ -362,7 +432,7 @@ export function ProductEditModal({
               <select name="ageGroup" defaultValue={ageGroup} className={selectInputClass}>
                 <option value="">Seleccionar edad</option>
                 {ageGroupOptions.map((a) => (
-                  <option key={a} value={a.toLowerCase()}>{a}</option>
+                  <option key={a} value={a}>{a}</option>
                 ))}
               </select>
             </div>
@@ -432,16 +502,9 @@ export function ProductEditModal({
                 </div>
               </div>
 
-              {mainUploadedFiles.length > 0 ? (
-                <div className="space-y-1">
-                  {mainUploadedFiles.map((file, index) => (
-                    <div key={`${file.name}-${index}`} className="flex items-center justify-between gap-2 rounded-lg border border-[#e3d7cd] bg-white p-2">
-                      <span className="text-xs text-black">{file.name}</span>
-                      <button type="button" onClick={() => removeMainUploadedFile(index)} className="text-rose-600 hover:text-rose-700">
-                        <X className="size-4" />
-                      </button>
-                    </div>
-                  ))}
+              {mainPreviewUrl ? (
+                <div className="flex flex-wrap gap-3">
+                  {renderPreviewThumbnail(mainPreviewUrl, "Foto principal", removeMainPreviewImage)}
                 </div>
               ) : null}
             </div>
@@ -475,16 +538,27 @@ export function ProductEditModal({
                 </div>
               </div>
 
-              {galleryUploadedFiles.length > 0 ? (
-                <div className="space-y-1">
-                  {galleryUploadedFiles.map((file, index) => (
-                    <div key={`${file.name}-${index}`} className="flex items-center justify-between gap-2 rounded-lg border border-[#e3d7cd] bg-white p-2">
-                      <span className="text-xs text-black">{file.name}</span>
-                      <button type="button" onClick={() => removeGalleryUploadedFile(index)} className="text-rose-600 hover:text-rose-700">
-                        <X className="size-4" />
-                      </button>
-                    </div>
-                  ))}
+              {galleryPreviewUrls.length > 0 ? (
+                <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-5">
+                  {galleryPreviewUrls.map((src, index) => {
+                    const isUploadedFile = index >= parseMediaList(galleryImageUrls).length;
+                    const uploadedIndex = index - parseMediaList(galleryImageUrls).length;
+                    const alt = isUploadedFile ? `Galería ${uploadedIndex + 1}` : `Galería ${index + 1}`;
+
+                    return (
+                      <div key={`${src}-${index}`} className="relative overflow-hidden rounded-xl border border-[#e3d7cd] bg-white shadow-sm">
+                        <button
+                          type="button"
+                          onClick={() => removeGalleryPreviewItem(index)}
+                          className="absolute right-1 top-1 z-10 inline-flex h-6 w-6 items-center justify-center rounded-full bg-black/70 text-white transition hover:bg-rose-600"
+                          aria-label={`Eliminar ${alt}`}
+                        >
+                          <X className="size-3.5" />
+                        </button>
+                        <img src={src} alt={alt} className="h-24 w-full object-cover" />
+                      </div>
+                    );
+                  })}
                 </div>
               ) : null}
             </div>
