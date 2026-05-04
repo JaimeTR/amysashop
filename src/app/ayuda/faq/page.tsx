@@ -46,15 +46,18 @@ const faqs = [
 export default function FaqPage() {
   return (
     <main className="mx-auto max-w-6xl p-6">
-      <div className="rounded-lg bg-gradient-to-br from-amber-50 via-white to-white/70 p-8 shadow-md">
-        <h1 className="font-[var(--font-display)] text-3xl">Preguntas frecuentes</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Encuentra respuestas rápidas sobre envíos, pagos y garantías.</p>
+      <div className="relative overflow-hidden rounded-[1.75rem] border border-white/50 bg-white/45 p-6 shadow-[0_24px_80px_rgba(117,82,63,0.12)] backdrop-blur-xl md:p-8">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(166,118,92,0.2),transparent_35%),radial-gradient(circle_at_top_right,rgba(255,255,255,0.75),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.68),rgba(255,255,255,0.32))]" />
+        <div className="relative">
+          <h1 className="font-[var(--font-display)] text-3xl">Preguntas frecuentes</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Encuentra respuestas rápidas sobre envíos, pagos y garantías.</p>
 
-        <section className="mt-6 grid gap-4 md:grid-cols-2">
-          {faqs.map((f, i) => (
-            <FaqItem key={i} question={f.q} answer={f.a} />
-          ))}
-        </section>
+          <section className="mt-6 grid gap-4 md:grid-cols-2">
+            {faqs.map((f, i) => (
+              <FaqItem key={i} question={f.q} answer={f.a} />
+            ))}
+          </section>
+        </div>
       </div>
     </main>
   );

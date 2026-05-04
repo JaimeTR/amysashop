@@ -1,54 +1,66 @@
 import { NextResponse } from "next/server";
+import nodemailer from "nodemailer";
 
-const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
-const TO_EMAIL = process.env.CONTACT_TO_EMAIL ?? "contacto@amysashop.com";
-const FROM_EMAIL = process.env.CONTACT_FROM_EMAIL ?? "no-reply@amysashop.com";
+const SMTP_HOST = process.env.SMTP_HOST || "smtp.titan.email";
+const SMTP_PORT = parseInt(process.env.SMTP_PORT || "465");
+const SMTP_USER = process.env.SMTP_USER || "contacto@amysashop.com";
+const SMTP_PASS = process.env.SMTP_PASS || "";
+const TO_EMAIL = process.env.CONTACT_TO_EMAIL || "contacto@amysashop.com";
+const EXTRA_TO_EMAIL = "jaimetr1309@gmail.com";
+const FROM_EMAIL = process.env.CONTACT_FROM_EMAIL || "contacto@amysashop.com";
 
 export async function POST(req: Request) {
   try {
     const { name, email, message } = await req.json();
 
-    if (!SENDGRID_API_KEY) {
-      console.error("SENDGRID_API_KEY no configurada");
-      return NextResponse.json({ ok: false, error: "missing_api_key" }, { status: 500 });
+    if (!SMTP_PASS) {
+      console.error("SMTP_PASS no configurada");
+      return NextResponse.json({ ok: false, error: "missing_credentials" }, { status: 500 });
     }
 
-    const payload = {
-      personalizations: [
-        {
-          to: [{ email: TO_EMAIL }],
-          subject: `Nuevo mensaje desde formulario de contacto: ${name || "(sin nombre)"}`,
-        },
-      ],
-      from: { email: FROM_EMAIL, name: "Amysa Shop" },
-      reply_to: { email: email || FROM_EMAIL, name: name || "Cliente" },
-      content: [
-        {
-          type: "text/plain",
-          value: `Nombre: ${name || "-"}\nCorreo: ${email || "-"}\n\nMensaje:\n${message || "-"}`,
-        },
-      ],
-    };
-
-    const res = await fetch("https://api.sendgrid.com/v3/mail/send", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${SENDGRID_API_KEY}`,
-        "Content-Type": "application/json",
+    // Configurar transporte SMTP
+    const transporter = nodemailer.createTransport({
+      host: SMTP_HOST,
+      port: SMTP_PORT,
+      secure: SMTP_PORT === 465, // true para puerto 465, false para otros
+      auth: {
+        user: SMTP_USER,
+        pass: SMTP_PASS,
       },
-      body: JSON.stringify(payload),
     });
 
-    if (!res.ok) {
-      const text = await res.text();
-      console.error("SendGrid error:", res.status, text);
-      return NextResponse.json({ ok: false, error: "send_failed", detail: text }, { status: 500 });
-    }
+    // Contenido del correo
+    const mailOptions = {
+      from: FROM_EMAIL,
+      to: `${TO_EMAIL}, ${EXTRA_TO_EMAIL}`,
+      replyTo: email || FROM_EMAIL,
+      subject: `Nuevo mensaje desde formulario de contacto: ${name || "(sin nombre)"}`,
+      text: `Nombre: ${name || "-"}\nCorreo: ${email || "-"}\n\nMensaje:\n${message || "-"}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+          <h2>Nuevo mensaje de contacto</h2>
+          <p><strong>Nombre:</strong> ${name || "-"}</p>
+          <p><strong>Correo:</strong> ${email || "-"}</p>
+          <p><strong>Mensaje:</strong></p>
+          <p style="background-color: #f5f5f5; padding: 10px; border-left: 4px solid #666; white-space: pre-wrap;">
+            ${message || "-"}
+          </p>
+        </div>
+      `,
+    };
+
+    // Enviar correo
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Correo enviado exitosamente:", info.messageId);
 
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("/api/contact error:", err);
-    return NextResponse.json({ ok: false }, { status: 500 });
+    const errorMessage = err instanceof Error ? err.message : "Error desconocido";
+    return NextResponse.json(
+      { ok: false, error: "send_failed", detail: errorMessage },
+      { status: 500 }
+    );
   }
 }
 

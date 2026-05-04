@@ -7,7 +7,8 @@ import { getActiveProductsForNav, getRegisteredCategories } from "@/lib/catalog"
 import { LayoutWrapper } from "@/components/layout/layout-wrapper";
 
 const APP_VERSION = "0.1.1";
-const APP_ICON = "/logos/amysa shop.png";
+const APP_ICON = "/icon.svg";
+const APP_APPLE_ICON = "/logos/amysa-square-primary.png";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -26,10 +27,10 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   icons: {
     icon: [
-      { url: APP_ICON, sizes: "192x192", type: "image/png" },
-      { url: APP_ICON, sizes: "512x512", type: "image/png" },
+      { url: APP_ICON, type: "image/svg+xml" },
+      { url: "/logos/amysa-square-primary.png", sizes: "512x512", type: "image/png" },
     ],
-    apple: [{ url: APP_ICON, sizes: "180x180", type: "image/png" }],
+    apple: [{ url: APP_APPLE_ICON, sizes: "180x180", type: "image/png" }],
   },
   appleWebApp: {
     capable: true,

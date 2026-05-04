@@ -23,7 +23,6 @@ type ProfileDraft = {
   telefono: string;
   direccion: string;
   gender: string;
-  avatar_url: string;
 };
 
 function isMissingColumnError(error: { message?: string } | null | undefined, column: string) {
@@ -36,7 +35,12 @@ export function ProfileSettingsForm({ userId, email, initialProfile }: ProfileSe
   const supabase = useMemo(() => createClient(), []);
   const notify = useNotify();
 
-  const [draft, setDraft] = useState<ProfileDraft>(initialProfile);
+  const [draft, setDraft] = useState<ProfileDraft>({
+    nombre: initialProfile.nombre,
+    telefono: initialProfile.telefono,
+    direccion: initialProfile.direccion,
+    gender: initialProfile.gender,
+  });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadPreview, setUploadPreview] = useState("");
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -107,7 +111,7 @@ export function ProfileSettingsForm({ userId, email, initialProfile }: ProfileSe
       });
 
       if (upload.error) {
-        throw upload.error;
+        throw new Error(upload.error.message || `No se pudo subir la imagen al bucket ${bucketName}.`);
       }
 
       const { data } = supabase.storage.from(bucketName).getPublicUrl(objectPath);
@@ -117,16 +121,36 @@ export function ProfileSettingsForm({ userId, email, initialProfile }: ProfileSe
       }
 
       const avatarUrl = data.publicUrl;
-      const saveResult = await supabase.from("profiles").upsert(
-        { id: userId, avatar_url: avatarUrl },
-        { onConflict: "id" }
-      );
+      console.log("[ProfileSettingsForm] Attempting to save avatar URL:", avatarUrl);
+
+      let saveResult = await supabase.from("profiles").update({ avatar_url: avatarUrl }).eq("id", userId);
+
+      console.log("[ProfileSettingsForm] Upsert result:", { 
+        error: saveResult.error, 
+        data: saveResult.data,
+        status: saveResult.status 
+      });
 
       if (saveResult.error) {
-        throw saveResult.error;
+        console.log("[ProfileSettingsForm] Update failed, retrying with upsert");
+        saveResult = await supabase.from("profiles").upsert(
+          { id: userId, avatar_url: avatarUrl },
+          { onConflict: "id" }
+        );
+
+        console.log("[ProfileSettingsForm] Upsert retry result:", {
+          error: saveResult.error,
+          data: saveResult.data,
+          status: saveResult.status,
+        });
       }
 
-      setDraft((prev) => ({ ...prev, avatar_url: avatarUrl }));
+      if (saveResult.error) {
+        console.error("[ProfileSettingsForm] Avatar save failed:", saveResult.error);
+        throw new Error(saveResult.error.message || "No se pudo guardar la foto en tu perfil.");
+      }
+
+      console.log("[ProfileSettingsForm] Avatar saved successfully to database");
       setSelectedFile(null);
       try {
         console.debug("[ProfileSettingsForm] dispatching amysa:avatar-updated", { url: avatarUrl });
@@ -134,7 +158,7 @@ export function ProfileSettingsForm({ userId, email, initialProfile }: ProfileSe
       } catch (err) {
         console.debug("[ProfileSettingsForm] failed dispatching avatar event", err);
       }
-      notify.success("Imagen subida", "Tu nueva foto de perfil está lista para guardar.");
+      notify.success("Imagen subida", "Tu foto de perfil se actualizó correctamente.");
     } catch (error) {
       notify.error("Error al subir", String((error as { message?: string })?.message || "No se pudo subir la imagen."));
     } finally {
@@ -151,30 +175,43 @@ export function ProfileSettingsForm({ userId, email, initialProfile }: ProfileSe
       telefono: draft.telefono.trim() || null,
       direccion: draft.direccion.trim() || null,
       gender: draft.gender.trim() || null,
-      avatar_url: draft.avatar_url.trim() || null,
     };
 
     try {
+      console.log("[ProfileSettingsForm] Attempting profile save with payload:", payload);
+      
       let result = await supabase.from("profiles").upsert(payload, { onConflict: "id" });
 
-      if (result.error && (isMissingColumnError(result.error, "gender") || isMissingColumnError(result.error, "avatar_url"))) {
-        const { gender: _omitGender, avatar_url: _omitAvatar, ...fallbackPayload } = payload;
+      console.log("[ProfileSettingsForm] First upsert result:", { 
+        error: result.error, 
+        data: result.data,
+        status: result.status 
+      });
+
+      if (result.error && isMissingColumnError(result.error, "gender")) {
+        console.log("[ProfileSettingsForm] Missing column detected, retrying without gender");
+        const { gender: _omitGender, ...fallbackPayload } = payload;
         result = await supabase.from("profiles").upsert(fallbackPayload, { onConflict: "id" });
+        console.log("[ProfileSettingsForm] Fallback upsert result:", { 
+          error: result.error, 
+          data: result.data,
+          status: result.status 
+        });
       }
 
       if (result.error) {
+        console.error("[ProfileSettingsForm] Profile save failed:", result.error);
         throw result.error;
       }
 
+      console.log("[ProfileSettingsForm] Profile saved successfully");
       notify.success("Perfil actualizado", "Tus datos se guardaron correctamente.");
       try {
-        const avatarUrl = String(payload.avatar_url || "").trim();
         const updated = {
           nombre: payload.nombre,
           telefono: payload.telefono,
           direccion: payload.direccion,
           gender: String(payload.gender || ""),
-          avatar_url: avatarUrl ? `${avatarUrl}${avatarUrl.includes("?") ? "&" : "?"}v=${Date.now()}` : "",
         };
         console.debug("[ProfileSettingsForm] dispatching amysa:profile-updated", updated);
         window.dispatchEvent(new CustomEvent("amysa:profile-updated", { detail: updated }));
@@ -182,27 +219,28 @@ export function ProfileSettingsForm({ userId, email, initialProfile }: ProfileSe
         console.debug("[ProfileSettingsForm] failed dispatching profile event", err);
       }
     } catch (error) {
+      console.error("[ProfileSettingsForm] Exception during profile save:", error);
       notify.error("No se pudo guardar", String((error as { message?: string })?.message || "Intenta nuevamente."));
     } finally {
       setSaving(false);
     }
   }
 
-  const avatarSrc = uploadPreview || draft.avatar_url || "/placeholder-product.svg";
+  const avatarSrc = uploadPreview || initialProfile.avatar_url || "/placeholder-product.svg";
 
   return (
     <div className="space-y-4 text-sm">
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col items-center gap-4 rounded-2xl border border-white/70 bg-white/70 p-4 sm:flex-row sm:items-center">
         <img
           src={avatarSrc}
           alt="Foto de perfil"
           key={avatarSrc}
-          className="size-[84px] rounded-full border border-primary/20 object-cover"
+          className="size-[88px] rounded-full border border-primary/20 object-cover"
         />
-        <div className="space-y-2">
+        <div className="w-full space-y-3 sm:flex-1">
           <label className="block text-xs font-semibold text-muted-foreground">Imagen de perfil</label>
           <input type="file" accept="image/*" onChange={handleFileChange} className="block w-full text-xs" />
-          <Button type="button" variant="outline" onClick={handleUploadAvatar} disabled={!selectedFile || uploadingAvatar}>
+          <Button type="button" variant="outline" onClick={handleUploadAvatar} disabled={!selectedFile || uploadingAvatar} className="w-full sm:w-auto">
             {uploadingAvatar ? <Loader2 className="mr-2 size-4 animate-spin" /> : <UploadCloud className="mr-2 size-4" />}
             Subir imagen
           </Button>

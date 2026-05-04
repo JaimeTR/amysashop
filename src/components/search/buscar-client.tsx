@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { canonicalizeBrandName, getRegisteredBrandNames } from "@/lib/brands";
 import { useBrandNamesFromDB } from "@/lib/use-db-taxonomies";
 import { useRegisteredTaxonomies } from "@/lib/use-registered-taxonomies";
+import { normalizeSearchText, productMatchesSearch } from "@/lib/product-search";
 import { Product } from "@/lib/types";
 
 type Props = {
@@ -61,13 +62,13 @@ export function BuscarClient({ products }: Props) {
   }
 
   const filtered = useMemo(() => {
-    const value = query.trim().toLowerCase();
+    const value = normalizeSearchText(query);
     const normalizedGender = normalizeGender(selectedGender);
     const normalizedCategory = normalizeLabel(selectedCategory || "");
     const normalizedBrand = normalizeLabel(canonicalizeBrandName(selectedBrand || ""));
 
     return products.filter((product) => {
-      const matchesText = !value || product.name.toLowerCase().includes(value);
+      const matchesText = productMatchesSearch(product, value);
       const matchesGender = !normalizedGender || normalizeGender(String(product.gender || "")) === normalizedGender;
       const matchesCategory = !normalizedCategory || normalizeLabel(String(product.category || "")) === normalizedCategory;
       const matchesBrand = !normalizedBrand || normalizeLabel(canonicalizeBrandName(String(product.brand || ""))) === normalizedBrand;

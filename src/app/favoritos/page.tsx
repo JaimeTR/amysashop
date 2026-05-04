@@ -20,10 +20,55 @@ export default function FavoritosPage() {
   const clearFavorites = useFavoritesStore((state) => state.clearFavorites);
   const addItem = useCartStore((state) => state.addItem);
   const [mounted, setMounted] = useState(false);
+  const [liveCoverById, setLiveCoverById] = useState<Record<string, string>>({});
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (!mounted || items.length === 0) {
+      setLiveCoverById({});
+      return;
+    }
+
+    const ids = Array.from(new Set(items.map((item) => item.productId).filter(Boolean)));
+    if (ids.length === 0) {
+      setLiveCoverById({});
+      return;
+    }
+
+    const controller = new AbortController();
+
+    async function loadLiveCovers() {
+      try {
+        const params = new URLSearchParams({ ids: ids.join(",") });
+        const response = await fetch(`/api/products/covers?${params.toString()}`, {
+          signal: controller.signal,
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          return;
+        }
+
+        const payload = (await response.json()) as { covers?: Record<string, string> };
+        setLiveCoverById(payload.covers || {});
+      } catch {
+        // Ignore network aborts/errors and keep persisted image fallback.
+      }
+    }
+
+    void loadLiveCovers();
+
+    return () => {
+      controller.abort();
+    };
+  }, [mounted, items]);
+
+  function getFavoriteCover(productId: string, savedImage?: string) {
+    return liveCoverById[productId] || getSafeImageSrc(savedImage);
+  }
 
   const hasItems = mounted && items.length > 0;
 
@@ -63,7 +108,7 @@ export default function FavoritosPage() {
               <div className="relative">
                 <Link href={`/producto/${item.productId}`}>
                   <Image
-                    src={getSafeImageSrc(item.image)}
+                    src={getFavoriteCover(item.productId, item.image)}
                     alt={item.name}
                     width={700}
                     height={700}
@@ -71,12 +116,12 @@ export default function FavoritosPage() {
                     className="h-44 w-full object-cover"
                   />
                 </Link>
-                <div className="absolute right-2 top-2 rounded-full bg-white/90 backdrop-blur-sm p-1 shadow-md">
+                <div className="absolute right-2 top-2">
                   <ToggleFavoriteButton
                     productId={item.productId}
                     name={item.name}
                     price={item.price}
-                    image={item.image}
+                    image={getFavoriteCover(item.productId, item.image)}
                     category={item.category}
                   />
                 </div>
@@ -105,7 +150,7 @@ export default function FavoritosPage() {
                         productId: item.productId,
                         name: item.name,
                         price: item.price,
-                        image: item.image,
+                        image: getFavoriteCover(item.productId, item.image),
                       })
                     }
                   >

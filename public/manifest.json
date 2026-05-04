@@ -12,13 +12,13 @@
   "lang": "es-PE",
   "icons": [
     {
-      "src": "/logos/amysa shop.png",
+      "src": "/logos/amysa-square-primary.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/logos/amysa shop.png",
+      "src": "/logos/amysa-square-primary.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

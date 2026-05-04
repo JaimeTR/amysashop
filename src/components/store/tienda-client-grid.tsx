@@ -100,6 +100,10 @@ function normalizeAgeGroup(value: string) {
   return String(value || "").trim();
 }
 
+function navigateToProduct(productId: string) {
+  window.location.href = `/producto/${productId}`;
+}
+
 export function TiendaClientGrid({ products, allProducts, categories = [], initialCategory, initialBrand }: Props) {
   const searchParams = useSearchParams();
   const [query, setQuery] = useState("");
@@ -464,315 +468,339 @@ export function TiendaClientGrid({ products, allProducts, categories = [], initi
     });
   }
 
-  return (
-    <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
-      <aside className="glass-card h-fit rounded-3xl p-5">
-        <h2 className="text-2xl font-semibold">Filtros</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Refina por categoría y encuentra más rápido.</p>
+  const filtersContent = (
+    <>
+      <h2 className="text-2xl font-semibold">Filtros</h2>
+      <p className="mt-1 text-sm text-muted-foreground">Refina por categoría y encuentra más rápido.</p>
 
+      <div className="mt-5 space-y-3">
+        <p className="text-sm font-semibold">Categorías</p>
+        {availableCategories.map((category) => {
+          const checked = selectedCategories.includes(category);
+          const count = categoryProductCount.get(normalizeLabel(category)) || 0;
+          return (
+            <label key={category} className="flex items-center justify-between gap-2 text-sm">
+              <span className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={() => toggleCategory(category)}
+                  className="size-4 rounded border-input"
+                />
+                <span>{category}</span>
+              </span>
+              <span className="text-xs text-muted-foreground">({count})</span>
+            </label>
+          );
+        })}
+      </div>
+
+      {/* Subcategorías: mostrar cuando una categoría está seleccionada */}
+      {subcategories.length > 0 && selectedCategories.length === 1 && (
         <div className="mt-5 space-y-3">
-          <p className="text-sm font-semibold">Categorías</p>
-          {availableCategories.map((category) => {
-            const checked = selectedCategories.includes(category);
-            const count = categoryProductCount.get(normalizeLabel(category)) || 0;
-            return (
-              <label key={category} className="flex items-center justify-between gap-2 text-sm">
-                <span className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    onChange={() => toggleCategory(category)}
-                    className="size-4 rounded border-input"
-                  />
-                  <span>{category}</span>
-                </span>
-                <span className="text-xs text-muted-foreground">({count})</span>
-              </label>
-            );
-          })}
-        </div>
-
-        {/* Subcategorías: mostrar cuando una categoría está seleccionada */}
-        {subcategories.length > 0 && selectedCategories.length === 1 && (
-          <div className="mt-5 space-y-3">
-            <p className="text-sm font-semibold">Subcategorías</p>
-            <div className="space-y-2 border-l-2 border-[#e3d7cd] pl-3">
-              {subcategories.map((subcat) => {
-                const checked = selectedSubcategories.includes(subcat.name);
-                return (
-                  <label key={subcat.id} className="flex items-center justify-between gap-2 text-sm">
-                    <span className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={() => {
-                          setSelectedSubcategories((current) => {
-                            if (current.includes(subcat.name)) {
-                              return current.filter((item) => item !== subcat.name);
-                            }
-                            return [...current, subcat.name];
-                          });
-                        }}
-                        className="size-4 rounded border-input"
-                      />
-                      <span>{subcat.name}</span>
-                    </span>
-                  </label>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        <div className="mt-5 space-y-3">
-          <p className="text-sm font-semibold">Marcas</p>
-          {brands.length === 0 ? <p className="text-xs text-muted-foreground">Sin marcas detectadas.</p> : null}
-          <div className="grid grid-cols-2 gap-2">
-            {brands.map((brand) => {
-              const checked = selectedBrands.includes(brand);
-              const count = brandProductCount.get(normalizeLabel(brand)) || 0;
+          <p className="text-sm font-semibold">Subcategorías</p>
+          <div className="space-y-2 border-l-2 border-[#e3d7cd] pl-3">
+            {subcategories.map((subcat) => {
+              const checked = selectedSubcategories.includes(subcat.name);
               return (
-                <label
-                  key={brand}
-                  className={`relative cursor-pointer rounded-lg border-2 p-2 transition-all ${
-                    checked ? "border-primary bg-primary/5" : "border-border"
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    onChange={() => toggleSelection(brand, setSelectedBrands)}
-                    className="absolute inset-0 size-full cursor-pointer opacity-0"
-                  />
-                  <div className="pointer-events-none flex flex-col items-center gap-1">
-                    <BrandLogo brandName={brand} size="sm" withBackground={false} />
-                    <span className="text-center text-xs font-semibold">{brand}</span>
-                    <span className="text-xs text-muted-foreground">({count})</span>
-                  </div>
+                <label key={subcat.id} className="flex items-center justify-between gap-2 text-sm">
+                  <span className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => {
+                        setSelectedSubcategories((current) => {
+                          if (current.includes(subcat.name)) {
+                            return current.filter((item) => item !== subcat.name);
+                          }
+                          return [...current, subcat.name];
+                        });
+                      }}
+                      className="size-4 rounded border-input"
+                    />
+                    <span>{subcat.name}</span>
+                  </span>
                 </label>
               );
             })}
           </div>
         </div>
+      )}
 
-        {/* Submarcas: mostrar cuando una marca está seleccionada */}
-        {subbrands.length > 0 && selectedBrands.length === 1 && (
-          <div className="mt-5 space-y-3">
-            <p className="text-sm font-semibold">Submarcas</p>
-            <div className="space-y-2 border-l-2 border-[#e3d7cd] pl-3">
-              {subbrands.map((subbrand) => {
-                const checked = selectedSubbrands.includes(subbrand.name);
-                return (
-                  <label key={subbrand.id} className="flex items-center justify-between gap-2 text-sm">
-                    <span className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={() => {
-                          setSelectedSubbrands((current) => {
-                            if (current.includes(subbrand.name)) {
-                              return current.filter((item) => item !== subbrand.name);
-                            }
-                            return [...current, subbrand.name];
-                          });
-                        }}
-                        className="size-4 rounded border-input"
-                      />
-                      <span>{subbrand.name}</span>
-                    </span>
-                  </label>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        <div className="mt-5 space-y-3">
-          <p className="text-sm font-semibold">Género</p>
-          {normalizedGenderOptions.length === 0 ? <p className="text-xs text-muted-foreground">Sin géneros detectados.</p> : null}
-          <label className="flex items-center justify-between gap-2 text-sm">
-            <span className="flex items-center gap-2">
-              <input
-                type="radio"
-                name="gender"
-                checked={selectedGender === ""}
-                onChange={() => setSelectedGender("")}
-                className="size-4 rounded border-input"
-              />
-              <span>Todos</span>
-            </span>
-            <span className="text-xs text-muted-foreground">({(allProducts && allProducts.length > 0 ? allProducts : products).length})</span>
-          </label>
-          {normalizedGenderOptions.map((g) => {
-            const checked = selectedGender === g;
-            const count = genderProductCount.get(normalizeLabel(g)) || 0;
+      <div className="mt-5 space-y-3">
+        <p className="text-sm font-semibold">Marcas</p>
+        {brands.length === 0 ? <p className="text-xs text-muted-foreground">Sin marcas detectadas.</p> : null}
+        <div className="grid grid-cols-2 gap-2">
+          {brands.map((brand) => {
+            const checked = selectedBrands.includes(brand);
+            const count = brandProductCount.get(normalizeLabel(brand)) || 0;
             return (
-              <label key={g} className="flex items-center justify-between gap-2 text-sm">
-                <span className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="gender"
-                    checked={checked}
-                    onChange={() => setSelectedGender(g)}
-                    className="size-4 rounded border-input"
-                  />
-                  <span>{g}</span>
-                </span>
-                <span className="text-xs text-muted-foreground">({count})</span>
+              <label
+                key={brand}
+                className={`relative cursor-pointer rounded-lg border-2 p-2 transition-all ${
+                  checked ? "border-primary bg-primary/5" : "border-border"
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={() => toggleSelection(brand, setSelectedBrands)}
+                  className="absolute inset-0 size-full cursor-pointer opacity-0"
+                />
+                <div className="pointer-events-none flex flex-col items-center gap-1">
+                  <BrandLogo brandName={brand} size="sm" withBackground={false} />
+                  <span className="text-center text-xs font-semibold">{brand}</span>
+                  <span className="text-xs text-muted-foreground">({count})</span>
+                </div>
               </label>
             );
           })}
         </div>
+      </div>
 
+      {/* Submarcas: mostrar cuando una marca está seleccionada */}
+      {subbrands.length > 0 && selectedBrands.length === 1 && (
         <div className="mt-5 space-y-3">
-          <p className="text-sm font-semibold">Rango de precio</p>
-          <div className="space-y-3 rounded-lg border border-[#e3d7cd] bg-white/50 p-3">
-            {/* Slider dual para rango de precio */}
-            <style>{`
-              .price-slider-track {
-                position: relative;
-                width: 100%;
-                height: 0.5rem;
-                background: #e3d7cd;
-                border-radius: 0.5rem;
-                outline: none;
-              }
-              .price-slider-track input {
-                position: absolute;
-                width: 100%;
-                height: 0.5rem;
-                top: 0;
-                left: 0;
-                margin: 0;
-                padding: 0;
-                border: none;
-                border-radius: 0.5rem;
-                background: none;
-                pointer-events: none;
-                appearance: none;
-                -webkit-appearance: none;
-              }
-              .price-slider-track input::-webkit-slider-thumb {
-                appearance: none;
-                -webkit-appearance: none;
-                width: 1.1rem;
-                height: 1.1rem;
-                border-radius: 50%;
-                background: linear-gradient(135deg, #6b4a38 0%, #4f3526 50%, #3d281a 100%);
-                cursor: pointer;
-                pointer-events: auto;
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25), 0 0 0 2px rgba(255, 255, 255, 0.8), inset 0 1px 2px rgba(255, 255, 255, 0.4);
-                border: 2px solid rgba(79, 53, 38, 0.5);
-                transition: transform 0.2s, box-shadow 0.2s;
-              }
-              .price-slider-track input::-webkit-slider-thumb:hover {
-                transform: scale(1.15);
-                box-shadow: 0 6px 12px rgba(0, 0, 0, 0.35), 0 0 0 2px rgba(255, 255, 255, 1), inset 0 1px 2px rgba(255, 255, 255, 0.5);
-              }
-              .price-slider-track input::-webkit-slider-thumb:active {
-                transform: scale(1.2);
-              }
-              .price-slider-track input::-moz-range-thumb {
-                width: 1.1rem;
-                height: 1.1rem;
-                border-radius: 50%;
-                background: linear-gradient(135deg, #6b4a38 0%, #4f3526 50%, #3d281a 100%);
-                cursor: pointer;
-                pointer-events: auto;
-                border: 2px solid rgba(79, 53, 38, 0.5);
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25), 0 0 0 2px rgba(255, 255, 255, 0.8), inset 0 1px 2px rgba(255, 255, 255, 0.4);
-                transition: transform 0.2s, box-shadow 0.2s;
-              }
-              .price-slider-track input::-moz-range-thumb:hover {
-                transform: scale(1.15);
-                box-shadow: 0 6px 12px rgba(0, 0, 0, 0.35), 0 0 0 2px rgba(255, 255, 255, 1), inset 0 1px 2px rgba(255, 255, 255, 0.5);
-              }
-              .price-slider-track input::-moz-range-thumb:active {
-                transform: scale(1.2);
-              }
-              .price-slider-min {
-                z-index: 5;
-              }
-              .price-slider-max {
-                z-index: 6;
-              }
-            `}</style>
-            <div className="space-y-2">
-              <label className="block text-xs font-medium text-muted-foreground">
-                Rango: S/ {priceMin || "0"} - S/ {priceMax || maxPrice}
-              </label>
-              <div className="price-slider-track">
-                {/* Input para el mínimo */}
-                <input
-                  type="range"
-                  min="0"
-                  max={maxPrice}
-                  step="1"
-                  value={priceMin || 0}
-                  onChange={(event) => {
-                    const newMin = Number(event.target.value);
-                    const currentMax = Number(priceMax || maxPrice);
-                    if (newMin <= currentMax) {
-                      setPriceMin(String(newMin));
-                    }
-                  }}
-                  className="price-slider-min"
-                />
-                {/* Input para el máximo */}
-                <input
-                  type="range"
-                  min="0"
-                  max={maxPrice}
-                  step="1"
-                  value={priceMax || maxPrice}
-                  onChange={(event) => {
-                    const newMax = Number(event.target.value);
-                    const currentMin = Number(priceMin || 0);
-                    if (newMax >= currentMin) {
-                      setPriceMax(String(newMax));
-                    }
-                  }}
-                  className="price-slider-max"
-                />
-              </div>
-            </div>
-
-            {/* Display del rango */}
-            <div className="rounded-md bg-primary/5 px-2 py-1.5 text-center text-xs font-semibold text-primary">
-              S/ {priceMin || 0} - S/ {priceMax || maxPrice}
-            </div>
+          <p className="text-sm font-semibold">Submarcas</p>
+          <div className="space-y-2 border-l-2 border-[#e3d7cd] pl-3">
+            {subbrands.map((subbrand) => {
+              const checked = selectedSubbrands.includes(subbrand.name);
+              return (
+                <label key={subbrand.id} className="flex items-center justify-between gap-2 text-sm">
+                  <span className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => {
+                        setSelectedSubbrands((current) => {
+                          if (current.includes(subbrand.name)) {
+                            return current.filter((item) => item !== subbrand.name);
+                          }
+                          return [...current, subbrand.name];
+                        });
+                      }}
+                      className="size-4 rounded border-input"
+                    />
+                    <span>{subbrand.name}</span>
+                  </span>
+                </label>
+              );
+            })}
           </div>
         </div>
+      )}
 
-        <div className="mt-5 space-y-2">
-          <label className="flex items-center gap-2 text-sm font-medium">
+      <div className="mt-5 space-y-3">
+        <p className="text-sm font-semibold">Género</p>
+        {normalizedGenderOptions.length === 0 ? <p className="text-xs text-muted-foreground">Sin géneros detectados.</p> : null}
+        <label className="flex items-center justify-between gap-2 text-sm">
+          <span className="flex items-center gap-2">
             <input
-              type="checkbox"
-              checked={discountOnly}
-              onChange={(event) => setDiscountOnly(event.target.checked)}
+              type="radio"
+              name="gender"
+              checked={selectedGender === ""}
+              onChange={() => setSelectedGender("")}
               className="size-4 rounded border-input"
             />
-            Solo con descuento
-          </label>
+            <span>Todos</span>
+          </span>
+          <span className="text-xs text-muted-foreground">({(allProducts && allProducts.length > 0 ? allProducts : products).length})</span>
+        </label>
+        {normalizedGenderOptions.map((g) => {
+          const checked = selectedGender === g;
+          const count = genderProductCount.get(normalizeLabel(g)) || 0;
+          return (
+            <label key={g} className="flex items-center justify-between gap-2 text-sm">
+              <span className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="gender"
+                  checked={checked}
+                  onChange={() => setSelectedGender(g)}
+                  className="size-4 rounded border-input"
+                />
+                <span>{g}</span>
+              </span>
+              <span className="text-xs text-muted-foreground">({count})</span>
+            </label>
+          );
+        })}
+      </div>
 
-          <label className="flex items-center gap-2 text-sm font-medium">
-            <input
-              type="checkbox"
-              checked={packOnly}
-              onChange={(event) => setPackOnly(event.target.checked)}
-              className="size-4 rounded border-input"
-            />
-            Pack / Combo AMYSA
-          </label>
+      <div className="mt-5 space-y-3">
+        <p className="text-sm font-semibold">Rango de precio</p>
+        <div className="space-y-3 rounded-lg border border-[#e3d7cd] bg-white/50 p-3">
+          {/* Slider dual para rango de precio */}
+          <style>{` 
+            .price-slider-track {
+              position: relative;
+              width: 100%;
+              height: 0.5rem;
+              background: #e3d7cd;
+              border-radius: 0.5rem;
+              outline: none;
+            }
+            .price-slider-track input {
+              position: absolute;
+              width: 100%;
+              height: 0.5rem;
+              top: 0;
+              left: 0;
+              margin: 0;
+              padding: 0;
+              border: none;
+              border-radius: 0.5rem;
+              background: none;
+              pointer-events: none;
+              appearance: none;
+              -webkit-appearance: none;
+            }
+            .price-slider-track input::-webkit-slider-thumb {
+              appearance: none;
+              -webkit-appearance: none;
+              width: 1.1rem;
+              height: 1.1rem;
+              border-radius: 50%;
+              background: linear-gradient(135deg, #6b4a38 0%, #4f3526 50%, #3d281a 100%);
+              cursor: pointer;
+              pointer-events: auto;
+              box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25), 0 0 0 2px rgba(255, 255, 255, 0.8), inset 0 1px 2px rgba(255, 255, 255, 0.4);
+              border: 2px solid rgba(79, 53, 38, 0.5);
+              transition: transform 0.2s, box-shadow 0.2s;
+            }
+            .price-slider-track input::-webkit-slider-thumb:hover {
+              transform: scale(1.15);
+              box-shadow: 0 6px 12px rgba(0, 0, 0, 0.35), 0 0 0 2px rgba(255, 255, 255, 1), inset 0 1px 2px rgba(255, 255, 255, 0.5);
+            }
+            .price-slider-track input::-webkit-slider-thumb:active {
+              transform: scale(1.2);
+            }
+            .price-slider-track input::-moz-range-thumb {
+              width: 1.1rem;
+              height: 1.1rem;
+              border-radius: 50%;
+              background: linear-gradient(135deg, #6b4a38 0%, #4f3526 50%, #3d281a 100%);
+              cursor: pointer;
+              pointer-events: auto;
+              border: 2px solid rgba(79, 53, 38, 0.5);
+              box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25), 0 0 0 2px rgba(255, 255, 255, 0.8), inset 0 1px 2px rgba(255, 255, 255, 0.4);
+              transition: transform 0.2s, box-shadow 0.2s;
+            }
+            .price-slider-track input::-moz-range-thumb:hover {
+              transform: scale(1.15);
+              box-shadow: 0 6px 12px rgba(0, 0, 0, 0.35), 0 0 0 2px rgba(255, 255, 255, 1), inset 0 1px 2px rgba(255, 255, 255, 0.5);
+            }
+            .price-slider-track input::-moz-range-thumb:active {
+              transform: scale(1.2);
+            }
+            .price-slider-min {
+              z-index: 5;
+            }
+            .price-slider-max {
+              z-index: 6;
+            }
+          `}</style>
+          <div className="space-y-2">
+            <label className="block text-xs font-medium text-muted-foreground">
+              Rango: S/ {priceMin || "0"} - S/ {priceMax || maxPrice}
+            </label>
+            <div className="price-slider-track">
+              <input
+                type="range"
+                min="0"
+                max={maxPrice}
+                step="1"
+                value={priceMin || 0}
+                onChange={(event) => {
+                  const newMin = Number(event.target.value);
+                  const currentMax = Number(priceMax || maxPrice);
+                  if (newMin <= currentMax) {
+                    setPriceMin(String(newMin));
+                  }
+                }}
+                className="price-slider-min"
+              />
+              <input
+                type="range"
+                min="0"
+                max={maxPrice}
+                step="1"
+                value={priceMax || maxPrice}
+                onChange={(event) => {
+                  const newMax = Number(event.target.value);
+                  const currentMin = Number(priceMin || 0);
+                  if (newMax >= currentMin) {
+                    setPriceMax(String(newMax));
+                  }
+                }}
+                className="price-slider-max"
+              />
+            </div>
+          </div>
+
+          <div className="rounded-md bg-primary/5 px-2 py-1.5 text-center text-xs font-semibold text-primary">
+            S/ {priceMin || 0} - S/ {priceMax || maxPrice}
+          </div>
         </div>
-      </aside>
+      </div>
+
+      <div className="mt-5 space-y-2">
+        <label className="flex items-center gap-2 text-sm font-medium">
+          <input
+            type="checkbox"
+            checked={discountOnly}
+            onChange={(event) => setDiscountOnly(event.target.checked)}
+            className="size-4 rounded border-input"
+          />
+          Solo con descuento
+        </label>
+
+        <label className="flex items-center gap-2 text-sm font-medium">
+          <input
+            type="checkbox"
+            checked={packOnly}
+            onChange={(event) => setPackOnly(event.target.checked)}
+            className="size-4 rounded border-input"
+          />
+          Pack / Combo AMYSA
+        </label>
+      </div>
+    </>
+  );
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
+      <aside className="hidden h-fit rounded-3xl p-5 md:block glass-card">{filtersContent}</aside>
 
       <section className="space-y-4">
         <div className="glass-card rounded-2xl p-3">
           <div className="relative">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 w-full md:w-auto">
-                <div className="relative w-full sm:w-[320px] md:w-[360px]">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div className="order-1 flex w-full items-center justify-between gap-2 md:order-2 md:w-auto md:justify-normal md:flex-shrink-0">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-10 rounded-xl px-3 text-sm md:hidden"
+                  onClick={() => setShowQuickFilters((current) => !current)}
+                >
+                  <Filter className="mr-2 size-4" />
+                  Filtrar
+                </Button>
+
+                <select
+                  value={sortBy}
+                  onChange={(event) => setSortBy(event.target.value as SortOption)}
+                  className="h-10 min-w-0 flex-1 rounded-xl border border-input bg-white/80 px-3 text-sm outline-none focus:border-primary/40 md:flex-none"
+                >
+                  <option value="recent">Ordenar: recientes</option>
+                  <option value="price-asc">Precio: menor a mayor</option>
+                  <option value="price-desc">Precio: mayor a menor</option>
+                  <option value="name-asc">Nombre: A-Z</option>
+                </select>
+              </div>
+
+              <div className="order-2 w-full md:order-1 md:w-auto">
+                <div className="relative w-full md:w-[360px]">
                   <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                   <input
                     value={query}
@@ -782,119 +810,31 @@ export function TiendaClientGrid({ products, allProducts, categories = [], initi
                   />
                 </div>
               </div>
-
-              <div className="flex-shrink-0">
-                <select
-                  value={sortBy}
-                  onChange={(event) => setSortBy(event.target.value as SortOption)}
-                  className="h-10 rounded-xl border border-input bg-white/80 px-3 text-sm outline-none focus:border-primary/40"
-                >
-                  <option value="recent">Ordenar: recientes</option>
-                  <option value="price-asc">Precio: menor a mayor</option>
-                  <option value="price-desc">Precio: mayor a menor</option>
-                  <option value="name-asc">Nombre: A-Z</option>
-                </select>
-              </div>
             </div>
 
-            {showQuickFilters ? (
-              <div className="absolute right-0 top-[calc(100%+0.5rem)] z-20 w-full rounded-2xl border border-[#e3d7cd] bg-white p-3 shadow-lg sm:w-[360px]">
-                <div className="grid gap-3">
-                  <label className="grid gap-1 text-xs font-medium text-muted-foreground">
-                    Género
-                    <select
-                      value={selectedGender}
-                      onChange={(event) => setSelectedGender(event.target.value as GenderFilter)}
-                      className="h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground"
-                    >
-                      <option value="">Todos</option>
-                      {normalizedGenderOptions.map((option) => (
-                        <option key={option} value={option}>
-                          {option}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <label className="grid gap-1 text-xs font-medium text-muted-foreground">
-                    Edad
-                    <select
-                      value={selectedAgeGroup}
-                      onChange={(event) => setSelectedAgeGroup(event.target.value as AgeFilter)}
-                      className="h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground"
-                    >
-                      <option value="">Todas</option>
-                      {ageGroupOptions.map((option) => (
-                        <option key={option} value={option}>
-                          {option}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <label className="grid gap-1 text-xs font-medium text-muted-foreground">
-                    Categoría
-                    <select
-                      value={selectedCategories[0] || ""}
-                      onChange={(event) => setSelectedCategories(event.target.value ? [event.target.value] : [])}
-                      className="h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground"
-                    >
-                      <option value="">Todas</option>
-                      {availableCategories.map((option) => (
-                        <option key={option} value={option}>
-                          {option}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <label className="grid gap-1 text-xs font-medium text-muted-foreground">
-                    Marca
-                    <select
-                      value={selectedBrands[0] || ""}
-                      onChange={(event) => setSelectedBrands(event.target.value ? [event.target.value] : [])}
-                      className="h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground"
-                    >
-                      <option value="">Todas</option>
-                      {brandOptions.map((option) => (
-                        <option key={option} value={option}>
-                          {option}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <div className="flex justify-end gap-2 pt-1">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="h-8 px-2 text-sm"
-                      onClick={() => {
-                        setSelectedGender("");
-                        setSelectedAgeGroup("");
-                        setSelectedCategories([]);
-                        setSelectedBrands([]);
-                      }}
-                    >
-                      Limpiar
-                    </Button>
-                    <Button type="button" variant="outline" className="h-8 px-2 text-sm" onClick={() => setShowQuickFilters(false)}>
-                      Cerrar
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ) : null}
+            
           </div>
 
-          
+          {showQuickFilters ? (
+            <div className="mt-3 glass-card h-fit rounded-3xl p-5 md:hidden">{filtersContent}</div>
+          ) : null}
         </div>
 
         <div className="grid gap-3 px-3 sm:grid-cols-2 sm:px-0 xl:grid-cols-4">
           {filteredProducts.map((product) => (
-            <Card key={product.id} className="glass-card overflow-hidden group">
+            <div
+              key={product.id}
+              className="glass-card overflow-hidden group cursor-pointer rounded-xl border bg-card text-card-foreground shadow-sm"
+              onClick={(e) => {
+                const target = e.target as HTMLElement | null;
+                const interactive = target?.closest("a,button,[role='button']");
+                if (!interactive) {
+                  window.location.href = `/producto/${product.id}`;
+                }
+              }}
+            >
               <div className="relative">
-                <Link href={`/producto/${product.id}`}>
+                <Link href={`/producto/${product.id}`} onClick={() => navigateToProduct(product.id)}>
                   <Image
                     src={getSafeImageSrc(product.images)}
                     alt={product.name}
@@ -927,7 +867,7 @@ export function TiendaClientGrid({ products, allProducts, categories = [], initi
                   <p className="text-xs uppercase tracking-wide text-muted-foreground">{product.category}</p>
                   {marketingLabel ? <Badge className="bg-primary/10 text-primary">{marketingLabel}</Badge> : null}
                 </div>
-                <Link href={`/producto/${product.id}`} className="block">
+                <Link href={`/producto/${product.id}`} className="block" onClick={() => navigateToProduct(product.id)}>
                   <h2 className="line-clamp-1 truncate font-semibold text-foreground hover:text-primary">{product.name}</h2>
                 </Link>
                 <p className="line-clamp-2 text-xs text-muted-foreground">{product.description}</p>
@@ -958,15 +898,23 @@ export function TiendaClientGrid({ products, allProducts, categories = [], initi
                   />
                 </div>
                 <Button asChild size="sm" variant="outline" className="w-full">
-                  <Link href={`/producto/${product.id}`}>
-                    Ver producto <ShoppingBag className="ml-2 size-4" />
-                  </Link>
+                  <a
+                      href={`/producto/${product.id}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Forzar navegación clásica en caso de que la SPA no responda
+                        window.location.href = `/producto/${product.id}`;
+                      }}
+                      className="inline-flex items-center"
+                    >
+                      Ver producto <ShoppingBag className="ml-2 size-4" />
+                    </a>
                 </Button>
                     </>
                   );
                 })()}
               </CardContent>
-            </Card>
+            </div>
           ))}
         </div>
       </section>

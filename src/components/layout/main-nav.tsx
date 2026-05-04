@@ -3,8 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { createPortal } from "react-dom";
-import { ChangeEvent, useDeferredValue, useEffect, useMemo, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { ChangeEvent, useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   ChevronDown,
   Heart,
@@ -32,6 +32,7 @@ import {
   type AccessRole,
 } from "@/lib/access-control";
 import { DEFAULT_PRODUCT_IMAGE, getSafeProductImageSrc } from "@/lib/product-images";
+import { getProductSearchText, normalizeSearchText } from "@/lib/product-search";
 import type { NavProduct } from "@/lib/types";
 
 function normalizeLabel(value: string) {
@@ -103,22 +104,6 @@ function formatPrice(value: number) {
   }).format(value);
 }
 
-function normalizeText(value: string) {
-  return value.trim().toLowerCase();
-}
-
-function getProductSearchText(product: NavProduct) {
-  return [
-    product.name,
-    product.category,
-    product.brand,
-    product.description,
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
-}
-
 function getProductImage(product: NavProduct) {
   return getSafeProductImageSrc(product.images);
 }
@@ -177,6 +162,7 @@ function WhatsAppIcon({ className }: { className?: string }) {
 export function MainNav({ products, categories = [] }: MainNavProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const navSearchParams = useSearchParams();
   const supabase = useMemo(() => createClient(), []);
   const whatsappPhone = process.env.NEXT_PUBLIC_WHATSAPP_PHONE || DEFAULT_WHATSAPP_PHONE;
   const whatsappDisplayPhone = process.env.NEXT_PUBLIC_WHATSAPP_DISPLAY_PHONE || DEFAULT_WHATSAPP_DISPLAY_PHONE;
@@ -211,7 +197,7 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [preheaderMessageIndex, setPreheaderMessageIndex] = useState(0);
   const [preheaderMessages, setPreheaderMessages] = useState<string[]>(fallbackPreheaderMessages);
-  const deferredQuery = useDeferredValue(searchQuery);
+  const [liveCoverById, setLiveCoverById] = useState<Record<string, string>>({});
   const cartItems = useCartStore((state) => state.items);
   const favoriteItems = useFavoritesStore((state) => state.items);
 
@@ -243,7 +229,7 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
   );
 
   const searchResults = useMemo(() => {
-    const query = normalizeText(deferredQuery);
+    const query = normalizeSearchText(searchQuery);
     if (!query) {
       return [] as NavProduct[];
     }
@@ -267,7 +253,7 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
       .sort((left, right) => right.score - left.score)
       .slice(0, 6)
       .map((item) => item.product);
-  }, [deferredQuery, products]);
+  }, [searchQuery, products]);
 
   useEffect(() => {
     return () => {
@@ -397,7 +383,6 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
       const url = e?.detail?.avatar_url;
       console.debug("[MainNav] onAvatarUpdated", url);
       if (url) {
-        setProfileDraft((prev) => ({ ...prev, avatar_url: String(url) }));
         setProfileData((prev) => ({ ...prev, avatar_url: String(url) }));
       }
     }
@@ -414,7 +399,13 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
           avatar_url: String(d.avatar_url || ""),
         };
         setProfileData(updated);
-        setProfileDraft(updated);
+        setProfileDraft({
+          nombre: updated.nombre,
+          telefono: updated.telefono,
+          direccion: updated.direccion,
+          gender: updated.gender,
+          avatar_url: updated.avatar_url,
+        });
       }
     }
 
@@ -474,6 +465,46 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
     };
   }, [isAdminRoute, preheaderMessages.length, supabase]);
 
+  useEffect(() => {
+    if (!mounted || favoriteItems.length === 0) {
+      setLiveCoverById({});
+      return;
+    }
+
+    const ids = Array.from(new Set(favoriteItems.map((item) => item.productId).filter(Boolean)));
+    if (ids.length === 0) {
+      setLiveCoverById({});
+      return;
+    }
+
+    const controller = new AbortController();
+
+    async function loadLiveCovers() {
+      try {
+        const params = new URLSearchParams({ ids: ids.join(",") });
+        const response = await fetch(`/api/products/covers?${params.toString()}`, {
+          signal: controller.signal,
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          return;
+        }
+
+        const payload = (await response.json()) as { covers?: Record<string, string> };
+        setLiveCoverById(payload.covers || {});
+      } catch {
+        // Ignore network aborts/errors and keep persisted image fallback.
+      }
+    }
+
+    void loadLiveCovers();
+
+    return () => {
+      controller.abort();
+    };
+  }, [mounted, favoriteItems]);
+
   async function handleSignOut() {
     await supabase.auth.signOut();
     setProfileOpen(false);
@@ -485,7 +516,14 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
     setCategoriesOpen(false);
     setFavoritesOpen(false);
     setSearchQuery("");
+    setProfileOpen(false);
   }
+
+  // Cerrar menús/overlays automáticamente cuando cambie la ruta o los search params
+  useEffect(() => {
+    closeMenus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname, navSearchParams?.toString()]);
 
   async function handleSaveProfile() {
     if (!user?.id || savingProfile) return;
@@ -493,42 +531,47 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
     setSavingProfile(true);
 
     const payload = {
+      id: user.id,
       nombre: profileDraft.nombre.trim(),
       telefono: profileDraft.telefono.trim(),
       direccion: profileDraft.direccion.trim(),
       gender: profileDraft.gender.trim() || null,
-      avatar_url: profileDraft.avatar_url.trim() || null,
     };
 
-    let updateResult = await supabase.from("profiles").update(payload).eq("id", user.id);
+    console.log("[MainNav] Attempting profile save with payload:", payload);
 
-    if (
-      updateResult.error &&
-      (isMissingColumnError(updateResult.error, "gender") || isMissingColumnError(updateResult.error, "avatar_url"))
-    ) {
-      updateResult = await supabase
-        .from("profiles")
-        .update({
-          nombre: payload.nombre,
-          telefono: payload.telefono,
-          direccion: payload.direccion,
-        })
-        .eq("id", user.id);
-    }
+    const upsertResult = await supabase
+      .from("profiles")
+      .upsert(payload, { onConflict: "id" });
 
-    if (!updateResult.error) {
+    console.log("[MainNav] Upsert result:", { 
+      error: upsertResult.error, 
+      data: upsertResult.data,
+      status: upsertResult.status 
+    });
+
+    if (!upsertResult.error) {
+      console.log("[MainNav] Profile saved successfully");
       const updated: ProfileData = {
         nombre: payload.nombre,
         telefono: payload.telefono,
         direccion: payload.direccion,
         gender: String(payload.gender || ""),
-        avatar_url: String(payload.avatar_url || ""),
+        avatar_url: profileData.avatar_url,
       };
       setProfileData(updated);
-      setProfileDraft(updated);
+      setProfileDraft({
+        nombre: payload.nombre,
+        telefono: payload.telefono,
+        direccion: payload.direccion,
+        gender: String(payload.gender || ""),
+        avatar_url: profileData.avatar_url,
+      });
       setEditingProfile(false);
       setProfileOpen(false);
       router.refresh();
+    } else {
+      console.error("[MainNav] Profile save failed:", upsertResult.error);
     }
 
     setSavingProfile(false);
@@ -581,6 +624,8 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
       const cleanName = selectedAvatarFile.name.replace(/\s+/g, "-").toLowerCase();
       const objectPath = `${user.id}/${Date.now()}-${cleanName || `avatar.${extension}`}`;
 
+      console.log("[MainNav] Uploading avatar to storage:", objectPath);
+      
       const upload = await supabase.storage.from(bucketName).upload(objectPath, selectedAvatarFile, {
         upsert: true,
         cacheControl: "3600",
@@ -588,28 +633,39 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
       });
 
       if (upload.error) {
-        return;
+        console.error("[MainNav] Storage upload failed:", upload.error);
+        throw upload.error;
       }
+
+      console.log("[MainNav] Avatar uploaded to storage successfully");
 
       const { data } = supabase.storage.from(bucketName).getPublicUrl(objectPath);
 
       if (!data?.publicUrl) {
-        return;
+        throw new Error("No se pudo generar la URL pública del avatar");
       }
 
       const avatarUrl = data.publicUrl;
-      let saveResult = await supabase.from("profiles").update({ avatar_url: avatarUrl }).eq("id", user.id);
+      console.log("[MainNav] Attempting to save avatar URL:", avatarUrl);
+      
+      const saveResult = await supabase.from("profiles").upsert(
+        { id: user.id, avatar_url: avatarUrl },
+        { onConflict: "id" }
+      );
 
-      if (saveResult.error && isMissingColumnError(saveResult.error, "avatar_url")) {
-        saveResult = await supabase.from("profiles").update({}).eq("id", user.id);
-      }
+      console.log("[MainNav] Upsert result:", { 
+        error: saveResult.error, 
+        data: saveResult.data,
+        status: saveResult.status 
+      });
 
       if (saveResult.error) {
+        console.error("[MainNav] Avatar save failed:", saveResult.error);
         throw saveResult.error;
       }
 
+      console.log("[MainNav] Avatar saved successfully to database");
       setProfileData((prev) => ({ ...prev, avatar_url: avatarUrl }));
-      setProfileDraft((prev) => ({ ...prev, avatar_url: avatarUrl }));
       setSelectedAvatarFile(null);
       if (avatarPreview) {
         URL.revokeObjectURL(avatarPreview);
@@ -618,6 +674,9 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
       setEditingProfile(false);
       setProfileOpen(false);
       router.refresh();
+    } catch (error) {
+      console.error("[MainNav] Avatar upload/save error:", error);
+      // Aquí podrías mostrar un toast de error si tienes acceso a notify
     } finally {
       setUploadingAvatar(false);
     }
@@ -628,7 +687,7 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
       <header className="mb-5">
         <div className="glass-card rounded-[28px] border border-white/40 bg-white/90 px-4 py-4 shadow-[0_18px_55px_rgba(110,71,49,0.08)] backdrop-blur-xl md:px-5 lg:px-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <Link href="/admin" className="inline-flex items-center">
+            <Link href="/admin" className="inline-flex items-center" onClick={closeMenus}>
               {logoError ? (
                 <span className="font-[var(--font-display)] text-2xl text-primary">AMYSA</span>
               ) : (
@@ -744,12 +803,6 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
                             <option value="masculino">Masculino</option>
                             <option value="femenino">Femenino</option>
                           </select>
-                          <input
-                            value={profileDraft.avatar_url}
-                            onChange={(event) => setProfileDraft((prev) => ({ ...prev, avatar_url: event.target.value }))}
-                            placeholder="URL foto de perfil"
-                            className="h-10 rounded-xl border border-input bg-white px-3 text-sm"
-                          />
                           <input type="file" accept="image/*" onChange={handleAvatarFileChange} className="block w-full text-xs" />
                           <Button
                             type="button"
@@ -899,7 +952,7 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
       <div className="glass-card relative z-[130] overflow-visible rounded-[28px] border border-white/40 bg-[linear-gradient(135deg,rgba(255,255,255,0.88),rgba(255,248,242,0.9))] px-4 py-4 shadow-[0_18px_55px_rgba(110,71,49,0.08)] backdrop-blur-xl md:px-5 lg:px-6">
         <div className="flex flex-col gap-0 lg:gap-4 lg:flex-row lg:items-center lg:justify-between xl:flex-row xl:items-center xl:justify-between">
           <div className="flex flex-col items-center gap-3 xl:flex-row xl:items-center">
-            <Link href="/" className="inline-flex items-center justify-center">
+            <Link href="/" className="inline-flex items-center justify-center" onClick={closeMenus}>
               {logoError ? (
                 <span className="font-[var(--font-display)] text-2xl text-primary">AMYSA</span>
               ) : (
@@ -997,7 +1050,7 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
                             onClick={closeMenus}
                           >
                             <Image
-                              src={item.image || DEFAULT_PRODUCT_IMAGE}
+                              src={liveCoverById[item.productId] || item.image || DEFAULT_PRODUCT_IMAGE}
                               alt={item.name}
                               width={56}
                               height={56}
@@ -1214,6 +1267,7 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
                 className={`flex flex-col items-center justify-center gap-1 rounded-xl py-1 text-[10px] font-semibold transition ${
                   isActive ? "bg-primary/15 text-primary" : "text-foreground/80 hover:bg-primary/10 hover:text-primary"
                 }`}
+                onClick={closeMenus}
               >
                 <div className="relative">
                   <Icon className="size-4" />
@@ -1295,12 +1349,6 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
                           <option value="masculino">Masculino</option>
                           <option value="femenino">Femenino</option>
                         </select>
-                        <input
-                          value={profileDraft.avatar_url}
-                          onChange={(event) => setProfileDraft((prev) => ({ ...prev, avatar_url: event.target.value }))}
-                          placeholder="URL foto de perfil"
-                          className="h-10 rounded-xl border border-input bg-white px-3 text-sm"
-                        />
                         <input type="file" accept="image/*" onChange={handleAvatarFileChange} className="block w-full text-xs" />
                         <Button
                           type="button"

@@ -5,13 +5,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useRegisteredTaxonomies } from "@/lib/use-registered-taxonomies";
 
 export type InventoryEditItem = {
   id: string;
   name: string;
-  gender?: string;
-  ageGroup?: string;
   category: string;
   stock: number;
   cost: number;
@@ -23,7 +20,6 @@ export type InventoryEditItem = {
 
 type Props = {
   item: InventoryEditItem | null;
-  categoryOptions: string[];
   updateInventoryAction: (formData: FormData) => Promise<void>;
   onClose: () => void;
 };
@@ -43,16 +39,12 @@ function calculateSalePrice(item: Pick<InventoryEditItem, "cost" | "operating_co
   return Number((totalCost / divisor).toFixed(2));
 }
 
-export function InventoryEditModal({ item, categoryOptions, updateInventoryAction, onClose }: Props) {
+export function InventoryEditModal({ item, updateInventoryAction, onClose }: Props) {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [notification, setNotification] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [formState, setFormState] = useState({
-    name: item?.name || "",
-    gender: item?.gender || "",
-    ageGroup: item?.ageGroup || "",
-    category: item?.category || "",
     stock: String(item?.stock ?? 0),
     cost: String(item?.cost ?? 0),
     operating_cost: String(item?.operating_cost ?? 0),
@@ -60,7 +52,6 @@ export function InventoryEditModal({ item, categoryOptions, updateInventoryActio
     priceBefore: item?.priceBefore == null ? "" : String(item.priceBefore),
     active: Boolean(item?.active),
   });
-  const { genderOptions, ageGroupOptions } = useRegisteredTaxonomies();
 
   useEffect(() => {
     setMounted(true);
@@ -70,10 +61,6 @@ export function InventoryEditModal({ item, categoryOptions, updateInventoryActio
   useEffect(() => {
     if (!item) return;
     setFormState({
-      name: item.name || "",
-      gender: item.gender || "",
-      ageGroup: item.ageGroup || "",
-      category: item.category || "",
       stock: String(item.stock ?? 0),
       cost: String(item.cost ?? 0),
       operating_cost: String(item.operating_cost ?? 0),
@@ -102,10 +89,6 @@ export function InventoryEditModal({ item, categoryOptions, updateInventoryActio
     try {
       const formData = new FormData();
       formData.set("productId", item.id);
-      formData.set("name", formState.name);
-      formData.set("gender", formState.gender);
-      formData.set("ageGroup", formState.ageGroup);
-      formData.set("category", formState.category);
       formData.set("stock", formState.stock);
       formData.set("cost", formState.cost);
       formData.set("operating_cost", formState.operating_cost);
@@ -153,7 +136,7 @@ export function InventoryEditModal({ item, categoryOptions, updateInventoryActio
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-black/60">Registro</p>
             <h2 className="font-[var(--font-display)] text-3xl text-black">Editar inventario</h2>
-            <p className="text-sm text-black/60">Ajusta datos del producto, género, categoría y métricas de costo.</p>
+            <p className="text-sm text-black/60">Ajusta stock y precios sin modificar la ficha base del producto.</p>
           </div>
           <Button variant="ghost" size="icon" type="button" onClick={onClose} disabled={loading} aria-label="Cerrar modal">
             <X className="size-5" />
@@ -161,65 +144,12 @@ export function InventoryEditModal({ item, categoryOptions, updateInventoryActio
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid gap-3 md:grid-cols-2">
-            <div>
-              <label className="mb-1 block text-xs font-semibold text-black">Nombre</label>
-              <input
-                name="name"
-                value={formState.name}
-                onChange={(event) => setFormState((prev) => ({ ...prev, name: event.target.value }))}
-                className="w-full h-10 rounded-lg border border-[#e3d7cd] bg-white/95 px-3 text-sm text-black placeholder-black/40 focus:outline-none focus:ring-2 focus:ring-primary/25"
-                required
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-semibold text-black">Género</label>
-              <select
-                name="gender"
-                value={formState.gender}
-                onChange={(event) => setFormState((prev) => ({ ...prev, gender: event.target.value }))}
-                className="w-full h-10 rounded-lg border border-[#e3d7cd] bg-white/95 px-3 text-sm text-black placeholder-black/40 focus:outline-none focus:ring-2 focus:ring-primary/25"
-              >
-                <option value="">Seleccionar género</option>
-                {genderOptions.map((g) => (
-                  <option key={g} value={g.toLowerCase()}>{g}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-semibold text-black">Edad</label>
-              <select
-                name="ageGroup"
-                value={formState.ageGroup}
-                onChange={(event) => setFormState((prev) => ({ ...prev, ageGroup: event.target.value }))}
-                className="w-full h-10 rounded-lg border border-[#e3d7cd] bg-white/95 px-3 text-sm text-black placeholder-black/40 focus:outline-none focus:ring-2 focus:ring-primary/25"
-              >
-                <option value="">Seleccionar edad</option>
-                {ageGroupOptions.map((a) => (
-                  <option key={a} value={a.toLowerCase()}>{a}</option>
-                ))}
-              </select>
-            </div>
+          <div className="grid gap-3 rounded-2xl border border-[#e3d7cd] bg-white/80 p-4 text-sm md:grid-cols-2">
+            <p><span className="font-semibold">Producto:</span> {item.name}</p>
+            <p><span className="font-semibold">Categoría:</span> {item.category || "Sin categoría"}</p>
           </div>
 
           <div className="grid gap-3 md:grid-cols-2">
-            <div>
-              <label className="mb-1 block text-xs font-semibold text-black">Categoría</label>
-              <select
-                name="category"
-                value={formState.category}
-                onChange={(event) => setFormState((prev) => ({ ...prev, category: event.target.value }))}
-                className="w-full h-10 rounded-lg border border-[#e3d7cd] bg-white/95 px-3 text-sm text-black placeholder-black/40 focus:outline-none focus:ring-2 focus:ring-primary/25"
-                required
-              >
-                <option value="">Seleccionar categoría</option>
-                {categoryOptions.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
-            </div>
             <div>
               <label className="mb-1 block text-xs font-semibold text-black">Stock</label>
               <input

@@ -1,16 +1,13 @@
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { InventoryTable } from "../../../components/admin/inventory-table";
-import { InventoryCreateModal } from "../../../components/admin/inventory-create-modal";
-import { InventoryImportModal } from "../../../components/admin/inventory-import-modal";
 import { requireAdminUser } from "@/lib/admin";
-import { canonicalizeBrandName } from "@/lib/brands";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 
 export const metadata = {
   title: "Gestión de Inventario | Admin",
-  description: "Gestiona los costos y márgenes de ganancia de tu inventario",
+  description: "Gestiona stock y precios de tus productos",
 };
 
 type InventoryRow = {
@@ -204,42 +201,23 @@ async function updateInventoryAction(formData: FormData) {
   const productId = String(formData.get("productId") || "").trim();
   if (!productId) return;
 
-  const name = String(formData.get("name") || "").trim();
-  const gender = normalizeProductGender(formData.get("gender"));
-  const ageGroup = normalizeProductAgeGroup(formData.get("ageGroup"));
-  const categoryName = String(formData.get("category") || "").trim();
   const active = ["true", "on", "1"].includes(String(formData.get("active") || "").trim().toLowerCase());
-
-  const toNumber = (value: FormDataEntryValue | null, fallback = 0) => {
-    const normalized = String(value || "").trim().replace(",", ".");
-    const parsed = Number(normalized);
-    return Number.isFinite(parsed) ? parsed : fallback;
-  };
+  const stock = Math.max(0, Math.trunc(toNumber(formData.get("stock"), 0)));
+  const cost = Math.max(0, toNumber(formData.get("cost"), 0));
+  const operatingCost = Math.max(0, toNumber(formData.get("operating_cost"), 0));
+  const profitMargin = Math.max(0, toNumber(formData.get("profit_margin"), 0));
 
   const db = createServiceRoleClient();
   if (!db) {
     throw new Error("Falta configurar SUPABASE_SECRET_KEY o SUPABASE_SERVICE_ROLE_KEY.");
   }
 
-  if (!name || !categoryName) {
-    throw new Error("Completa nombre y categoría del producto.");
-  }
-
-  const categoryId = await resolveCategoryId(db, categoryName);
-  if (!categoryId) {
-    throw new Error("No se pudo resolver la categoría seleccionada.");
-  }
-
   const payload = {
-    name,
-    gender,
-    age_group: ageGroup,
-    category_id: categoryId,
     active,
-    stock: Math.max(0, Math.trunc(toNumber(formData.get("stock"), 0))),
-    cost: Math.max(0, toNumber(formData.get("cost"), 0)),
-    operating_cost: Math.max(0, toNumber(formData.get("operating_cost"), 0)),
-    profit_margin: Math.max(0, toNumber(formData.get("profit_margin"), 0)),
+    stock,
+    cost,
+    operating_cost: operatingCost,
+    profit_margin: profitMargin,
     price_before: (() => {
       const raw = String(formData.get("price_before") || "").trim();
       if (!raw) return null;
@@ -257,10 +235,6 @@ async function updateInventoryAction(formData: FormData) {
   let result = await db
     .from("products")
     .update({
-      name: payload.name,
-      gender: payload.gender,
-      age_group: payload.age_group,
-      category_id: payload.category_id,
       active: payload.active,
       stock: payload.stock,
       cost: payload.cost,
@@ -275,10 +249,6 @@ async function updateInventoryAction(formData: FormData) {
     result = await db
       .from("products")
       .update({
-        name: payload.name,
-        gender: payload.gender,
-        age_group: payload.age_group,
-        category_id: payload.category_id,
         active: payload.active,
         stock: payload.stock,
         cost: payload.cost,
@@ -294,290 +264,6 @@ async function updateInventoryAction(formData: FormData) {
   }
 
   revalidatePath("/admin/inventario");
-}
-
-async function cloneInventoryItemAction(formData: FormData) {
-  "use server";
-
-  await requireAdminUser("inventory.manage");
-
-  const db = createServiceRoleClient();
-  if (!db) {
-    throw new Error("Falta configurar SUPABASE_SECRET_KEY o SUPABASE_SERVICE_ROLE_KEY.");
-  }
-
-  const productId = String(formData.get("productId") || "").trim();
-  if (!productId) {
-    throw new Error("Producto inválido para clonar.");
-  }
-
-  const { data: source, error: sourceError } = await db
-    .from("products")
-    .select("name,gender,age_group,category_id,images,designation,cost,operating_cost,profit_margin,price,price_before,stock,active,brand")
-    .eq("id", productId)
-    .maybeSingle();
-
-  if (sourceError || !source) {
-    throw new Error(sourceError?.message || "No se pudo encontrar el producto a clonar.");
-  }
-
-  const { count: productCount } = await db
-    .from("products")
-    .select("id", { count: "exact", head: true });
-
-  const nextSku = `AS${String((productCount || 0) + 1).padStart(6, "0")}`;
-
-  const clonePayload = {
-    name: `${String((source as { name?: string | null }).name || "Producto")} (Clon)`,
-    gender: (source as { gender?: string | null }).gender || null,
-    age_group: (source as { age_group?: string | null }).age_group || null,
-    category_id: (source as { category_id?: string | null }).category_id || null,
-    brand: canonicalizeBrandName(String((source as { brand?: string | null }).brand || "")) || String((source as { brand?: string | null }).brand || "") || null,
-    code: nextSku,
-    sku: nextSku,
-    images: Array.isArray((source as { images?: string[] | null }).images)
-      ? (source as { images?: string[] | null }).images
-      : [],
-    designation: String((source as { designation?: string | null }).designation || ""),
-    cost: Number((source as { cost?: number | null }).cost) || 0,
-    operating_cost: Number((source as { operating_cost?: number | null }).operating_cost) || 0,
-    profit_margin: Number((source as { profit_margin?: number | null }).profit_margin) || 0,
-    price: Number((source as { price?: number | null }).price) || 0,
-    price_before: (source as { price_before?: number | null }).price_before || null,
-    stock: Number((source as { stock?: number | null }).stock) || 0,
-    active: Boolean((source as { active?: boolean | null }).active),
-  };
-
-  let result = await db.from("products").insert(clonePayload);
-
-  if (result.error && isMissingColumnError(result.error, "price_before")) {
-    const { price_before: _omit, ...withoutPriceBefore } = clonePayload;
-    result = await db.from("products").insert(withoutPriceBefore);
-  }
-
-  if (result.error) {
-    throw new Error(result.error.message || "No se pudo clonar el producto.");
-  }
-
-  revalidatePath("/admin/inventario");
-}
-
-async function deleteInventoryItemAction(formData: FormData) {
-  "use server";
-
-  await requireAdminUser("inventory.manage");
-
-  const db = createServiceRoleClient();
-  if (!db) {
-    throw new Error("Falta configurar SUPABASE_SECRET_KEY o SUPABASE_SERVICE_ROLE_KEY.");
-  }
-
-  const productId = String(formData.get("productId") || "").trim();
-  if (!productId) {
-    throw new Error("Producto inválido para eliminar.");
-  }
-
-  const { error } = await db.from("products").delete().eq("id", productId);
-  if (error) {
-    throw new Error(error.message || "No se pudo eliminar el producto.");
-  }
-
-  revalidatePath("/admin/inventario");
-}
-
-async function createProductAction(formData: FormData) {
-  "use server";
-
-  await requireAdminUser("inventory.manage");
-
-  const toNumber = (value: FormDataEntryValue | null, fallback = 0) => {
-    const normalized = String(value || "").trim().replace(",", ".");
-    const parsed = Number(normalized);
-    return Number.isFinite(parsed) ? parsed : fallback;
-  };
-
-  const db = createServiceRoleClient();
-  if (!db) {
-    throw new Error("Falta configurar SUPABASE_SECRET_KEY o SUPABASE_SERVICE_ROLE_KEY.");
-  }
-
-  const name = String(formData.get("name") || "").trim();
-  const gender = normalizeProductGender(formData.get("gender"));
-  const ageGroup = normalizeProductAgeGroup(formData.get("ageGroup"));
-  const categoryId = String(formData.get("categoryId") || "").trim();
-  const image = String(formData.get("image") || "").trim();
-  const number = String(formData.get("number") || "").trim();
-  const brandRaw = String(formData.get("brand") || "").trim();
-  const brand = canonicalizeBrandName(brandRaw) || brandRaw || null;
-
-  const cost = Math.max(0, toNumber(formData.get("cost"), 0));
-  const operating_cost = Math.max(0, toNumber(formData.get("operating_cost"), 0));
-  const profit_margin = Math.max(0, toNumber(formData.get("profit_margin"), 0));
-  const price_before = (() => {
-    const raw = String(formData.get("price_before") || "").trim();
-    if (!raw) return null;
-    const parsed = Number(raw.replace(",", "."));
-    return Number.isFinite(parsed) ? Math.max(0, parsed) : null;
-  })();
-
-  if (!name) {
-    redirect("/admin/inventario?error=Nombre+de+producto+requerido");
-  }
-
-  // Generar SKU automático basado en el orden de registro
-  const { count: productCount } = await db
-    .from("products")
-    .select("id", { count: "exact", head: true });
-
-  const nextSku = `AS${String((productCount || 0) + 1).padStart(6, "0")}`;
-
-  // Calcular precio venta
-  const totalBaseCost = cost + operating_cost;
-  const normalizedMargin = profit_margin >= 1 ? profit_margin / 100 : profit_margin;
-  const divisor = 1 - normalizedMargin;
-  const computedFinalPrice = divisor > 0 && normalizedMargin < 1 ? totalBaseCost / divisor : totalBaseCost;
-  const price = Number(Math.max(0, computedFinalPrice).toFixed(2));
-
-  const images = image ? [image] : [];
-
-  const { error } = await db.from("products").insert({
-    name,
-    gender,
-    age_group: ageGroup,
-    category_id: categoryId || null,
-    brand,
-    code: nextSku,
-    sku: nextSku,
-    images,
-    designation: number,
-    cost,
-    operating_cost,
-    profit_margin,
-    price,
-    price_before,
-    stock: 0,
-    active: true,
-  });
-
-  if (error) {
-    redirect(`/admin/inventario?error=${encodeURIComponent(error.message)}`);
-  }
-
-  revalidatePath("/admin/inventario");
-  redirect("/admin/inventario?ok=Producto+creado+correctamente");
-}
-
-async function importInventoryAction(formData: FormData) {
-  "use server";
-
-  await requireAdminUser("inventory.manage");
-
-  const db = createServiceRoleClient();
-  if (!db) {
-    throw new Error("Falta configurar SUPABASE_SECRET_KEY o SUPABASE_SERVICE_ROLE_KEY.");
-  }
-
-  const csvFile = formData.get("csvFile");
-  if (!(csvFile instanceof File) || csvFile.size === 0) {
-    throw new Error("Selecciona un archivo CSV válido");
-  }
-
-  const content = (await csvFile.text()).replace(/^\uFEFF/, "");
-  const lines = content
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
-
-  if (lines.length < 2) {
-    throw new Error("El CSV debe tener encabezados y al menos una fila");
-  }
-
-  const delimiter = (lines[0].match(/;/g) || []).length > (lines[0].match(/,/g) || []).length ? ";" : ",";
-  const headers = parseCsvLine(lines[0], delimiter).map((header) => normalizeKey(header));
-
-  const { count: existingCount } = await db
-    .from("products")
-    .select("id", { count: "exact", head: true });
-
-  let skuSequence = (existingCount || 0) + 1;
-  const errors: string[] = [];
-  let imported = 0;
-
-  for (let lineIndex = 1; lineIndex < lines.length; lineIndex += 1) {
-    const values = parseCsvLine(lines[lineIndex], delimiter);
-    const row = headers.reduce<Record<string, string>>((acc, header, index) => {
-      acc[header] = String(values[index] || "").trim();
-      return acc;
-    }, {});
-
-    const name = findCell(row, ["nombre", "name"]);
-    const gender = normalizeProductGender(findCell(row, ["genero", "género", "gender", "sexo"]));
-    const ageGroup = normalizeProductAgeGroup(findCell(row, ["edad", "age", "age_group", "agegroup", "grupo_edad", "grupoedad"]));
-    const categoryName = findCell(row, ["categoria", "category"]);
-    const brandName = findCell(row, ["marca", "brand"]);
-    const stock = toNumber(findCell(row, ["stock"]), 0);
-    const cost = toNumber(findCell(row, ["precio_costo", "costo", "cost"]), 0);
-    const operatingCost = toNumber(findCell(row, ["costo_operativo", "operating_cost", "operatingcost"]), 0);
-    const profitMargin = toNumber(findCell(row, ["margen", "profit_margin", "margen_ganancia"]), 0);
-    const priceBeforeRaw = findCell(row, ["precio_sugerido", "precio_anterior", "price_before"]);
-    const priceBefore = priceBeforeRaw ? toNumber(priceBeforeRaw, 0) : null;
-    const image = findCell(row, ["imagen", "image", "images"]);
-    const active = toBoolean(findCell(row, ["activo", "active", "visible"]), true);
-
-    if (!name || !categoryName || stock < 0) {
-      errors.push(`Fila ${lineIndex + 1}: faltan campos obligatorios (nombre, categoria, stock).`);
-      continue;
-    }
-
-    const categoryResult = await db.from("categories").select("id").ilike("name", categoryName).maybeSingle();
-    const categoryId = categoryResult.data?.id;
-
-    if (!categoryId) {
-      errors.push(`Fila ${lineIndex + 1}: no se pudo resolver la categoria '${categoryName}'.`);
-      continue;
-    }
-
-    const nextSku = `AS${String(skuSequence).padStart(6, "0")}`;
-    skuSequence += 1;
-
-    const totalBaseCost = cost + operatingCost;
-    const normalizedMargin = profitMargin >= 1 ? profitMargin / 100 : profitMargin;
-    const divisor = 1 - normalizedMargin;
-    const salePrice = divisor > 0 && normalizedMargin < 1 ? totalBaseCost / divisor : totalBaseCost;
-
-    const { error } = await db.from("products").insert({
-      name,
-      gender,
-      age_group: ageGroup,
-      category_id: categoryId,
-      brand: canonicalizeBrandName(String(brandName || "").trim()) || String(brandName || "").trim() || null,
-      code: nextSku,
-      sku: nextSku,
-      stock,
-      cost,
-      operating_cost: operatingCost,
-      profit_margin: profitMargin,
-      price: Number(Math.max(0, salePrice).toFixed(2)),
-      price_before: priceBefore,
-      images: image ? [image] : [],
-      active: active && stock > 0,
-    });
-
-    if (error) {
-      errors.push(`Fila ${lineIndex + 1}: ${error.message}`);
-      continue;
-    }
-
-    imported += 1;
-  }
-
-  revalidatePath("/admin/inventario");
-
-  if (imported === 0 && errors.length > 0) {
-    throw new Error(`Se importaron ${imported} productos. Errores: ${errors.slice(0, 5).join(" | ")}`);
-  }
-
-  redirect("/admin/inventario?ok=Importaci%C3%B3n+completada+correctamente");
 }
 
 export default async function InventarioPage({ searchParams }: { searchParams?: { page?: string } }) {
@@ -651,7 +337,7 @@ export default async function InventarioPage({ searchParams }: { searchParams?: 
     name: String(product.name || ""),
     gender: String((product as { gender?: string | null }).gender || "") || undefined,
     ageGroup: String((product as { age_group?: string | null }).age_group || "") || undefined,
-    brand: canonicalizeBrandName(String((product as { brand?: string | null }).brand || "")) || String((product as { brand?: string | null }).brand || "") || undefined,
+    brand: String((product as { brand?: string | null }).brand || "") || undefined,
     category: String(
       (product as { categories?: { name?: string | null } | Array<{ name?: string | null }> | null }).categories &&
         Array.isArray((product as { categories?: { name?: string | null } | Array<{ name?: string | null }> | null }).categories)
@@ -677,12 +363,16 @@ export default async function InventarioPage({ searchParams }: { searchParams?: 
           <div>
             <h1 className="font-[var(--font-display)] text-3xl">Gestión de Inventario</h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              Administra costos, márgenes de ganancia y stock de tus productos.
+              Administra stock, costos y precios de tus productos.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <InventoryImportModal importInventoryAction={importInventoryAction} />
-            <InventoryCreateModal categories={categories} createProductAction={createProductAction} />
+            <Link
+              href="/admin/productos"
+              className="inline-flex h-10 items-center justify-center rounded-md border border-input bg-background px-4 text-sm font-medium text-foreground transition hover:bg-accent hover:text-accent-foreground"
+            >
+              Agregar nuevo producto
+            </Link>
           </div>
         </div>
       </div>
@@ -699,7 +389,6 @@ export default async function InventarioPage({ searchParams }: { searchParams?: 
             rows={rows}
             categoryOptions={uniqueLabels(categories.map((category) => category.name).filter(Boolean))}
             updateInventoryAction={updateInventoryAction}
-            deleteInventoryItemAction={deleteInventoryItemAction}
             currentPage={page}
             pageSize={pageSize}
             totalCount={totalCount}

@@ -86,6 +86,7 @@ function mapNavProduct(product: Product): NavProduct {
     images: product.images,
     category: product.category,
     brand: product.brand,
+    gender: product.gender,
     
   };
 }
@@ -114,7 +115,7 @@ function uniqueLabels(values: string[]) {
   return Array.from(seen.values()).sort((a, b) => a.localeCompare(b, "es"));
 }
 
-export const getActiveProducts = cache(async (): Promise<Product[]> => {
+export async function getActiveProducts(): Promise<Product[]> {
   const supabase = createClient();
   let result: {
     data: Array<Record<string, unknown>> | null;
@@ -142,13 +143,13 @@ export const getActiveProducts = cache(async (): Promise<Product[]> => {
   }
 
   return (data as ProductRow[]).map(mapProductRow);
-});
+}
 
-export const getActiveProductsForNav = cache(async (): Promise<NavProduct[]> => {
+export async function getActiveProductsForNav(): Promise<NavProduct[]> {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("products")
-    .select("id,name,description,price,images,brand,categories(name)")
+    .select("id,name,description,price,images,brand,gender,categories(name)")
     .eq("active", true)
     .gt("stock", 0)
     .order("created_at", { ascending: false });
@@ -158,9 +159,9 @@ export const getActiveProductsForNav = cache(async (): Promise<NavProduct[]> => 
   }
 
   return (data as ProductRow[]).map(mapProductRow).map(mapNavProduct);
-});
+}
 
-export const getRegisteredCategories = cache(async (): Promise<string[]> => {
+export async function getRegisteredCategories(): Promise<string[]> {
   const supabase = createClient();
   const { data, error } = await supabase.from("categories").select("id,name").order("name", { ascending: true });
 
@@ -175,7 +176,7 @@ export const getRegisteredCategories = cache(async (): Promise<string[]> => {
   }
 
   return uniqueLabels(productSamples.map((item) => item.category).filter(Boolean));
-});
+}
 
 export async function getProductsPage(
   page = 1,

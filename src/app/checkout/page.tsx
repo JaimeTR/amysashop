@@ -446,8 +446,8 @@ export default function CheckoutPage() {
 
   if (items.length === 0) {
     return (
-      <main className="space-y-4 pb-8">
-        <h1 className="font-[var(--font-display)] text-3xl">Checkout</h1>
+      <main className="space-y-4 pb-10">
+        <h1 className="font-[var(--font-display)] text-center text-3xl md:text-left">Checkout</h1>
         <p className="text-sm text-muted-foreground">Tu carrito está vacío. Agrega productos para continuar.</p>
         <Button asChild>
           <Link href="/tienda">Ir a tienda</Link>
@@ -457,31 +457,31 @@ export default function CheckoutPage() {
   }
 
   return (
-    <main className="space-y-5 pb-8">
-      <header className="glass-card rounded-3xl p-5">
+    <main className="space-y-5 pb-10">
+      <header className="glass-card rounded-3xl p-5 text-center lg:text-left">
         <h1 className="font-[var(--font-display)] text-3xl">Checkout</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
+        <p className="mx-auto mt-2 max-w-xl text-sm text-muted-foreground lg:mx-0">
           Completa tus datos y confirma tu pedido por WhatsApp. Sin pasarela automática por el momento.
         </p>
       </header>
 
-      <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
-        <section className="glass-card rounded-2xl p-4">
-          <h2 className="mb-3 font-semibold">Datos del cliente</h2>
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
+        <section className="glass-card rounded-3xl p-4 sm:p-5">
+          <h2 className="mb-3 text-center font-semibold lg:text-left">Datos del cliente</h2>
           <form id="checkout-form" className="space-y-3" onSubmit={handleSubmit}>
             <div className="grid gap-3 md:grid-cols-2">
               <input
                 value={name}
                 onChange={(event) => setName(event.target.value)}
                 placeholder="Nombre completo"
-                className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                className="h-11 rounded-xl border border-input bg-background px-3 text-sm"
                 required
               />
-              <div className="grid grid-cols-[112px_1fr] gap-2">
+              <div className="grid gap-2 sm:grid-cols-[112px_1fr]">
                 <select
                   value={documentType}
                   onChange={(event) => setDocumentType(event.target.value)}
-                  className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                  className="h-11 rounded-xl border border-input bg-background px-3 text-sm"
                   required
                 >
                   {documentTypeOptions.map((option) => (
@@ -494,7 +494,7 @@ export default function CheckoutPage() {
                   value={documentNumber}
                   onChange={(event) => setDocumentNumber(event.target.value)}
                   placeholder="Número de documento"
-                  className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                  className="h-11 rounded-xl border border-input bg-background px-3 text-sm"
                   required
                 />
               </div>
@@ -506,14 +506,14 @@ export default function CheckoutPage() {
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 placeholder="Correo"
-                className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                className="h-11 rounded-xl border border-input bg-background px-3 text-sm"
                 required
               />
               <input
                 value={phone}
                 onChange={(event) => setPhone(event.target.value)}
                 placeholder="Teléfono"
-                className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                className="h-11 rounded-xl border border-input bg-background px-3 text-sm"
                 required
               />
             </div>
@@ -529,7 +529,7 @@ export default function CheckoutPage() {
                     setPaymentReference("");
                   }
                 }}
-                className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                className="h-11 rounded-xl border border-input bg-background px-3 text-sm"
               >
                 {deliveryOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -546,7 +546,7 @@ export default function CheckoutPage() {
                     setPaymentConfirmed(false);
                     setPaymentReference("");
                   }}
-                  className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                  className="h-11 rounded-xl border border-input bg-background px-3 text-sm"
                 >
                   {paymentOptions.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -555,18 +555,18 @@ export default function CheckoutPage() {
                   ))}
                 </select>
               ) : (
-                <div className="flex h-10 items-center rounded-md border border-input bg-muted/30 px-3 text-sm text-muted-foreground">
+                <div className="flex h-11 items-center rounded-xl border border-input bg-muted/30 px-3 text-sm text-muted-foreground">
                   Metodo de pago: A coordinar con AMYSA
                 </div>
               )}
             </div>
 
             {isShippingDelivery && (
-              <div className="space-y-2 rounded-xl border border-input/70 bg-white/70 p-3">
-                <p className="text-sm font-medium">Pasarela de pago manual</p>
+              <div className="space-y-3 rounded-2xl border border-input/70 bg-white/70 p-3 sm:p-4">
+                <p className="text-center text-sm font-medium lg:text-left">Pasarela de pago manual</p>
 
                 {(paymentMethod === "yape" || paymentMethod === "plin") && (
-                  <div className="space-y-2">
+                  <div className="space-y-2 text-center lg:text-left">
                     <p className="text-xs text-muted-foreground">
                       Escanea el QR de {paymentMethodLabel(paymentMethod)} para pagar. Luego marca &quot;Confirmar pago&quot;.
                     </p>
@@ -577,10 +577,10 @@ export default function CheckoutPage() {
                         width={192}
                         height={192}
                         unoptimized
-                        className="h-48 w-48 rounded-xl border bg-white object-cover"
+                        className="mx-auto h-44 w-44 rounded-2xl border bg-white object-cover"
                       />
                     ) : (
-                      <div className="rounded-lg border border-dashed border-input p-3 text-xs text-muted-foreground">
+                      <div className="rounded-xl border border-dashed border-input p-3 text-xs text-muted-foreground">
                         QR no configurado. Define {paymentMethod === "yape" ? "NEXT_PUBLIC_YAPE_QR_URL" : "NEXT_PUBLIC_PLIN_QR_URL"}.
                       </div>
                     )}
@@ -592,7 +592,7 @@ export default function CheckoutPage() {
                     <p className="text-xs text-muted-foreground">Bancos disponibles para transferencia:</p>
                     <ul className="space-y-2 text-xs">
                       {transferBanks.map((bank) => (
-                        <li key={bank.bank} className="rounded-lg border border-input bg-background p-2">
+                        <li key={bank.bank} className="rounded-xl border border-input bg-background p-3">
                           <p className="font-semibold">{bank.bank}</p>
                           <p>Cuenta: {bank.account}</p>
                           <p>CCI: {bank.cci}</p>
@@ -616,7 +616,7 @@ export default function CheckoutPage() {
                     value={paymentReference}
                     onChange={(event) => setPaymentReference(event.target.value)}
                     placeholder="Nro. de operación o referencia"
-                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm"
                   />
                 )}
               </div>
@@ -653,7 +653,7 @@ export default function CheckoutPage() {
               value={address}
               onChange={(event) => setAddress(event.target.value)}
               placeholder={deliveryMethod === "pickup_lima_points" ? "Referencia para coordinar (opcional)" : "Dirección de entrega"}
-              className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+              className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm"
               required={deliveryMethod !== "pickup_lima_points"}
             />
 
@@ -666,19 +666,19 @@ export default function CheckoutPage() {
               onChange={(event) => setNote(event.target.value)}
               rows={3}
               placeholder="Nota del pedido (opcional)"
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm"
             />
 
-            <div className="flex flex-wrap gap-2">
-              <Button type="button" variant="outline" asChild>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button type="button" variant="outline" asChild className="w-full sm:w-auto">
                 <Link href="/carrito">Volver al carrito</Link>
               </Button>
             </div>
           </form>
         </section>
 
-        <section className="glass-card rounded-2xl p-4">
-          <h2 className="mb-3 font-semibold">Resumen</h2>
+        <section className="glass-card rounded-3xl p-4 sm:p-5 lg:sticky lg:top-4 lg:self-start">
+          <h2 className="mb-3 text-center font-semibold lg:text-left">Resumen</h2>
           <div className="space-y-3">
             {items.map((item) => (
               <article
@@ -695,44 +695,40 @@ export default function CheckoutPage() {
 
                   return (
                     <div className="flex gap-3">
-                  <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border bg-muted">
-                    <Image
-                      src={item.image || DEFAULT_PRODUCT_IMAGE}
-                      alt={item.name}
-                      fill
-                      sizes="80px"
-                      className="object-cover"
-                    />
-                  </div>
-
-                  <div className="min-w-0 flex-1 space-y-1 pr-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="truncate font-semibold text-foreground">{item.name}</p>
-                        {item.variantLabel ? <p className="text-xs text-muted-foreground">Tipo: {item.variantLabel}</p> : null}
+                      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border bg-muted">
+                        <Image
+                          src={item.image || DEFAULT_PRODUCT_IMAGE}
+                          alt={item.name}
+                          fill
+                          sizes="80px"
+                          className="object-cover"
+                        />
                       </div>
-                      <div className="shrink-0 text-right text-xs">
-                        {unitBasePrice > item.price ? <p className="text-muted-foreground line-through">Antes: S/ {unitBasePrice.toFixed(2)}</p> : null}
-                        <p className="font-semibold text-foreground">Precio: S/ {item.price.toFixed(2)}</p>
-                        <p className="text-muted-foreground">Subtotal: S/ {itemSubtotal.toFixed(2)}</p>
-                        {/** Se elimina la visualización del descuento por precio a nivel de producto para simplificar la UI */}
-                        {/* itemProductDiscount ocultado intencionalmente */}
-                        {itemCouponDiscount > 0 ? <p className="text-emerald-700">Desc. cupón: - S/ {itemCouponDiscount.toFixed(2)}</p> : null}
-                        <p className="font-semibold text-primary">Total: S/ {itemTotal.toFixed(2)}</p>
+
+                      <div className="min-w-0 flex-1 space-y-1 pr-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="truncate font-semibold text-foreground">{item.name}</p>
+                            {item.variantLabel ? <p className="text-xs text-muted-foreground">Tipo: {item.variantLabel}</p> : null}
+                          </div>
+                          <div className="shrink-0 text-right text-xs">
+                            {unitBasePrice > item.price ? <p className="text-muted-foreground line-through">Antes: S/ {unitBasePrice.toFixed(2)}</p> : null}
+                            <p className="font-semibold text-foreground">Precio: S/ {item.price.toFixed(2)}</p>
+                            <p className="text-muted-foreground">Subtotal: S/ {itemSubtotal.toFixed(2)}</p>
+                            {itemCouponDiscount > 0 ? <p className="text-emerald-700">Desc. cupón: - S/ {itemCouponDiscount.toFixed(2)}</p> : null}
+                            <p className="font-semibold text-primary">Total: S/ {itemTotal.toFixed(2)}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                          <span className="rounded-full bg-muted px-2 py-1">Cantidad: {item.quantity}</span>
+                        </div>
+
+                        {item.personalizationText ? (
+                          <p className="text-xs text-foreground/80">Personalización: {item.personalizationText}</p>
+                        ) : null}
                       </div>
                     </div>
-
-                    <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                      <span className="rounded-full bg-muted px-2 py-1">Cantidad: {item.quantity}</span>
-                    </div>
-
-                    {item.personalizationText ? (
-                      <p className="text-xs text-foreground/80">
-                        Personalización: {item.personalizationText}
-                      </p>
-                    ) : null}
-                  </div>
-                </div>
                   );
                 })()}
               </article>
@@ -745,7 +741,7 @@ export default function CheckoutPage() {
                 value={couponInput}
                 onChange={(event) => setCouponInput(event.target.value.toUpperCase())}
                 placeholder="Código de cupón"
-                className="h-10 flex-1 rounded-md border border-input bg-background px-3 text-sm"
+                className="h-11 flex-1 rounded-xl border border-input bg-background px-3 text-sm"
               />
               <Button type="button" variant="outline" onClick={() => validateCoupon(couponInput)} disabled={validatingCoupon}>
                 {validatingCoupon ? <Loader2 className="mr-2 size-4 animate-spin" /> : <TicketPercent className="mr-2 size-4" />}
@@ -755,29 +751,38 @@ export default function CheckoutPage() {
             {activeCoupon ? <p className="mt-2 text-xs text-emerald-700">Cupón activo: {activeCoupon.code}</p> : null}
           </div>
 
-          <p className="mt-3 text-sm">
-            Subtotal base: <span className="font-semibold">S/ {subtotalBase.toFixed(2)}</span>
-          </p>
-          <p className="text-sm text-emerald-700">
-            Descuento por precio: <span className="font-semibold">- S/ {productDiscountAmount.toFixed(2)}</span>
-          </p>
-          <p className="text-sm">
-            Subtotal: <span className="font-semibold">S/ {subtotal.toFixed(2)}</span>
-          </p>
-          <p className="text-sm text-emerald-700">
-            Descuento cupón: <span className="font-semibold">- S/ {discountAmount.toFixed(2)}</span>
-          </p>
-          <p className="text-sm text-emerald-700">
-            Monto total ahorrado: <span className="font-semibold">S/ {totalSavings.toFixed(2)}</span>
-          </p>
-          <p className="text-sm">
-            Envio: <span className="font-semibold">S/ {shippingCost.toFixed(2)}</span>
-          </p>
-          <p className="text-sm">
-            Total final: <span className="font-semibold">S/ {total.toFixed(2)}</span>
-          </p>
+          <div className="mt-4 space-y-2 rounded-2xl border border-white/70 bg-white/70 p-3 text-sm">
+            <p className="flex items-center justify-between gap-3">
+              <span>Subtotal base</span>
+              <span className="font-semibold">S/ {subtotalBase.toFixed(2)}</span>
+            </p>
+            <p className="flex items-center justify-between gap-3 text-emerald-700">
+              <span>Descuento por precio</span>
+              <span className="font-semibold">- S/ {productDiscountAmount.toFixed(2)}</span>
+            </p>
+            <p className="flex items-center justify-between gap-3">
+              <span>Subtotal</span>
+              <span className="font-semibold">S/ {subtotal.toFixed(2)}</span>
+            </p>
+            <p className="flex items-center justify-between gap-3 text-emerald-700">
+              <span>Descuento cupón</span>
+              <span className="font-semibold">- S/ {discountAmount.toFixed(2)}</span>
+            </p>
+            <p className="flex items-center justify-between gap-3 text-emerald-700">
+              <span>Monto total ahorrado</span>
+              <span className="font-semibold">S/ {totalSavings.toFixed(2)}</span>
+            </p>
+            <p className="flex items-center justify-between gap-3">
+              <span>Envío</span>
+              <span className="font-semibold">S/ {shippingCost.toFixed(2)}</span>
+            </p>
+            <div className="flex items-center justify-between gap-3 border-t border-white/80 pt-2 text-base">
+              <span className="font-semibold">Total final</span>
+              <span className="font-bold text-primary">S/ {total.toFixed(2)}</span>
+            </div>
+          </div>
 
-          <Button type="submit" form="checkout-form" className="mt-4 w-full" disabled={submitting}>
+          <Button type="submit" form="checkout-form" className="mt-4 w-full rounded-xl" disabled={submitting}>
             {submitting
               ? "Procesando..."
               : isShippingDelivery && paymentConfirmed

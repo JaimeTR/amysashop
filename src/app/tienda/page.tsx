@@ -36,7 +36,7 @@ export default async function TiendaPage({ searchParams }: Props) {
 
   return (
     <main className="space-y-5 pb-8">
-      <div className="flex items-baseline gap-3 px-3 sm:px-0">
+      <div className="flex items-baseline justify-center gap-3 px-3 text-center sm:justify-start sm:px-0 sm:text-left">
         <h1 className="font-[var(--font-display)] text-3xl">{showFeaturedCatalog ? "Destacados" : "Tienda"}</h1>
       </div>
       <TiendaClientGrid

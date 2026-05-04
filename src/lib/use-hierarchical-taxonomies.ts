@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 
 type HierarchicalTaxonomyResponse = {
   subcategories?: { id: string; name: string }[];
@@ -12,7 +12,7 @@ export function useHierarchicalTaxonomies() {
   const [subbrands, setSubbrands] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(false);
 
-  async function loadSubcategoriesForCategory(categoryId: string) {
+  const loadSubcategoriesForCategory = useCallback(async (categoryId: string) => {
     if (!categoryId) {
       setSubcategories([]);
       return;
@@ -30,9 +30,9 @@ export function useHierarchicalTaxonomies() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
-  async function loadSubbrandsForBrand(brandId: string) {
+  const loadSubbrandsForBrand = useCallback(async (brandId: string) => {
     if (!brandId) {
       setSubbrands([]);
       return;
@@ -50,7 +50,7 @@ export function useHierarchicalTaxonomies() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   return { subcategories, subbrands, loading, loadSubcategoriesForCategory, loadSubbrandsForBrand };
 }

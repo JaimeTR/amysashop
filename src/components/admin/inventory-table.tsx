@@ -7,7 +7,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getSafeProductImageSrc } from "@/lib/product-images";
-import { Loader2, Eye, Pencil, Trash2, X, Search, Filter } from "lucide-react";
+import { Eye, Pencil, X, Search, Filter } from "lucide-react";
 import { InventoryEditModal, type InventoryEditItem } from "@/components/admin/inventory-edit-modal";
 
 type InventoryItem = {
@@ -35,7 +35,6 @@ type Props = {
   rows: InventoryItem[];
   categoryOptions: string[];
   updateInventoryAction: (formData: FormData) => Promise<void>;
-  deleteInventoryItemAction: (formData: FormData) => Promise<void>;
   currentPage?: number;
   pageSize?: number;
   totalCount?: number;
@@ -100,7 +99,6 @@ export function InventoryTable({
   rows,
   categoryOptions,
   updateInventoryAction,
-  deleteInventoryItemAction,
   currentPage = 1,
   pageSize = 20,
   totalCount,
@@ -114,8 +112,6 @@ export function InventoryTable({
   const [selectedBrand, setSelectedBrand] = useState("");
   const [showQuickFilters, setShowQuickFilters] = useState(false);
   const [previewId, setPreviewId] = useState<string | null>(null);
-  const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
-  const [pendingDeleteItem, setPendingDeleteItem] = useState<InventoryItem | null>(null);
   const normalizedGender = normalizeGender(selectedGender);
   const normalizedCategory = normalizeLabel(selectedCategory || "");
   const normalizedBrand = normalizeLabel(selectedBrand || "");
@@ -163,27 +159,7 @@ export function InventoryTable({
   };
 
   const handleDelete = async (item: InventoryItem) => {
-    try {
-      setIsDeletingId(item.id);
-      const formData = new FormData();
-      formData.set("productId", item.id);
-      await deleteInventoryItemAction(formData);
-      setItems((prev) => prev.filter((candidate) => candidate.id !== item.id));
-      if (previewId === item.id) {
-        setPreviewId(null);
-      }
-      router.refresh();
-    } catch (error) {
-      console.error("Error deleting inventory item:", error);
-    } finally {
-      setIsDeletingId(null);
-      setPendingDeleteItem(null);
-    }
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!pendingDeleteItem) return;
-    await handleDelete(pendingDeleteItem);
+    setPreviewId(item.id);
   };
 
   const previewItem = useMemo(() => items.find((item) => item.id === previewId) || null, [items, previewId]);
@@ -383,16 +359,6 @@ export function InventoryTable({
                       >
                         <Pencil className="size-4" />
                       </Button>
-                      <Button
-                        type="button"
-                        size="icon"
-                        variant="destructive"
-                        onClick={() => setPendingDeleteItem(item)}
-                        disabled={isDeletingId === item.id}
-                        aria-label="Eliminar"
-                      >
-                        {isDeletingId === item.id ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
-                      </Button>
                     </div>
                   </td>
                 </tr>
@@ -426,8 +392,6 @@ export function InventoryTable({
         item={editingItem ? {
           id: editingItem.id,
           name: editingItem.name,
-          gender: editingItem.gender,
-          ageGroup: editingItem.ageGroup,
           category: editingItem.category,
           stock: editingItem.stock,
           cost: editingItem.cost,
@@ -436,7 +400,6 @@ export function InventoryTable({
           priceBefore: editingItem.priceBefore,
           active: editingItem.active,
         } : null}
-        categoryOptions={categoryOptions}
         updateInventoryAction={updateInventoryAction}
         onClose={handleCancel}
       />
@@ -482,38 +445,6 @@ export function InventoryTable({
           )
         : null}
 
-      {pendingDeleteItem
-        ? createPortal(
-            <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/55 p-4">
-              <div className="w-full max-w-md rounded-2xl border border-white/30 bg-white p-5 shadow-2xl">
-                <h3 className="text-base font-semibold text-foreground">Eliminar producto</h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  ¿Seguro que quieres eliminar <span className="font-semibold text-foreground">{pendingDeleteItem.name}</span>?
-                  Esta acción no se puede deshacer.
-                </p>
-                <div className="mt-4 flex flex-wrap justify-end gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setPendingDeleteItem(null)}
-                    disabled={isDeletingId === pendingDeleteItem.id}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    onClick={handleConfirmDelete}
-                    disabled={isDeletingId === pendingDeleteItem.id}
-                  >
-                    {isDeletingId === pendingDeleteItem.id ? "Eliminando..." : "Sí, eliminar"}
-                  </Button>
-                </div>
-              </div>
-            </div>,
-            document.body
-          )
-        : null}
     </div>
   );
 }

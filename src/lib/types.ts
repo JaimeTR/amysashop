@@ -20,7 +20,7 @@ export type Product = {
 
 export type NavProduct = Pick<
   Product,
-  "id" | "name" | "description" | "price" | "images" | "category" | "brand"
+  "id" | "name" | "description" | "price" | "images" | "category" | "brand" | "gender"
 >;
 
 export type CartItem = {

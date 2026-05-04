@@ -202,7 +202,7 @@ export default function CarritoPage() {
 
   return (
     <main className="space-y-5 pb-8">
-      <h1 className="font-[var(--font-display)] text-3xl">Carrito</h1>
+      <h1 className="font-[var(--font-display)] text-center text-3xl md:text-left">Carrito</h1>
       {items.length === 0 ? (
         <p className="text-sm text-muted-foreground">Tu carrito está vacío.</p>
       ) : (
@@ -217,53 +217,55 @@ export default function CarritoPage() {
               const itemFinal = Math.max(0, itemSubtotal - itemCouponDiscount);
 
               return (
-              <article key={item.id} className="glass-card grid gap-3 rounded-2xl p-4 md:grid-cols-[88px_minmax(0,1fr)_auto] md:items-center">
-                <Image
-                  src={item.image || DEFAULT_PRODUCT_IMAGE}
-                  alt={item.name}
-                  width={88}
-                  height={88}
-                  unoptimized
-                  className="size-20 rounded-xl object-cover md:size-[88px]"
-                />
+                <article key={item.id} className="glass-card rounded-2xl p-4">
+                  <div className="flex items-start gap-3 md:grid md:grid-cols-[88px_minmax(0,1fr)_auto] md:items-center">
+                    <Image
+                      src={item.image || DEFAULT_PRODUCT_IMAGE}
+                      alt={item.name}
+                      width={88}
+                      height={88}
+                      unoptimized
+                      className="size-20 shrink-0 rounded-xl object-cover md:size-[88px]"
+                    />
 
-                <div className="min-w-0">
-                  <h2 className="line-clamp-2 font-semibold">{item.name}</h2>
-                  {item.variantLabel ? (
-                    <p className="text-xs text-muted-foreground">Tipo: {item.variantLabel}</p>
-                  ) : null}
-                  {item.personalizationText ? (
-                    <p className="text-xs text-muted-foreground">Personalización: {item.personalizationText}</p>
-                  ) : null}
-                  <p className="mt-1 text-xs text-muted-foreground">Monto unitario: S/ {item.price.toFixed(2)}</p>
-                  <p className="text-sm font-semibold text-primary">Monto: S/ {itemSubtotal.toFixed(2)}</p>
-                </div>
+                    <div className="min-w-0 flex-1">
+                      <h2 className="line-clamp-2 font-semibold">{item.name}</h2>
+                      {item.variantLabel ? (
+                        <p className="text-xs text-muted-foreground">Tipo: {item.variantLabel}</p>
+                      ) : null}
+                      {item.personalizationText ? (
+                        <p className="text-xs text-muted-foreground">Personalización: {item.personalizationText}</p>
+                      ) : null}
+                      <p className="mt-1 text-xs text-muted-foreground">Monto unitario: S/ {item.price.toFixed(2)}</p>
+                      <p className="text-sm font-semibold text-primary">Monto: S/ {itemSubtotal.toFixed(2)}</p>
+                    </div>
 
-                <div className="flex items-center gap-2 md:flex-col md:items-end">
-                  <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-white px-2 py-1">
-                    <button
-                      type="button"
-                      onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
-                      className="grid size-7 place-content-center rounded-full border border-primary/20 text-primary transition hover:bg-primary/10"
-                      aria-label="Disminuir cantidad"
-                    >
-                      <Minus className="size-3.5" />
-                    </button>
-                    <span className="min-w-6 text-center text-sm font-semibold">{item.quantity}</span>
-                    <button
-                      type="button"
-                      onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
-                      className="grid size-7 place-content-center rounded-full border border-primary/20 text-primary transition hover:bg-primary/10"
-                      aria-label="Aumentar cantidad"
-                    >
-                      <Plus className="size-3.5" />
-                    </button>
+                    <div className="flex shrink-0 flex-col items-end gap-2 md:items-end">
+                      <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-white px-2 py-1">
+                        <button
+                          type="button"
+                          onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
+                          className="grid size-7 place-content-center rounded-full border border-primary/20 text-primary transition hover:bg-primary/10"
+                          aria-label="Disminuir cantidad"
+                        >
+                          <Minus className="size-3.5" />
+                        </button>
+                        <span className="min-w-6 text-center text-sm font-semibold">{item.quantity}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
+                          className="grid size-7 place-content-center rounded-full border border-primary/20 text-primary transition hover:bg-primary/10"
+                          aria-label="Aumentar cantidad"
+                        >
+                          <Plus className="size-3.5" />
+                        </button>
+                      </div>
+                      <Button variant="ghost" size="icon" onClick={() => handleRemoveItem(item.id, item.name)}>
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </div>
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => handleRemoveItem(item.id, item.name)}>
-                    <Trash2 className="size-4" />
-                  </Button>
-                </div>
-              </article>
+                </article>
               );
             })}
           </div>
