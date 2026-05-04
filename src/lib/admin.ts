@@ -6,6 +6,7 @@ import {
   canAccessAdmin,
   getPermissionsForRole,
   getRoleLabel,
+  getRedirectPathForRole,
   hasPermission,
   resolveRoleFromContext,
 } from "@/lib/access-control";
@@ -82,10 +83,7 @@ export async function requireAdminUser(requiredPermission: AdminPermission = "da
     const role = "superadmin" as const;
 
     if (!hasPermission(role, requiredPermission)) {
-      if (requiredPermission === "dashboard.view") {
-        redirect("/");
-      }
-      redirect("/admin");
+      redirect(`/acceso-restringido?reason=permission&role=${encodeURIComponent(role)}`);
     }
 
     const permissions = getPermissionsForRole(role);
@@ -109,10 +107,7 @@ export async function requireAdminUser(requiredPermission: AdminPermission = "da
 
   if (canAccessAdmin(metadataOnlyRole)) {
     if (!hasPermission(metadataOnlyRole, requiredPermission)) {
-      if (requiredPermission === "dashboard.view") {
-        redirect("/");
-      }
-      redirect("/admin");
+      redirect(`/acceso-restringido?reason=permission&role=${encodeURIComponent(metadataOnlyRole)}`);
     }
 
     const permissions = getPermissionsForRole(metadataOnlyRole);
@@ -137,14 +132,11 @@ export async function requireAdminUser(requiredPermission: AdminPermission = "da
   });
 
   if (!canAccessAdmin(role)) {
-    redirect("/");
+    redirect(`/acceso-restringido?reason=profile&role=${encodeURIComponent(role)}`);
   }
 
   if (!hasPermission(role, requiredPermission)) {
-    if (requiredPermission === "dashboard.view") {
-      redirect("/");
-    }
-    redirect("/admin");
+    redirect(`/acceso-restringido?reason=permission&role=${encodeURIComponent(role)}`);
   }
 
   const permissions = getPermissionsForRole(role);

@@ -33,6 +33,8 @@ export default function RegistroPage() {
     setLoading(true);
     setMessage("");
 
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -43,6 +45,7 @@ export default function RegistroPage() {
           direccion,
           preferred_payment_method: paymentMethod,
         },
+        emailRedirectTo: siteUrl ? `${siteUrl.replace(/\/$/, "")}/cuenta-verificada` : undefined,
       },
     });
 

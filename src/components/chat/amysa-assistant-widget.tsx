@@ -149,10 +149,10 @@ export function AmysaAssistantWidget({ userId, userName }: Props) {
         return;
       }
 
-      const { data } = await supabase.from("profiles").select("avatar_url").eq("id", userId).maybeSingle();
+      const { data } = await supabase.from("profiles").select("img_avatar,avatar_url").eq("id", userId).maybeSingle();
       if (!active) return;
 
-      setClientAvatarUrl(String((data as { avatar_url?: string | null } | null)?.avatar_url || "").trim());
+      setClientAvatarUrl(String((data as { img_avatar?: string | null; avatar_url?: string | null } | null)?.img_avatar || (data as { avatar_url?: string | null } | null)?.avatar_url || "").trim());
     }
 
     loadClientAvatar();

@@ -19,7 +19,7 @@
 
             <tr>
               <td style="padding:28px 24px 12px 24px;">
-                <p style="margin:0 0 14px 0;font-size:15px;line-height:1.6;">Hola {{ .Email }},</p>
+                <p style="margin:0 0 14px 0;font-size:15px;line-height:1.6;">Hola {{if .User.user_metadata.nombre}}{{ .User.user_metadata.nombre }}{{else}}{{ .Email }}{{end}},</p>
                 <p style="margin:0 0 14px 0;font-size:15px;line-height:1.6;">
                   Gracias por registrarte en <strong>AMYSA</strong>. Para activar tu cuenta y empezar a comprar, confirma tu correo con el siguiente boton:
                 </p>

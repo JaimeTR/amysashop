@@ -1,6 +1,6 @@
 import React from "react";
 import Image from "next/image";
-import Link from "next/link";
+// Usar <a> para enlaces externos (WhatsApp) en iOS/Safari
 import { Phone } from "lucide-react";
 import { DEFAULT_WHATSAPP_DISPLAY_PHONE, DEFAULT_WHATSAPP_PHONE } from "@/lib/whatsapp";
 
@@ -148,12 +148,15 @@ export default function BannerPage() {
             </h2>
 
             {/* Contact Number - Simple */}
-            <Link
+            <a
               href={`https://wa.me/${DEFAULT_WHATSAPP_PHONE}`}
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-block text-4xl md:text-5xl font-bold text-white hover:text-white/80 transition-colors"
+              aria-label="WhatsApp"
             >
               {DEFAULT_WHATSAPP_DISPLAY_PHONE}
-            </Link>
+            </a>
           </div>
 
           {/* Social Media Buttons - Glasmorphism */}

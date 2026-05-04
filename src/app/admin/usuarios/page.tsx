@@ -112,7 +112,7 @@ async function createUserAction(formData: FormData) {
   const nombre = String(formData.get("nombre") || "").trim();
   const role = String(formData.get("role") || "cliente").trim().toLowerCase() as AccessRole;
   const tempPassword = String(formData.get("tempPassword") || "").trim();
-  const avatarUrlInput = String(formData.get("avatar_url") || "").trim();
+  const avatarUrlInput = String(formData.get("img_avatar") || formData.get("avatar_url") || "").trim();
   const avatarFile = formData.get("avatarFile");
 
   if (!email || !nombre || !creatableRoles.includes(role)) {
@@ -130,7 +130,7 @@ async function createUserAction(formData: FormData) {
     user_metadata: {
       nombre,
       role,
-      avatar_url: finalAvatarUrl || undefined,
+        img_avatar: finalAvatarUrl || undefined,
     },
   });
 
@@ -147,7 +147,7 @@ async function createUserAction(formData: FormData) {
       user_metadata: {
         nombre,
         role,
-        avatar_url: finalAvatarUrl,
+        img_avatar: finalAvatarUrl,
       },
     });
   }
@@ -157,10 +157,10 @@ async function createUserAction(formData: FormData) {
     nombre,
     is_admin: role !== "cliente",
     role,
-    avatar_url: finalAvatarUrl || null,
+    img_avatar: finalAvatarUrl || null,
   });
 
-  if (profileResult.error && isMissingColumnError(profileResult.error, "avatar_url")) {
+  if (profileResult.error && (isMissingColumnError(profileResult.error, "img_avatar") || isMissingColumnError(profileResult.error, "avatar_url"))) {
     profileResult = await service.from("profiles").upsert({
       id: createResult.data.user.id,
       nombre,
@@ -253,7 +253,7 @@ async function updateUserDataAction(formData: FormData) {
     user_metadata: {
       nombre,
       role: typeof currentMetadata.role === "string" ? currentMetadata.role : undefined,
-      avatar_url: typeof currentMetadata.avatar_url === "string" ? currentMetadata.avatar_url : undefined,
+      img_avatar: typeof currentMetadata.img_avatar === "string" ? currentMetadata.img_avatar : undefined,
     },
   });
 

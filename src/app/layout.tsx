@@ -8,7 +8,7 @@ import { LayoutWrapper } from "@/components/layout/layout-wrapper";
 
 const APP_VERSION = "0.1.1";
 const APP_ICON = "/icon.svg";
-const APP_APPLE_ICON = "/logos/amysa-square-primary.png";
+const APP_APPLE_ICON = "/icon.svg";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: APP_ICON, type: "image/svg+xml" },
-      { url: "/logos/amysa-square-primary.png", sizes: "512x512", type: "image/png" },
+      { url: "/icon.svg", sizes: "512x512", type: "image/svg+xml" },
     ],
     apple: [{ url: APP_APPLE_ICON, sizes: "180x180", type: "image/png" }],
   },

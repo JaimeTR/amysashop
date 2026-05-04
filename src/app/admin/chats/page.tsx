@@ -36,6 +36,7 @@ type ProfileRow = {
   id: string;
   nombre: string | null;
   telefono: string | null;
+  img_avatar: string | null;
   avatar_url: string | null;
   email?: string | null;
 };
@@ -186,13 +187,13 @@ export default async function AdminChatsPage({ searchParams }: PageProps) {
 
       const withEmail = await service
         .from("profiles")
-        .select("id,nombre,telefono,avatar_url,email")
+        .select("id,nombre,telefono,img_avatar,avatar_url,email")
         .in("id", clientIds);
 
       if (withEmail.error) {
         const fallback = await service
           .from("profiles")
-          .select("id,nombre,telefono,avatar_url")
+          .select("id,nombre,telefono,img_avatar,avatar_url")
           .in("id", clientIds);
 
         return (fallback.data || []) as ProfileRow[];
@@ -242,7 +243,7 @@ export default async function AdminChatsPage({ searchParams }: PageProps) {
               const profile = profilesById.get(session.client_id);
               const isSelected = selectedSessionId === session.id;
               const displayName = profile?.nombre?.trim() || "Cliente";
-              const avatarUrl = String(profile?.avatar_url || "").trim();
+              const avatarUrl = String(profile?.img_avatar || profile?.avatar_url || "").trim();
               const hasAvatar = avatarUrl.startsWith("http://") || avatarUrl.startsWith("https://") || avatarUrl.startsWith("/");
               const state = getStatePresentation(session);
               const contactText = buildContactLine(profile);

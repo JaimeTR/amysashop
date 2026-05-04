@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { MainNav } from "@/components/layout/main-nav";
 import Footer from "@/components/layout/footer";
+import IosInstallHint from "@/components/pwa/ios-install-hint";
 
 interface LayoutWrapperProps {
   products: any[];
@@ -25,6 +26,7 @@ export function LayoutWrapper({ products, categories, children }: LayoutWrapperP
         {children}
       </div>
       <Footer />
+      <IosInstallHint />
     </>
   );
 }

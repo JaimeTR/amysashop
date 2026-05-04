@@ -22,11 +22,14 @@ export default async function PerfilPage() {
 
   let result = await supabase
     .from("profiles")
-    .select("nombre, telefono, direccion, gender, avatar_url")
+    .select("nombre, telefono, direccion, gender, img_avatar, avatar_url")
     .eq("id", user.id)
     .single();
 
-  if (result.error && (isMissingColumnError(result.error, "gender") || isMissingColumnError(result.error, "avatar_url"))) {
+  if (
+    result.error &&
+    (isMissingColumnError(result.error, "gender") || isMissingColumnError(result.error, "img_avatar") || isMissingColumnError(result.error, "avatar_url"))
+  ) {
     result = await supabase
       .from("profiles")
       .select("nombre, telefono, direccion")
@@ -39,10 +42,11 @@ export default async function PerfilPage() {
     telefono?: string | null;
     direccion?: string | null;
     gender?: string | null;
+    img_avatar?: string | null;
     avatar_url?: string | null;
   } | null;
 
-  const profileAvatar = profile?.avatar_url?.trim() || "/placeholder-product.svg";
+  const profileAvatar = profile?.img_avatar?.trim() || profile?.avatar_url?.trim() || "/placeholder-product.svg";
   const profileName = profile?.nombre?.trim() || user.email || "Mi cuenta";
   const profilePhone = profile?.telefono?.trim() || "Sin teléfono";
   const profileAddress = profile?.direccion?.trim() || "Sin dirección registrada";
@@ -72,6 +76,7 @@ export default async function PerfilPage() {
             telefono: profile?.telefono ?? "",
             direccion: profile?.direccion ?? "",
             gender: profile?.gender ?? "",
+            img_avatar: profile?.img_avatar ?? "",
             avatar_url: profile?.avatar_url ?? "",
           }}
         />
@@ -90,6 +95,7 @@ export default async function PerfilPage() {
               telefono: profile?.telefono ?? "",
               direccion: profile?.direccion ?? "",
               gender: profile?.gender ?? "",
+              img_avatar: profile?.img_avatar ?? "",
               avatar_url: profile?.avatar_url ?? "",
             }}
           />

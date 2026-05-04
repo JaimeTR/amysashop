@@ -19,6 +19,7 @@ type ProfileMobileViewProps = {
     telefono: string;
     direccion: string;
     gender: string;
+    img_avatar: string;
     avatar_url: string;
   };
 };

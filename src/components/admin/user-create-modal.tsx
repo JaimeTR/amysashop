@@ -113,7 +113,7 @@ export function UserCreateModal({ createUserAction, roles }: Props) {
           <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
             <div className="grid gap-2">
               <input
-                name="avatar_url"
+                name="img_avatar"
                 value={avatarUrlDraft}
                 onChange={(event) => {
                   const value = event.target.value;

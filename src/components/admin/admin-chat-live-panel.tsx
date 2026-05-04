@@ -168,7 +168,7 @@ export function AdminChatLivePanel({ sessionId, initialMessages, initiallyJoined
       if (user?.id) {
         const { data: profile } = await supabase
           .from("profiles")
-          .select("nombre,gender,avatar_url")
+          .select("nombre,gender,img_avatar,avatar_url")
           .eq("id", user.id)
           .maybeSingle();
 
@@ -182,7 +182,7 @@ export function AdminChatLivePanel({ sessionId, initialMessages, initiallyJoined
           setAdvisorLabel(resolveAdvisorLabel(profileGender));
         }
 
-        setAdminAvatarUrl(String((profile as { avatar_url?: string | null } | null)?.avatar_url || "").trim());
+        setAdminAvatarUrl(String((profile as { img_avatar?: string | null; avatar_url?: string | null } | null)?.img_avatar || (profile as { avatar_url?: string | null } | null)?.avatar_url || "").trim());
       }
 
       if (user?.id) {
@@ -222,13 +222,13 @@ export function AdminChatLivePanel({ sessionId, initialMessages, initiallyJoined
 
       const { data: clientProfile } = await supabase
         .from("profiles")
-        .select("avatar_url")
+        .select("img_avatar,avatar_url")
         .eq("id", clientId)
         .maybeSingle();
 
       if (!active) return;
 
-      setClientAvatarUrl(String((clientProfile as { avatar_url?: string | null } | null)?.avatar_url || "").trim());
+      setClientAvatarUrl(String((clientProfile as { img_avatar?: string | null; avatar_url?: string | null } | null)?.img_avatar || (clientProfile as { avatar_url?: string | null } | null)?.avatar_url || "").trim());
     }
 
     loadClientAvatarForSession();

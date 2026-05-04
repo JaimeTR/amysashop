@@ -78,6 +78,7 @@ type ProfileData = {
   telefono: string;
   direccion: string;
   gender: string;
+  img_avatar: string;
   avatar_url: string;
 };
 
@@ -176,6 +177,7 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
     telefono: "",
     direccion: "",
     gender: "",
+    img_avatar: "",
     avatar_url: "",
   });
   const [profileDraft, setProfileDraft] = useState<ProfileData>({
@@ -183,6 +185,7 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
     telefono: "",
     direccion: "",
     gender: "",
+    img_avatar: "",
     avatar_url: "",
   });
   const [selectedAvatarFile, setSelectedAvatarFile] = useState<File | null>(null);
@@ -212,8 +215,8 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
     superAdminEmail: allowedAdminEmail,
   });
   const accessLevels = getPermissionsForRole(role).map((permission) => getPermissionLabel(permission));
-  const profileAvatarUrl = (avatarPreview || profileDraft.avatar_url || profileData.avatar_url || "").trim();
-  const editingAvatarUrl = (avatarPreview || profileDraft.avatar_url || profileData.avatar_url || "").trim();
+  const profileAvatarUrl = (avatarPreview || profileDraft.img_avatar || profileDraft.avatar_url || profileData.img_avatar || profileData.avatar_url || "").trim();
+  const editingAvatarUrl = (avatarPreview || profileDraft.img_avatar || profileDraft.avatar_url || profileData.img_avatar || profileData.avatar_url || "").trim();
 
   const cartSummary = useMemo(
     () => ({
@@ -330,8 +333,8 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
 
   useEffect(() => {
     if (!user?.id) {
-      setProfileData({ nombre: "", telefono: "", direccion: "", gender: "", avatar_url: "" });
-      setProfileDraft({ nombre: "", telefono: "", direccion: "", gender: "", avatar_url: "" });
+      setProfileData({ nombre: "", telefono: "", direccion: "", gender: "", img_avatar: "", avatar_url: "" });
+      setProfileDraft({ nombre: "", telefono: "", direccion: "", gender: "", img_avatar: "", avatar_url: "" });
       return;
     }
 
@@ -343,11 +346,14 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
     async function loadProfile() {
       let result = await supabase
         .from("profiles")
-        .select("nombre,telefono,direccion,gender,avatar_url")
+        .select("nombre,telefono,direccion,gender,img_avatar,avatar_url")
         .eq("id", userId)
         .maybeSingle();
 
-      if (result.error && (isMissingColumnError(result.error, "gender") || isMissingColumnError(result.error, "avatar_url"))) {
+      if (
+        result.error &&
+        (isMissingColumnError(result.error, "gender") || isMissingColumnError(result.error, "img_avatar") || isMissingColumnError(result.error, "avatar_url"))
+      ) {
         result = await supabase
           .from("profiles")
           .select("nombre,telefono,direccion")
@@ -364,6 +370,7 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
         telefono: String((data as { telefono?: string | null } | null)?.telefono || ""),
         direccion: String((data as { direccion?: string | null } | null)?.direccion || ""),
         gender: String((data as { gender?: string | null } | null)?.gender || ""),
+        img_avatar: String((data as { img_avatar?: string | null } | null)?.img_avatar || ""),
         avatar_url: String((data as { avatar_url?: string | null } | null)?.avatar_url || ""),
       };
 
@@ -380,10 +387,10 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
 
   useEffect(() => {
     function onAvatarUpdated(e: any) {
-      const url = e?.detail?.avatar_url;
+      const url = e?.detail?.img_avatar || e?.detail?.avatar_url;
       console.debug("[MainNav] onAvatarUpdated", url);
       if (url) {
-        setProfileData((prev) => ({ ...prev, avatar_url: String(url) }));
+        setProfileData((prev) => ({ ...prev, img_avatar: String(url), avatar_url: String(url) }));
       }
     }
 
@@ -396,6 +403,7 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
           telefono: String(d.telefono || ""),
           direccion: String(d.direccion || ""),
           gender: String(d.gender || ""),
+          img_avatar: String(d.img_avatar || d.avatar_url || ""),
           avatar_url: String(d.avatar_url || ""),
         };
         setProfileData(updated);
@@ -404,6 +412,7 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
           telefono: updated.telefono,
           direccion: updated.direccion,
           gender: updated.gender,
+          img_avatar: updated.img_avatar,
           avatar_url: updated.avatar_url,
         });
       }
@@ -557,6 +566,7 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
         telefono: payload.telefono,
         direccion: payload.direccion,
         gender: String(payload.gender || ""),
+        img_avatar: profileData.img_avatar,
         avatar_url: profileData.avatar_url,
       };
       setProfileData(updated);
@@ -565,6 +575,7 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
         telefono: payload.telefono,
         direccion: payload.direccion,
         gender: String(payload.gender || ""),
+        img_avatar: profileData.img_avatar,
         avatar_url: profileData.avatar_url,
       });
       setEditingProfile(false);
@@ -649,7 +660,7 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
       console.log("[MainNav] Attempting to save avatar URL:", avatarUrl);
       
       const saveResult = await supabase.from("profiles").upsert(
-        { id: user.id, avatar_url: avatarUrl },
+        { id: user.id, img_avatar: avatarUrl },
         { onConflict: "id" }
       );
 
@@ -665,7 +676,7 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
       }
 
       console.log("[MainNav] Avatar saved successfully to database");
-      setProfileData((prev) => ({ ...prev, avatar_url: avatarUrl }));
+      setProfileData((prev) => ({ ...prev, img_avatar: avatarUrl, avatar_url: avatarUrl }));
       setSelectedAvatarFile(null);
       if (avatarPreview) {
         URL.revokeObjectURL(avatarPreview);

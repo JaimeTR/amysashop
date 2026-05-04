@@ -14,6 +14,7 @@ type ProfileSettingsFormProps = {
     telefono: string;
     direccion: string;
     gender: string;
+    img_avatar: string;
     avatar_url: string;
   };
 };
@@ -123,7 +124,7 @@ export function ProfileSettingsForm({ userId, email, initialProfile }: ProfileSe
       const avatarUrl = data.publicUrl;
       console.log("[ProfileSettingsForm] Attempting to save avatar URL:", avatarUrl);
 
-      let saveResult = await supabase.from("profiles").update({ avatar_url: avatarUrl }).eq("id", userId);
+      let saveResult = await supabase.from("profiles").update({ img_avatar: avatarUrl }).eq("id", userId);
 
       console.log("[ProfileSettingsForm] Upsert result:", { 
         error: saveResult.error, 
@@ -134,7 +135,7 @@ export function ProfileSettingsForm({ userId, email, initialProfile }: ProfileSe
       if (saveResult.error) {
         console.log("[ProfileSettingsForm] Update failed, retrying with upsert");
         saveResult = await supabase.from("profiles").upsert(
-          { id: userId, avatar_url: avatarUrl },
+          { id: userId, img_avatar: avatarUrl },
           { onConflict: "id" }
         );
 
@@ -154,7 +155,7 @@ export function ProfileSettingsForm({ userId, email, initialProfile }: ProfileSe
       setSelectedFile(null);
       try {
         console.debug("[ProfileSettingsForm] dispatching amysa:avatar-updated", { url: avatarUrl });
-        window.dispatchEvent(new CustomEvent("amysa:avatar-updated", { detail: { avatar_url: avatarUrl } }));
+        window.dispatchEvent(new CustomEvent("amysa:avatar-updated", { detail: { img_avatar: avatarUrl } }));
       } catch (err) {
         console.debug("[ProfileSettingsForm] failed dispatching avatar event", err);
       }
@@ -226,7 +227,7 @@ export function ProfileSettingsForm({ userId, email, initialProfile }: ProfileSe
     }
   }
 
-  const avatarSrc = uploadPreview || initialProfile.avatar_url || "/placeholder-product.svg";
+  const avatarSrc = uploadPreview || initialProfile.img_avatar || initialProfile.avatar_url || "/placeholder-product.svg";
 
   return (
     <div className="space-y-4 text-sm">
