@@ -17,6 +17,7 @@ type PageProps = {
     ok?: string;
     error?: string;
     page?: string;
+    q?: string;
   };
 };
 
