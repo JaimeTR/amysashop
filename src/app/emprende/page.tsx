@@ -14,47 +14,173 @@ import { Product, Salesperson } from "@/lib/types";
 
 export default function EmprenderPage() {
   const router = useRouter();
+
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [salesperson, setSalesperson] = useState<Salesperson | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"dashboard" | "sales" | "clients">(
-    "dashboard"
-  );
+
+  const [activeTab, setActiveTab] = useState<
+    "dashboard" | "sales" | "clients"
+  >("dashboard");
+
   const [refreshSales, setRefreshSales] = useState(false);
+
   const [adminModalOpen, setAdminModalOpen] = useState(false);
+
   const [adminSalespeople, setAdminSalespeople] = useState<Salesperson[]>([]);
-  const [adminSelectedSalespersonId, setAdminSelectedSalespersonId] = useState<string>("");
+
+  const [adminSelectedSalespersonId, setAdminSelectedSalespersonId] =
+    useState<string>("");
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const supabase = createClient();
-        
-        // Get current user
+
+        // Obtener usuario actual
         const {
           data: { user: currentUser },
         } = await supabase.auth.getUser();
+
         if (!currentUser) {
           router.push("/login");
           return;
         }
+
         setUser(currentUser);
 
-        // Get user profile
+        // Obtener perfil
         const { data: profileData } = await supabase
           .from("profiles")
           .select("*")
           .eq("id", currentUser.id)
           .single();
+
         setProfile(profileData);
 
-        // Check if user is salesperson or admin
-        if (
-          import { redirect } from "next/navigation";
+        // Validar rol
+        if (profileData?.role === "admin") {
+          router.push("/admin/emprende");
+          return;
+        }
 
-          export default function EmprendeRedirectPage() {
-            redirect("/admin/emprende");
-          }
-          setSalesperson(null);
+        // Obtener vendedor
+        const salespersonData = await getSalesperson(currentUser.id);
+
+        if (!salespersonData) {
+          router.push("/");
+          return;
+        }
+
+        setSalesperson(salespersonData);
+
+        // Obtener productos
+        const { data: productsData } = await supabase
+          .from("products")
+          .select("*")
+          .eq("active", true);
+
+        setProducts(productsData || []);
+      } catch (error) {
+        console.error("Error loading data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [router]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        Cargando...
+      </div>
+    );
+  }
+
+  return (
+    <AdminShell>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">Emprende</h1>
+          <p className="text-muted-foreground">
+            Panel de gestión de ventas y comisiones
+          </p>
+        </div>
+
+        {salesperson && (
+          <>
+            <CommissionsDashboard salesperson={salesperson} />
+
+            <div className="flex gap-4">
+              <button
+                onClick={() => setActiveTab("dashboard")}
+                className={`px-4 py-2 rounded ${
+                  activeTab === "dashboard"
+                    ? "bg-black text-white"
+                    : "bg-gray-200"
+                }`}
+              >
+                Dashboard
+              </button>
+
+              <button
+                onClick={() => setActiveTab("sales")}
+                className={`px-4 py-2 rounded ${
+                  activeTab === "sales"
+                    ? "bg-black text-white"
+                    : "bg-gray-200"
+                }`}
+              >
+                Ventas
+              </button>
+
+              <button
+                onClick={() => setActiveTab("clients")}
+                className={`px-4 py-2 rounded ${
+                  activeTab === "clients"
+                    ? "bg-black text-white"
+                    : "bg-gray-200"
+                }`}
+              >
+                Clientes
+              </button>
+            </div>
+
+            {activeTab === "dashboard" && (
+              <SalesTable
+                salespersonId={salesperson.id}
+                refresh={refreshSales}
+              />
+            )}
+
+            {activeTab === "sales" && (
+              <SalesForm
+                salesperson={salesperson}
+                products={products}
+                onSaleCreated={() => setRefreshSales(!refreshSales)}
+              />
+            )}
+
+            {activeTab === "clients" && (
+              <ExternalClientForm salespersonId={salesperson.id} />
+            )}
+          </>
+        )}
+
+        {profile?.role === "admin" && (
+          <EmpendeAdminDashboard
+            open={adminModalOpen}
+            onOpenChange={setAdminModalOpen}
+            salespeople={adminSalespeople}
+            selectedSalespersonId={adminSelectedSalespersonId}
+            onSelectSalesperson={setAdminSelectedSalespersonId}
+          />
+        )}
+      </div>
+    </AdminShell>
+  );
+}
