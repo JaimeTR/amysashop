@@ -27,13 +27,6 @@ export default function EmprenderPage() {
 
   const [refreshSales, setRefreshSales] = useState(false);
 
-  const [adminModalOpen, setAdminModalOpen] = useState(false);
-
-  const [adminSalespeople, setAdminSalespeople] = useState<Salesperson[]>([]);
-
-  const [adminSelectedSalespersonId, setAdminSelectedSalespersonId] =
-    useState<string>("");
-
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -106,6 +99,7 @@ export default function EmprenderPage() {
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold">Emprende</h1>
+
           <p className="text-muted-foreground">
             Panel de gestión de ventas y comisiones
           </p>
@@ -113,7 +107,7 @@ export default function EmprenderPage() {
 
         {salesperson && (
           <>
-            <CommissionsDashboard salesperson={salesperson} />
+            <CommissionsDashboard salespersonId={salesperson.id} />
 
             <div className="flex gap-4">
               <button
@@ -151,15 +145,12 @@ export default function EmprenderPage() {
             </div>
 
             {activeTab === "dashboard" && (
-              <SalesTable
-                salespersonId={salesperson.id}
-                refresh={refreshSales}
-              />
+              <SalesTable salespersonId={salesperson.id} />
             )}
 
             {activeTab === "sales" && (
               <SalesForm
-                salesperson={salesperson}
+                salespersonId={salesperson.id}
                 products={products}
                 onSaleCreated={() => setRefreshSales(!refreshSales)}
               />
@@ -171,15 +162,7 @@ export default function EmprenderPage() {
           </>
         )}
 
-        {profile?.role === "admin" && (
-          <EmpendeAdminDashboard
-            open={adminModalOpen}
-            onOpenChange={setAdminModalOpen}
-            salespeople={adminSalespeople}
-            selectedSalespersonId={adminSelectedSalespersonId}
-            onSelectSalesperson={setAdminSelectedSalespersonId}
-          />
-        )}
+        {profile?.role === "admin" && <EmpendeAdminDashboard />}
       </div>
     </AdminShell>
   );

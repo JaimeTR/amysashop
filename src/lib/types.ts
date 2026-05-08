@@ -1,3 +1,12 @@
+export type Profile = {
+  id: string;
+  name?: string;
+  email?: string;
+  role?: string;
+  created_at?: string;
+  updated_at?: string;
+};
+
 export type Product = {
   id: string;
   name: string;
@@ -71,6 +80,7 @@ export type ExternalClient = {
 };
 
 export type PaymentStatus = "pending" | "partial" | "completed";
+
 export type CommissionStatus = "pending" | "approved" | "paid";
 
 export type Sale = {
@@ -104,6 +114,7 @@ export type SalesCommission = {
 };
 
 // Tipos para respuestas de servidor
+
 export type SaleWithDetails = Sale & {
   product?: Product;
   salesperson?: Salesperson;
@@ -121,6 +132,7 @@ export type SalespersonWithStats = Salesperson & {
 };
 
 // Tipos para formularios
+
 export type CreateSaleInput = {
   product_id: string;
   client_id?: string;
@@ -144,6 +156,7 @@ export type UpdateSalespersonInput = {
 };
 
 // Tipos para filtros
+
 export type SalesFilter = {
   salesperson_id?: string;
   month?: number;
