@@ -13,6 +13,7 @@ export const metadata = {
 type InventoryRow = {
   id: string;
   name: string;
+  sku?: string;
   gender?: string;
   brand?: string;
   category: string;
@@ -24,6 +25,7 @@ type InventoryRow = {
   priceBefore?: number | null;
   images?: string[];
   active?: boolean;
+  createdAt?: string;
 };
 
 function isMissingColumnError(error: { message?: string } | null | undefined, column: string) {
@@ -266,7 +268,7 @@ async function updateInventoryAction(formData: FormData) {
   revalidatePath("/admin/inventario");
 }
 
-export default async function InventarioPage({ searchParams }: { searchParams?: { page?: string } }) {
+export default async function InventarioPage({ searchParams }: { searchParams?: { page?: string; q?: string } }) {
   // Verificar que el usuario tiene permiso para acceder a inventario
   const { supabase } = await requireAdminUser("inventory.manage");
 
@@ -281,21 +283,31 @@ export default async function InventarioPage({ searchParams }: { searchParams?: 
   const categories = (categoriesResult.data || []) as Array<{ id: string; name: string }>;
 
   const page = Number.parseInt(String(searchParams?.page || "1"), 10) || 1;
+  const searchQuery = String(searchParams?.q || "").trim().toLowerCase();
   const pageSize = 20;
   const start = Math.max(0, (page - 1) * pageSize);
   const end = start + pageSize - 1;
 
-  let { data: products, error: productsError, count: productsCount } = await db
+  let productsQuery = db
     .from("products")
-    .select("id, name, gender, age_group, brand, stock, cost, operating_cost, profit_margin, price, price_before, images, active, categories(name)", { count: "exact" })
-    .order("name", { ascending: true })
+    .select("id, name, sku, gender, age_group, brand, stock, cost, operating_cost, profit_margin, price, price_before, images, active, created_at, categories(name)", { count: "exact" });
+
+  // Aplicar búsqueda en servidor si existe
+  if (searchQuery) {
+    productsQuery = productsQuery.or(
+      `name.ilike.%${searchQuery}%,code.ilike.%${searchQuery}%,sku.ilike.%${searchQuery}%,brand.ilike.%${searchQuery}%`
+    );
+  }
+
+  let { data: products, error: productsError, count: productsCount } = await productsQuery
+    .order("created_at", { ascending: false })
     .range(start, end);
 
   if (productsError && (isMissingColumnError(productsError, "price_before") || isMissingColumnError(productsError, "age_group"))) {
     const fallbackNoPriceBefore = await db
       .from("products")
-      .select("id, name, gender, brand, stock, cost, operating_cost, profit_margin, price, images, active, categories(name)", { count: "exact" })
-      .order("name", { ascending: true })
+      .select("id, name, sku, gender, brand, stock, cost, operating_cost, profit_margin, price, images, active, created_at, categories(name)", { count: "exact" })
+      .order("created_at", { ascending: false })
       .range(start, end);
 
     productsError = fallbackNoPriceBefore.error;
@@ -315,8 +327,8 @@ export default async function InventarioPage({ searchParams }: { searchParams?: 
   ) {
     const fallback = await db
       .from("products")
-      .select("id, name, gender, age_group, brand, stock, price, images, active, categories(name)", { count: "exact" })
-      .order("name", { ascending: true })
+      .select("id, name, sku, gender, age_group, brand, stock, price, images, active, created_at, categories(name)", { count: "exact" })
+      .order("created_at", { ascending: false })
       .range(start, end);
 
     productsError = fallback.error;
@@ -335,9 +347,11 @@ export default async function InventarioPage({ searchParams }: { searchParams?: 
   const rows: InventoryRow[] = (products || []).map((product) => ({
     id: String(product.id || ""),
     name: String(product.name || ""),
+    sku: String((product as { sku?: string | null }).sku || "") || undefined,
     gender: String((product as { gender?: string | null }).gender || "") || undefined,
     ageGroup: String((product as { age_group?: string | null }).age_group || "") || undefined,
     brand: String((product as { brand?: string | null }).brand || "") || undefined,
+    createdAt: String((product as { created_at?: string | null }).created_at || "") || undefined,
     category: String(
       (product as { categories?: { name?: string | null } | Array<{ name?: string | null }> | null }).categories &&
         Array.isArray((product as { categories?: { name?: string | null } | Array<{ name?: string | null }> | null }).categories)
@@ -392,6 +406,7 @@ export default async function InventarioPage({ searchParams }: { searchParams?: 
             currentPage={page}
             pageSize={pageSize}
             totalCount={totalCount}
+            initialSearchTerm={searchQuery}
           />
         </CardContent>
       </Card>

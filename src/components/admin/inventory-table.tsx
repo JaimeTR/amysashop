@@ -13,6 +13,7 @@ import { InventoryEditModal, type InventoryEditItem } from "@/components/admin/i
 type InventoryItem = {
   id: string;
   name: string;
+  sku?: string;
   gender?: string;
   ageGroup?: string;
   brand?: string;
@@ -38,6 +39,7 @@ type Props = {
   currentPage?: number;
   pageSize?: number;
   totalCount?: number;
+  initialSearchTerm?: string;
 };
 
 type GenderFilter = "" | "Hombre" | "Mujer" | "Unisex";
@@ -102,11 +104,12 @@ export function InventoryTable({
   currentPage = 1,
   pageSize = 20,
   totalCount,
+  initialSearchTerm = "",
 }: Props) {
   const router = useRouter();
   const [items, setItems] = useState<InventoryItem[]>(rows);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
   const [selectedGender, setSelectedGender] = useState<GenderFilter>("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedBrand, setSelectedBrand] = useState("");
@@ -126,7 +129,8 @@ export function InventoryTable({
   );
 
   const filteredItems = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
+    // Nota: La búsqueda por nombre/código/etc se hace en SERVIDOR ahora (no en cliente)
+    // Aquí solo aplicamos filtros facetados visuales opcionales
     return items.filter((item) => {
       const itemGender = normalizeGender(String(item.gender || ""));
       const itemCategory = normalizeLabel(String(item.category || ""));
@@ -136,19 +140,9 @@ export function InventoryTable({
       const matchesCategory = !normalizedCategory || itemCategory === normalizedCategory;
       const matchesBrand = !normalizedBrand || itemBrand === normalizedBrand;
 
-      const searchable = [
-        item.name,
-        item.gender || "",
-        item.brand || "",
-        item.category,
-        String(item.price),
-        String(item.stock),
-      ]
-        .join(" ")
-        .toLowerCase();
-      return matchesGender && matchesCategory && matchesBrand && (!term || searchable.includes(term));
+      return matchesGender && matchesCategory && matchesBrand;
     });
-  }, [items, searchTerm, normalizedGender, normalizedCategory, normalizedBrand]);
+  }, [items, normalizedGender, normalizedCategory, normalizedBrand]);
 
   const handleCancel = () => {
     setEditingId(null);
@@ -173,7 +167,7 @@ export function InventoryTable({
   const baseIndex = (currentPage - 1) * pageSize;
 
   return (
-    <div className="space-y-3 pt-3">
+    <div className="space-y-3 pt-8">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h3 className="font-semibold text-foreground">Gestión de Inventario</h3>
         <div className="relative w-full sm:max-w-md">
@@ -191,7 +185,15 @@ export function InventoryTable({
               <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <input
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSearchTerm(value);
+                  if (value.trim()) {
+                    router.push(`?q=${encodeURIComponent(value.trim())}&page=1`);
+                  } else {
+                    router.push("?page=1");
+                  }
+                }}
                 placeholder="Buscar por nombre, categoría, marca..."
                 className="h-10 w-full rounded-md border border-input bg-background pl-9 pr-3 text-sm"
               />
@@ -277,12 +279,13 @@ export function InventoryTable({
       {filteredItems.length === 0 ? (
         <p className="text-sm text-muted-foreground">No se encontraron productos con ese criterio.</p>
       ) : (
-        <div className="overflow-x-auto rounded-xl border bg-white/80">
+        <div className="overflow-x-auto rounded-xl border bg-white">
           <table className="min-w-[1400px] w-full text-sm">
             <thead className="bg-[#efe3d8] text-left">
               <tr>
                 <th className="px-3 py-2">N°</th>
                 <th className="px-3 py-2">Imagen</th>
+                <th className="px-3 py-2">SKU</th>
                 <th className="px-3 py-2">Nombre</th>
                 <th className="px-3 py-2">Categoría</th>
                 <th className="px-3 py-2">Marca</th>
@@ -310,6 +313,7 @@ export function InventoryTable({
                       />
                     </div>
                   </td>
+                  <td className="px-3 py-2 font-semibold text-primary">{item.sku || "Sin SKU"}</td>
                   <td className="px-3 py-2 font-medium">
                     <button
                       type="button"

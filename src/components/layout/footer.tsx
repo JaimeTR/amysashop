@@ -14,7 +14,7 @@ export default function Footer() {
 
           <div className="grid grid-cols-2 gap-6 sm:grid-cols-2">
             <div>
-              <h4 className="mb-2 font-medium">Tienda</h4>
+              <h4 className="mb-2 font-medium">Catálogo</h4>
               <ul className="text-sm opacity-90 space-y-1">
                 <li>
                   <Link href="/perfil" className="hover:underline">Cuenta</Link>

@@ -3,34 +3,37 @@
 @tailwind utilities;
 
 :root {
+  /* Paleta de marca (AMYSA) - ajustar si tienes valores exactos */
   --background: 33 28% 98%;
-  --foreground: 24 20% 14%;
+  --foreground: 18 18% 12%;
   --card: 0 0% 100%;
-  --card-foreground: 24 20% 14%;
+  --card-foreground: 18 18% 12%;
   --popover: 0 0% 100%;
-  --popover-foreground: 24 20% 14%;
-  --primary: 23 28% 55%;
-  --primary-foreground: 20 25% 97%;
-  --secondary: 30 25% 93%;
-  --secondary-foreground: 24 20% 20%;
+  --popover-foreground: 18 18% 12%;
+  /* Color principal de la marca: tono terracota / caramelo */
+  --primary: 20 29% 50%; /* aprox hsl(20,29%,50%) */
+  --primary-foreground: 0 0% 100%;
+  /* Tonos secundarios neutros para mantener consistencia */
+  --secondary: 30 14% 92%;
+  --secondary-foreground: 18 18% 12%;
   --muted: 30 20% 94%;
-  --muted-foreground: 24 12% 40%;
-  --accent: 17 32% 90%;
-  --accent-foreground: 24 24% 20%;
+  --muted-foreground: 18 12% 40%;
+  --accent: 20 28% 85%;
+  --accent-foreground: 18 18% 12%;
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 98%;
-  --border: 24 20% 86%;
-  --input: 24 20% 86%;
-  --ring: 23 28% 55%;
+  --border: 18 18% 88%;
+  --input: 18 18% 88%;
+  --ring: 20 29% 48%;
   --radius: 0.9rem;
 }
 
 body {
   color: hsl(var(--foreground));
   background:
-    radial-gradient(circle at 10% 0%, rgba(174, 130, 109, 0.25), transparent 45%),
-    radial-gradient(circle at 85% 15%, rgba(236, 211, 196, 0.35), transparent 30%),
-    linear-gradient(180deg, #fcf8f5 0%, #f7f2ee 52%, #f1e7df 100%);
+    radial-gradient(circle at 10% 0%, rgba(174, 130, 109, 0.18), transparent 45%),
+    radial-gradient(circle at 85% 15%, rgba(236, 211, 196, 0.25), transparent 30%),
+    linear-gradient(180deg, #fffaf8 0%, #fff6f2 52%, #fff1ea 100%);
   min-height: 100vh;
 }
 
@@ -40,7 +43,17 @@ body {
   }
 
   .glass-card {
-    @apply border border-white/50 bg-white/70 shadow-sm backdrop-blur-md;
+    @apply border border-white/30 bg-white/60 shadow-sm backdrop-blur-md;
+  }
+
+  /* Botón primario de la marca */
+  .btn-primary {
+    @apply bg-primary text-white px-4 py-2 rounded font-medium hover:bg-primary/90;
+  }
+
+  /* Contenedor de marca: uso consistente en módulos */
+  .brand-card {
+    @apply bg-white rounded-lg shadow p-4 border border-primary/10;
   }
 
   .notify-enter {

@@ -2,6 +2,7 @@
 
 import { createPortal } from "react-dom";
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Eye, Filter, Pencil, Search, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -75,6 +76,7 @@ type Props = {
   currentPage?: number;
   pageSize?: number;
   totalCount?: number;
+  initialSearchTerm?: string;
 };
 
 type GenderFilter = "" | "Hombre" | "Mujer" | "Unisex";
@@ -94,7 +96,7 @@ function normalizeLabel(value: string) {
     .trim()
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[00-\u036f]/g, "");
+    .replace(/[\u0300-\u036f]/g, "");
 }
 
 type SavedProductFilters = {
@@ -120,8 +122,9 @@ export function ProductsInventoryTable({
   currentPage = 1,
   pageSize = 20,
   totalCount,
+  initialSearchTerm = "",
 }: Props) {
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialSearchTerm);
   const [selectedGender, setSelectedGender] = useState<GenderFilter>("");
   const [selectedAgeGroup, setSelectedAgeGroup] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -134,6 +137,7 @@ export function ProductsInventoryTable({
   const [isDeleting, setIsDeleting] = useState(false);
   const [mounted, setMounted] = useState(false);
   const { genderOptions, ageGroupOptions } = useRegisteredTaxonomies();
+  const router = useRouter();
 
   useEffect(() => {
     setMounted(true);
@@ -277,7 +281,8 @@ export function ProductsInventoryTable({
   };
 
   const filteredRows = useMemo(() => {
-    const term = query.trim().toLowerCase();
+    // Nota: La búsqueda por nombre/código/etc se hace en SERVIDOR ahora (no en cliente)
+    // Aquí solo aplicamos filtros facetados visuales opcionales
     const normalizedCategory = normalizeLabel(selectedCategory || "");
     const normalizedSubCategory = normalizeLabel(selectedSubCategory || "");
     const normalizedBrand = normalizeLabel(selectedBrand || "");
@@ -289,23 +294,7 @@ export function ProductsInventoryTable({
       const rowGender = normalizeGender(String(row.gender || ""));
       const rowGenderLabel = normalizeLabel(rowGender);
       const rowAgeGroup = normalizeLabel(String(row.ageGroup || ""));
-      const searchable = [
-        row.sku,
-        row.name,
-        row.brand,
-        row.subBrand,
-        row.category,
-        row.subCategory,
-        row.gender,
-        row.ageGroup,
-        String(row.price),
-        String(row.stock),
-        row.active ? "si" : "no",
-      ]
-        .join(" ")
-        .toLowerCase();
 
-      const matchesText = !term || searchable.includes(term);
       const matchesGender = !selectedGenderLabel || rowGenderLabel === selectedGenderLabel;
       const matchesAgeGroup = !normalizedAgeGroup || rowAgeGroup === normalizedAgeGroup;
       const matchesCategory = !normalizedCategory || normalizeLabel(String(row.category || "")) === normalizedCategory;
@@ -313,9 +302,9 @@ export function ProductsInventoryTable({
       const matchesBrand = !normalizedBrand || normalizeLabel(String(row.brand || "")) === normalizedBrand;
       const matchesSubBrand = !normalizedSubBrand || normalizeLabel(String(row.subBrand || "")) === normalizedSubBrand;
 
-      return matchesText && matchesGender && matchesAgeGroup && matchesCategory && matchesSubCategory && matchesBrand && matchesSubBrand;
+      return matchesGender && matchesAgeGroup && matchesCategory && matchesSubCategory && matchesBrand && matchesSubBrand;
     });
-  }, [rows, query, selectedCategory, selectedSubCategory, selectedBrand, selectedSubBrand, selectedAgeGroup, selectedGender]);
+  }, [rows, selectedCategory, selectedSubCategory, selectedBrand, selectedSubBrand, selectedAgeGroup, selectedGender]);
 
   return (
     <div className="space-y-3">
@@ -336,7 +325,15 @@ export function ProductsInventoryTable({
               <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <input
                 value={query}
-                onChange={(event) => setQuery(event.target.value)}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setQuery(value);
+                  if (value.trim()) {
+                    router.push(`?q=${encodeURIComponent(value.trim())}&page=1`);
+                  } else {
+                    router.push("?page=1");
+                  }
+                }}
                 placeholder="Buscar por SKU, nombre, marca, categoría, precio, stock..."
                 className="h-10 w-full rounded-md border border-input bg-background pl-9 pr-3 text-sm"
               />
@@ -477,21 +474,31 @@ export function ProductsInventoryTable({
                   </label>
                 </div>
 
-                <div className="flex justify-end gap-2 pt-1">
+                <div className="flex flex-col gap-2 border-t border-input pt-3">
                   <Button
                     type="button"
-                    variant="ghost"
-                    className="h-8 px-2 text-sm"
-                    onClick={handleClearFilters}
+                    variant="destructive"
+                    className="h-8 w-full text-xs"
+                    onClick={() => {
+                      handleClearFilters();
+                      try {
+                        window.localStorage.removeItem(PRODUCTS_FILTERS_STORAGE_KEY);
+                      } catch {
+                        // localStorage no disponible
+                      }
+                      setShowQuickFilters(false);
+                    }}
                   >
-                    Limpiar
+                    Mostrar TODOS (sin filtros)
                   </Button>
-                  <Button type="button" className="h-8 px-2 text-sm" onClick={handleSaveFilters}>
-                    Guardar filtro
-                  </Button>
-                  <Button type="button" variant="outline" className="h-8 px-2 text-sm" onClick={() => setShowQuickFilters(false)}>
-                    Cerrar
-                  </Button>
+                  <div className="flex justify-end gap-2">
+                    <Button type="button" className="h-8 px-2 text-sm" onClick={handleSaveFilters}>
+                      Guardar filtro
+                    </Button>
+                    <Button type="button" variant="outline" className="h-8 px-2 text-sm" onClick={() => setShowQuickFilters(false)}>
+                      Cerrar
+                    </Button>
+                  </div>
                 </div>
               </div>
               </div>

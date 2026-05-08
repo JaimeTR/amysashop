@@ -765,6 +765,7 @@ async function updateProductAction(formData: FormData) {
   const subBrand = String(formData.get("subBrand") || "").trim();
   const subCategory = String(formData.get("subCategory") || "").trim();
   const description = String(formData.get("description") || "").trim();
+  const price = Number(formData.get("price") || 0);
   const priceBefore = String(formData.get("priceBefore") || "").trim() ? Number(formData.get("priceBefore")) : null;
   const stock = Number(formData.get("stock") || 0);
   const visibleInStore = formData.get("active") === "on";
@@ -777,8 +778,8 @@ async function updateProductAction(formData: FormData) {
     galleryFilesField: "galleryFiles",
   });
 
-  if (!productId || !name || !code || !brand || !categoryName || stock < 0) {
-    throw new Error("Completa nombre, codigo, marca, categoria y stock valido");
+  if (!productId || !name || !code || !brand || !categoryName || price <= 0 || stock < 0) {
+    throw new Error("Completa nombre, codigo, marca, categoria, precio y stock valido");
   }
 
   const { data: existingCategory } = await supabase
@@ -797,14 +798,9 @@ async function updateProductAction(formData: FormData) {
 
   const current = await supabase
     .from("products")
-    .select("description,price")
+    .select("description")
     .eq("id", productId)
     .maybeSingle();
-
-  const currentPrice = Number((current.data as { price?: number | null } | null)?.price) || 0;
-  if (currentPrice <= 0) {
-    throw new Error("Este producto no tiene precio final valido. Definelo desde Inventario.");
-  }
 
   const baseDescription = stripMeta(String((current.data as { description?: string } | null)?.description || ""));
 
@@ -816,7 +812,7 @@ async function updateProductAction(formData: FormData) {
       age_group: ageGroup,
       brand: canonicalizeBrandName(brand) || brand,
       description,
-      price: currentPrice,
+      price,
       price_before: priceBefore,
       images: finalImages,
       category_id: categoryId,
@@ -832,7 +828,7 @@ async function updateProductAction(formData: FormData) {
       code: autoCode,
       sku: autoCode,
       gender,
-        price: currentPrice,
+        price,
         price_before: priceBefore,
         stock,
         images: finalImages,
@@ -1049,17 +1045,27 @@ export default async function AdminProductosPage({ searchParams }: PageProps) {
   ]);
 
   const page = Number.parseInt(String(searchParams?.page || "1"), 10) || 1;
+  const searchQuery = String(searchParams?.q || "").trim().toLowerCase();
   const pageSize = 20;
   const start = Math.max(0, (page - 1) * pageSize);
   const end = start + pageSize - 1;
+
+  let productsQuery = supabase
+    .from("products")
+    .select("id,name,code,brand,gender,age_group,sub_brand,sub_category,description,images,price,price_before,stock,active,created_at,categories(name)", { count: "exact" });
+
+  // Aplicar búsqueda en servidor si existe
+  if (searchQuery) {
+    productsQuery = productsQuery.or(
+      `name.ilike.%${searchQuery}%,code.ilike.%${searchQuery}%,sku.ilike.%${searchQuery}%,brand.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`
+    );
+  }
 
   let productsResult: {
     data: Array<Record<string, unknown>> | null;
     error: { message?: string } | null;
     count?: number | null;
-  } = await supabase
-    .from("products")
-    .select("id,name,code,brand,gender,age_group,sub_brand,sub_category,description,images,price,price_before,stock,active,created_at,categories(name)", { count: "exact" })
+  } = await productsQuery
     .order("created_at", { ascending: false })
     .range(start, end);
 
@@ -1245,6 +1251,7 @@ export default async function AdminProductosPage({ searchParams }: PageProps) {
               currentPage={page}
               pageSize={pageSize}
               totalCount={totalCount}
+              initialSearchTerm={searchQuery}
             />
           )}
         </CardContent>

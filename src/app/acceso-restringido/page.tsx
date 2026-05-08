@@ -26,7 +26,7 @@ export default function AccesoRestringidoPage({ searchParams }: { searchParams?:
     ? "La página a la que intentas ingresar está restringida para tu perfil o no tienes permisos suficientes."
     : "La página a la que intentas ingresar está restringida para tu perfil.";
   const specificMessage = isClient
-    ? "Si no encuentras lo que buscas, vuelve al inicio o entra a la tienda para seguir navegando."
+    ? "Si no encuentras lo que buscas, vuelve al inicio o entra al catálogo para seguir navegando."
     : `Tu acceso como ${roleLabel} está limitado a tu panel asignado.`;
 
   return (
@@ -42,7 +42,7 @@ export default function AccesoRestringidoPage({ searchParams }: { searchParams?:
             {primaryLabel}
           </Link>
           <Link href="/tienda" className="inline-flex items-center justify-center rounded-xl border border-primary/20 bg-white px-5 py-3 text-sm font-semibold text-primary">
-            Ir a la tienda
+            Ir al catálogo
           </Link>
         </div>
       </div>

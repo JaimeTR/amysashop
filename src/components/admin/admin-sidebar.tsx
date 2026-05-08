@@ -2,7 +2,7 @@
 
 import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
-import { Boxes, ClipboardList, HandCoins, LayoutGrid, Menu, MessageCircleMore, Megaphone, Settings2, TrendingUp, UserCog, Users2, X } from "lucide-react";
+import { Boxes, ClipboardList, HandCoins, LayoutGrid, Menu, MessageCircleMore, Megaphone, Settings2, TrendingUp, UserCog, Users2, X, Zap } from "lucide-react";
 import { AccessRole, AdminPermission, hasPermission } from "@/lib/access-control";
 import { Button } from "@/components/ui/button";
 
@@ -17,6 +17,7 @@ const links = [
   { href: "/admin/tienda", label: "Tienda", icon: Settings2, permission: "store.manage" as AdminPermission },
   { href: "/admin/marketing", label: "Marketing", icon: Megaphone, permission: "store.manage" as AdminPermission },
   { href: "/admin/usuarios", label: "Usuarios", icon: UserCog, permission: "users.manage" as AdminPermission },
+  { href: "/admin/emprende", label: "Emprende", icon: Zap, permission: "users.manage" as AdminPermission },
 ];
 
 type Props = {
@@ -46,6 +47,7 @@ export function AdminSidebar({ role, collapsed, mobileOpen, onToggleCollapse, on
     "/admin/marketing",
     "/admin/usuarios",
     "/admin/vendedora",
+    "/admin/emprende",
   ];
 
   const isActive = (href: string) => {

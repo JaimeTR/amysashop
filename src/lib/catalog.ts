@@ -247,7 +247,15 @@ export const getProductById = cache(async (id: string): Promise<Product | null> 
   const { data, error } = result;
 
   if (!error && data) {
-    return mapProductRow(data as ProductRow);
+    try {
+      return mapProductRow(data as ProductRow);
+    } catch (err) {
+      // Registro temporal para depuración: captura filas problemáticas y evita romper el render
+      // Esto ayuda a reproducir el error en `next dev` y luego se puede revertir.
+      // eslint-disable-next-line no-console
+      console.error("Error mapeando producto", { id, error: err, row: data });
+      return null;
+    }
   }
 
   return productSamples.find((item) => item.id === id) ?? null;

@@ -145,7 +145,7 @@ export function DiscountCarouselClient({ products }: { products: Product[] }) {
                 <div className="space-y-2 p-3 h-full flex flex-col">
                   <div className="relative -m-3 mb-0">
                     <Link href={`/producto/${product.id}`}>
-                      <div className="relative w-full h-44 bg-gray-200 overflow-hidden">
+                      <div className="relative w-full aspect-square bg-gray-200 overflow-hidden">
                         <Image
                           src={imageSrc}
                           alt={product.name}

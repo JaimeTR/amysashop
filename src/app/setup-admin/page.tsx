@@ -82,7 +82,7 @@ export default function SetAdminPage() {
       <button
         onClick={handleSetAdmin}
         disabled={loading}
-        className="bg-blue-600 text-white px-4 py-2 rounded font-bold hover:bg-blue-700 w-full disabled:opacity-50"
+        className="bg-primary text-white px-4 py-2 rounded font-bold hover:bg-primary/90 w-full disabled:opacity-50"
       >
         {loading ? "⏳ Procesando..." : "✓ Convertirme en Admin"}
       </button>

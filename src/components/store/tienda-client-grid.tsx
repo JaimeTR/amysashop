@@ -25,6 +25,7 @@ type Props = {
   categories?: string[];
   initialCategory?: string;
   initialBrand?: string;
+  showFeatured?: boolean;
 };
 
 type SortOption = "recent" | "price-asc" | "price-desc" | "name-asc";
@@ -104,7 +105,7 @@ function navigateToProduct(productId: string) {
   window.location.href = `/producto/${productId}`;
 }
 
-export function TiendaClientGrid({ products, allProducts, categories = [], initialCategory, initialBrand }: Props) {
+export function TiendaClientGrid({ products, allProducts, categories = [], initialCategory, initialBrand, showFeatured = false }: Props) {
   const searchParams = useSearchParams();
   const [query, setQuery] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>(initialCategory ? [initialCategory] : []);
@@ -432,6 +433,14 @@ export function TiendaClientGrid({ products, allProducts, categories = [], initi
     productMetaById,
   ]);
 
+  // Limitar productos cuando showFeatured es true
+  const displayedProducts = useMemo(() => {
+    if (showFeatured) {
+      return filteredProducts.slice(0, 12);
+    }
+    return filteredProducts;
+  }, [filteredProducts, showFeatured]);
+
   const discountedProducts = useMemo(() => {
     const list = [] as any[];
     for (const p of products) {
@@ -530,7 +539,7 @@ export function TiendaClientGrid({ products, allProducts, categories = [], initi
       <div className="mt-5 space-y-3">
         <p className="text-sm font-semibold">Marcas</p>
         {brands.length === 0 ? <p className="text-xs text-muted-foreground">Sin marcas detectadas.</p> : null}
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           {brands.map((brand) => {
             const checked = selectedBrands.includes(brand);
             const count = brandProductCount.get(normalizeLabel(brand)) || 0;
@@ -770,7 +779,7 @@ export function TiendaClientGrid({ products, allProducts, categories = [], initi
 
   return (
     <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
-      <aside className="hidden h-fit rounded-3xl p-5 md:block glass-card">{filtersContent}</aside>
+      <aside className="hidden sticky top-36 h-fit max-h-[calc(100vh-10rem)] overflow-y-auto rounded-3xl p-5 md:block glass-card [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">{filtersContent}</aside>
 
       <section className="space-y-4">
         <div className="glass-card rounded-2xl p-3">
@@ -821,7 +830,7 @@ export function TiendaClientGrid({ products, allProducts, categories = [], initi
         </div>
 
         <div className="grid gap-3 px-3 sm:grid-cols-2 sm:px-0 xl:grid-cols-4">
-          {filteredProducts.map((product) => (
+          {displayedProducts.map((product) => (
             <div
               key={product.id}
               className="glass-card overflow-hidden group cursor-pointer rounded-xl border bg-card text-card-foreground shadow-sm"
@@ -841,7 +850,7 @@ export function TiendaClientGrid({ products, allProducts, categories = [], initi
                     width={800}
                     height={800}
                     unoptimized
-                    className="h-40 w-full object-cover transition-transform duration-300 transform group-hover:scale-105"
+                    className="aspect-square w-full object-cover transition-transform duration-300 transform group-hover:scale-105"
                   />
                 </Link>
                 {(() => {

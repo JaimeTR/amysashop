@@ -40,7 +40,7 @@ export default function DiscountSlider({ products }: { products: ProductShort[] 
           <div key={p.id} className="w-64 flex-shrink-0">
             <div className="rounded-lg border bg-white/5">
               <Link href={`/producto/${p.id}`} className="block">
-                <Image src={getSafeProductImageSrc(p.images)} alt={p.name} width={400} height={400} className="h-40 w-full object-cover rounded-t-lg" unoptimized />
+                <Image src={getSafeProductImageSrc(p.images)} alt={p.name} width={400} height={400} className="aspect-square w-full object-cover rounded-t-lg" unoptimized />
               </Link>
               <div className="p-3">
                 <p className="text-xs text-muted-foreground">{p.category}</p>

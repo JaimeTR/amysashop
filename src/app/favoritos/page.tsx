@@ -113,7 +113,7 @@ export default function FavoritosPage() {
                     width={700}
                     height={700}
                     unoptimized
-                    className="h-44 w-full object-cover"
+                    className="aspect-square w-full object-cover"
                   />
                 </Link>
                 <div className="absolute right-2 top-2">

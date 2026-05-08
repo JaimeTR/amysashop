@@ -8,7 +8,7 @@ export default function NotFound() {
         <h1 className="mt-3 font-[var(--font-display)] text-4xl text-foreground">Te perdiste</h1>
         <p className="mt-4 text-base text-muted-foreground">
           La página que intentas abrir no existe o ya no está disponible.
-          Regresa al inicio o ve directo a la tienda para seguir comprando.
+          Regresa al inicio o ve directo al catálogo para seguir comprando.
         </p>
 
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
@@ -16,7 +16,7 @@ export default function NotFound() {
             Ir al inicio
           </Link>
           <Link href="/tienda" className="inline-flex items-center justify-center rounded-xl border border-primary/20 bg-white px-5 py-3 text-sm font-semibold text-primary">
-            Ir a la tienda
+            Ir al catálogo
           </Link>
         </div>
       </div>

@@ -445,13 +445,13 @@ export function ProductEditModal({
                 name="price"
                 type="number"
                 step="0.01"
-                min="0"
-                value={price}
-                readOnly
-                disabled
-                className={`${baseInputClass} cursor-not-allowed bg-[#f4eee9] text-black/70`}
+                min="0.01"
+                defaultValue={price > 0 ? price : ""}
+                placeholder="Ej: 29.99"
+                required
+                className={baseInputClass}
               />
-              <p className="mt-1 text-[11px] text-black/55">Se define automaticamente en Inventario</p>
+              <p className="mt-1 text-[11px] text-black/55">Precio de venta final (requerido)</p>
             </div>
             <div>
               <label className="mb-1 block text-xs font-semibold text-black">Precio sugerido</label>

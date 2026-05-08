@@ -124,7 +124,7 @@ function getDiscountPercent(priceBefore: number | null | undefined, price: numbe
 
 export default async function Home() {
   const [products, categories] = await Promise.all([getActiveProducts(), getRegisteredCategories()]);
-  const featuredProducts = products.slice(0, 12);
+  const featuredProducts = products.slice(0, 15);
 
   const discountedProducts = products
     .filter((product) => Number(product.priceBefore || 0) > Number(product.price || 0))
@@ -172,7 +172,7 @@ export default async function Home() {
               <div className="w-full md:w-auto">
                 <Button asChild className="w-full">
                   <Link href="/tienda" className="inline-flex items-center justify-center w-full uppercase font-light md:font-semibold">
-                    VER TIENDA <Store className="ml-2 size-4" />
+                    VER CATÁLOGO <Store className="ml-2 size-4" />
                   </Link>
                 </Button>
               </div>
@@ -275,7 +275,7 @@ export default async function Home() {
           ) : null}
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           {featuredProducts.map((product) => (
             <article key={product.id} className="glass-card overflow-hidden rounded-2xl group transition-transform duration-300 hover:scale-102 hover:shadow-lg">
               {(() => {
@@ -289,7 +289,7 @@ export default async function Home() {
                   alt={product.name}
                   width={600}
                   height={600}
-                  className="h-40 w-full object-cover transition-transform duration-300 transform group-hover:scale-105"
+                  className="aspect-square w-full object-cover transition-transform duration-300 transform group-hover:scale-105"
                 />
               </Link>
 

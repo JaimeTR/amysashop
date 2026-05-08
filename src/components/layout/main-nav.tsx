@@ -83,7 +83,7 @@ type ProfileData = {
 };
 
 const mobileLinks = [
-  { href: "/tienda", label: "Tienda", icon: Store },
+  { href: "/tienda", label: "Catálogo", icon: Store },
   { href: "/favoritos", label: "Favoritos", icon: Heart },
   { href: "/carrito", label: "Carrito", icon: ShoppingCart },
   { href: "/perfil", label: "Perfil", icon: User },
@@ -985,7 +985,7 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
                 className="rounded-full border border-primary/15 bg-white/75 px-4 py-2 text-sm font-semibold text-foreground transition hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
                 onClick={closeMenus}
               >
-                Tienda
+                Catálogo
               </Link>
 
               <div className="relative">

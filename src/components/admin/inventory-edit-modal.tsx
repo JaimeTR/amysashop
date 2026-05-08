@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 export type InventoryEditItem = {
   id: string;
   name: string;
+  sku?: string;
   category: string;
   stock: number;
   cost: number;
@@ -146,6 +147,7 @@ export function InventoryEditModal({ item, updateInventoryAction, onClose }: Pro
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid gap-3 rounded-2xl border border-[#e3d7cd] bg-white/80 p-4 text-sm md:grid-cols-2">
             <p><span className="font-semibold">Producto:</span> {item.name}</p>
+            <p><span className="font-semibold">SKU:</span> {item.sku || "-"}</p>
             <p><span className="font-semibold">Categoría:</span> {item.category || "Sin categoría"}</p>
           </div>
 
