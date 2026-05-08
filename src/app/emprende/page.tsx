@@ -102,7 +102,7 @@ export default function EmprenderPage() {
   }
 
   return (
-    <AdminShell>
+    <AdminShell role={profile?.role || "user"}>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold">Emprende</h1>
