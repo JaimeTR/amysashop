@@ -61,20 +61,20 @@ export default function SetAdminPage() {
   if (!user) {
     return (
       <div className="p-8">
-        <h1 className="text-yellow-600 font-bold">⏳ Cargando...</h1>
+        <h1 className="text-warning-foreground font-bold">⏳ Cargando...</h1>
       </div>
     );
   }
 
   return (
-    <div className="p-8 max-w-md mx-auto mt-8 bg-blue-50 rounded-lg">
+    <div className="p-8 max-w-md mx-auto mt-8 bg-info/10 rounded-lg">
       <h1 className="text-2xl font-bold mb-4">Activar Admin</h1>
       <p className="mb-4">
         Email: <strong>{user.email}</strong>
       </p>
 
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded mb-4">
+        <div className="bg-destructive/10 border border-destructive/80 text-destructive-foreground px-4 py-2 rounded mb-4">
           {error}
         </div>
       )}

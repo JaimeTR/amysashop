@@ -1,7 +1,7 @@
 "use client";
 
 import { createPortal } from "react-dom";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Eye, Filter, Pencil, Search, Trash2, X } from "lucide-react";
@@ -149,6 +149,53 @@ export function ProductsInventoryTable({
     () => (previewProduct ? buildProductDetailMeta(previewProduct.rawDescription || "", previewProduct.description || "") : null),
     [previewProduct]
   );
+
+  const modalRef = useRef<HTMLDivElement | null>(null);
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    if (!previewProduct) return;
+    const prevActive = document.activeElement as HTMLElement | null;
+    const modal = modalRef.current;
+    const selector = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    const focusable = modal ? Array.from(modal.querySelectorAll<HTMLElement>(selector)) : [];
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setPreviewProductId(null);
+        return;
+      }
+      if (e.key === "Tab") {
+        if (!focusable.length) {
+          e.preventDefault();
+          return;
+        }
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last?.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first?.focus();
+          }
+        }
+      }
+    }
+
+    document.addEventListener("keydown", onKey);
+    setTimeout(() => {
+      (closeButtonRef.current ?? modal)?.focus();
+    }, 0);
+
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      prevActive?.focus();
+    };
+  }, [previewProduct]);
 
   useEffect(() => {
     try {
@@ -315,7 +362,7 @@ export function ProductsInventoryTable({
             <Button
               type="button"
               variant="outline"
-              className="h-10 w-10 shrink-0 rounded-md p-0"
+              className="size-10 shrink-0 rounded-md p-0"
               onClick={() => setShowQuickFilters((current) => !current)}
               aria-label="Abrir filtros"
             >
@@ -515,26 +562,26 @@ export function ProductsInventoryTable({
         <p className="text-sm text-muted-foreground">No se encontraron productos con ese criterio.</p>
       ) : (
         <div className="overflow-x-auto rounded-xl border bg-white/80">
-          <table className="min-w-[1240px] w-full text-sm">
+          <table className="w-full text-sm">
             <thead className="bg-[#efe3d8] text-left">
               <tr>
                 <th className="px-3 py-2">N°</th>
                 <th className="px-3 py-2">Imagen</th>
-                <th className="px-3 py-2">SKU</th>
-                <th className="px-3 py-2">Nombre</th>
-                <th className="px-3 py-2">Categoría</th>
-                <th className="px-3 py-2">Marca</th>
-                <th className="px-3 py-2">Género</th>
+                <th className="px-3 py-2 hidden sm:table-cell">SKU</th>
+                <th className="px-3 py-2 min-w-[150px]">Nombre</th>
+                <th className="px-3 py-2 hidden md:table-cell">Categoría</th>
+                <th className="px-3 py-2 hidden md:table-cell">Marca</th>
+                <th className="px-3 py-2 hidden lg:table-cell">Género</th>
                 <th className="px-3 py-2">Precio</th>
-                <th className="px-3 py-2">Stock</th>
-                <th className="px-3 py-2">Visible Cliente</th>
+                <th className="px-3 py-2 hidden md:table-cell">Stock</th>
+                <th className="px-3 py-2 hidden lg:table-cell">Visible</th>
                 <th className="px-3 py-2">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {filteredRows.map((row, index) => (
                 <tr key={row.id} className="border-t align-top">
-                  <td className="px-3 py-2 text-muted-foreground">{baseIndex + index + 1}</td>
+                  <td className="px-3 py-2 text-muted-foreground text-xs">{baseIndex + index + 1}</td>
                   <td className="px-3 py-2">
                     <button
                       type="button"
@@ -547,24 +594,25 @@ export function ProductsInventoryTable({
                         alt={row.name}
                         width={52}
                         height={52}
-                        className="h-[52px] w-[52px] object-cover"
+                        className="h-[40px] w-[40px] sm:h-[52px] sm:w-[52px] object-cover"
                       />
                     </button>
                   </td>
-                  <td className="px-3 py-2 font-semibold text-primary">{row.sku || "Sin SKU"}</td>
+                  <td className="px-3 py-2 font-semibold text-primary hidden sm:table-cell text-xs">{row.sku || "Sin SKU"}</td>
                   <td className="px-3 py-2 font-medium">
                     <button
                       type="button"
                       onClick={() => setPreviewProductId(row.id)}
-                      className="text-left text-foreground transition hover:text-primary"
+                      className="text-left text-foreground transition hover:text-primary truncate max-w-xs block"
+                      title={row.name}
                     >
                       {row.name}
                     </button>
                   </td>
-                  <td className="px-3 py-2">{row.category || "Sin categoría"}</td>
-                  <td className="px-3 py-2">{row.brand || "Sin marca"}</td>
-                  <td className="px-3 py-2">{row.gender || "-"}</td>
-                  <td className="px-3 py-2">
+                  <td className="px-3 py-2 hidden md:table-cell text-xs">{row.category || "Sin categoría"}</td>
+                  <td className="px-3 py-2 hidden md:table-cell text-xs">{row.brand || "Sin marca"}</td>
+                  <td className="px-3 py-2 hidden lg:table-cell text-xs">{row.gender || "-"}</td>
+                  <td className="px-3 py-2 text-xs">
                     <div className="space-y-0.5">
                       {row.priceBefore && row.priceBefore > row.price ? (
                         <p className="text-xs font-medium text-muted-foreground line-through">S/ {Number(row.priceBefore).toFixed(2)}</p>
@@ -572,11 +620,11 @@ export function ProductsInventoryTable({
                       <p className="font-semibold text-primary">S/ {Number(row.price).toFixed(2)}</p>
                     </div>
                   </td>
-                  <td className="px-3 py-2">{row.stock}</td>
-                  <td className="px-3 py-2">
+                  <td className="px-3 py-2 hidden md:table-cell text-xs">{row.stock}</td>
+                  <td className="px-3 py-2 hidden lg:table-cell">
                     <span
                       className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                        row.active ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"
+                        row.active ? "bg-success/10 text-success-foreground" : "bg-destructive/10 text-destructive-foreground"
                       }`}
                     >
                       {row.active ? "Sí" : "No"}
@@ -590,8 +638,9 @@ export function ProductsInventoryTable({
                         variant="outline"
                         onClick={() => setPreviewProductId(row.id)}
                         aria-label="Visualizar"
+                        className="h-8 w-8"
                       >
-                        <Eye className="size-4" />
+                        <Eye className="size-3 sm:size-4" />
                       </Button>
                       <ProductEditModal
                         productId={row.id}
@@ -615,8 +664,9 @@ export function ProductsInventoryTable({
                         active={row.active}
                         updateProductAction={updateProductAction}
                         triggerMode="icon"
-                        triggerIcon={<Pencil className="size-4" />}
+                        triggerIcon={<Pencil className="size-3 sm:size-4" />}
                         triggerAriaLabel="Editar"
+                        className="h-8 w-8"
                       />
                       <Button
                         type="button"
@@ -624,8 +674,9 @@ export function ProductsInventoryTable({
                         variant="destructive"
                         onClick={() => setDeleteConfirmId(row.id)}
                         aria-label="Eliminar"
+                        className="h-8 w-8"
                       >
-                        <Trash2 className="size-4" />
+                        <Trash2 className="size-3 sm:size-4" />
                       </Button>
                     </div>
                   </td>
@@ -661,18 +712,18 @@ export function ProductsInventoryTable({
       {previewProduct && previewMeta && mounted
         ? createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-3xl overflow-hidden rounded-3xl border border-white/30 bg-[#fcf8f5] shadow-2xl">
+          <div ref={modalRef} tabIndex={-1} className="relative w-full max-w-3xl overflow-hidden rounded-3xl border border-white/30 bg-[#fcf8f5] shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-[#e3d7cd] px-5 py-4">
               <div>
                 <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Vista de producto</p>
                 <h3 className="font-[var(--font-display)] text-2xl text-foreground">{previewProduct.name}</h3>
               </div>
-              <Button type="button" variant="ghost" size="icon" onClick={() => setPreviewProductId(null)} aria-label="Cerrar vista">
+              <Button type="button" variant="ghost" size="icon" onClick={() => setPreviewProductId(null)} aria-label="Cerrar vista" className="absolute top-3 right-3" ref={closeButtonRef}>
                 <X className="size-4" />
               </Button>
             </div>
 
-            <div className="grid gap-5 p-5 md:grid-cols-[280px_minmax(0,1fr)]">
+            <div className="grid gap-5 p-4 md:p-5 grid-cols-1 md:grid-cols-[280px_minmax(0,1fr)] items-start">
               <div className="space-y-2">
                 <div className="overflow-hidden rounded-2xl border border-[#e3d7cd] bg-white">
                   <Image
@@ -680,7 +731,7 @@ export function ProductsInventoryTable({
                     alt={previewProduct.name}
                     width={420}
                     height={420}
-                    className="h-[260px] w-full object-cover"
+                    className="h-56 md:h-[260px] lg:h-[420px] w-full object-cover"
                   />
                 </div>
               </div>

@@ -21,8 +21,10 @@ function parseOptions(raw: string) {
   if (!raw) return [] as string[];
   return raw
     .split(/,|\||\//)
-    .map((item) => item.trim())
-    .filter(Boolean);
+    .flatMap((item) => {
+      const trimmed = item.trim();
+      return trimmed ? [trimmed] : [];
+    });
 }
 
 function normalizeLabel(value: string) {
@@ -159,7 +161,7 @@ export default async function Home() {
                 alt="Tienda AMYSA"
                 width={200}
                 height={200}
-                className="object-contain w-40 h-40"
+                className="object-contain size-40"
                 priority
               />
             </div>
@@ -194,7 +196,7 @@ export default async function Home() {
               alt="Tienda AMYSA"
               width={200}
               height={200}
-              className="object-contain w-80 h-80"
+              className="object-contain size-80"
               priority
             />
           </div>
@@ -204,7 +206,7 @@ export default async function Home() {
       {/* Flecha indicadora solo en móvil, fuera del contenedor hero: desplaza hacia la sección de marcas */}
       <div className="-mt-2 flex justify-center md:hidden">
         <a href="#brands" className="inline-flex items-center justify-center rounded-full bg-white/10 p-2 text-primary shadow-sm">
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" className="size-6 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
           </svg>
         </a>
@@ -248,7 +250,7 @@ export default async function Home() {
                     className="group flex min-w-[4.5rem] shrink-0 flex-col items-center gap-2 rounded-2xl border border-transparent px-2 py-2 transition hover:border-primary/30 hover:bg-white/50 md:min-w-0 md:px-2 md:py-3"
                   >
                     <span
-                      className={`flex h-12 w-12 items-center justify-center rounded-full border border-white/70 bg-gradient-to-br shadow-sm transition group-hover:scale-105 md:h-14 md:w-14 ${getPaletteClass(category)}`}
+                      className={`flex size-12 items-center justify-center rounded-full border border-white/70 bg-gradient-to-br shadow-sm transition group-hover:scale-105 md:size-14 ${getPaletteClass(category)}`}
                     >
                       <CategoryIcon className="size-5 md:size-6" />
                     </span>
@@ -305,7 +307,7 @@ export default async function Home() {
                   ) : null}
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="text-base font-bold text-primary">S/ {product.price.toFixed(2)}</p>
-                    {discountPercent > 0 ? <Badge className="border border-emerald-300 bg-emerald-100 text-emerald-700">{discountPercent}% OFF</Badge> : null}
+                    {discountPercent > 0 ? <Badge className="border border-success/70 bg-success/90 text-success-foreground">{discountPercent}% OFF</Badge> : null}
                   </div>
                 </div>
 

@@ -145,7 +145,7 @@ export function DiscountCarouselClient({ products }: { products: Product[] }) {
                 <div className="space-y-2 p-3 h-full flex flex-col">
                   <div className="relative -m-3 mb-0">
                     <Link href={`/producto/${product.id}`}>
-                      <div className="relative w-full aspect-square bg-gray-200 overflow-hidden">
+                      <div className="relative w-full aspect-square bg-muted/95 overflow-hidden">
                         <Image
                           src={imageSrc}
                           alt={product.name}
@@ -215,14 +215,14 @@ export function DiscountCarouselClient({ products }: { products: Product[] }) {
       <div className="flex items-center justify-center gap-2 md:hidden">
         <button
           onClick={() => scroll(-320)}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border/60 bg-background/70 text-foreground shadow-sm backdrop-blur-sm transition hover:bg-background"
+          className="inline-flex size-9 items-center justify-center rounded-md border border-border/60 bg-background/70 text-foreground shadow-sm backdrop-blur-sm transition hover:bg-background"
           aria-label="Anterior"
         >
           <ChevronLeft className="size-4" />
         </button>
         <button
           onClick={() => scroll(320)}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border/60 bg-background/70 text-foreground shadow-sm backdrop-blur-sm transition hover:bg-background"
+          className="inline-flex size-9 items-center justify-center rounded-md border border-border/60 bg-background/70 text-foreground shadow-sm backdrop-blur-sm transition hover:bg-background"
           aria-label="Siguiente"
         >
           <ChevronRight className="size-4" />

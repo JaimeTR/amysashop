@@ -67,7 +67,7 @@ function getStatePresentation(session: Pick<ChatSessionRow, "status" | "lead_sta
   if (session.joined_by_admin_id) {
     return {
       label: "Asesor se unió",
-      className: "bg-emerald-100 text-emerald-700 border border-emerald-200",
+      className: "bg-success/10 text-success-foreground border border-success/40",
       alert: false,
     };
   }
@@ -75,7 +75,7 @@ function getStatePresentation(session: Pick<ChatSessionRow, "status" | "lead_sta
   if (stage === "en_seguimiento") {
     return {
       label: "En seguimiento",
-      className: "bg-amber-100 text-amber-700 border border-amber-200",
+      className: "bg-warning/10 text-warning-foreground border border-warning/40",
       alert: false,
     };
   }
@@ -83,7 +83,7 @@ function getStatePresentation(session: Pick<ChatSessionRow, "status" | "lead_sta
   if (stage === "contactado" || status === "active" || status === "contactado") {
     return {
       label: "Asesor contactó",
-      className: "bg-sky-100 text-sky-700 border border-sky-200",
+      className: "bg-info/10 text-info-foreground border border-info/40",
       alert: false,
     };
   }
@@ -91,14 +91,14 @@ function getStatePresentation(session: Pick<ChatSessionRow, "status" | "lead_sta
   if (status === "lead") {
     return {
       label: "Lead nuevo",
-      className: "bg-rose-100 text-rose-700 border border-rose-200",
+      className: "bg-destructive/10 text-destructive-foreground border border-destructive/40",
       alert: true,
     };
   }
 
   return {
     label: "Cliente espera contacto",
-    className: "bg-gray-100 text-gray-700 border border-gray-200",
+    className: "bg-muted text-muted-foreground border border-border",
     alert: false,
   };
 }
@@ -261,7 +261,7 @@ export default async function AdminChatsPage({ searchParams }: PageProps) {
                   }`}
                 >
                   <div className="mb-3 flex items-start gap-3">
-                    <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#e3d7cd] bg-[#f7f1ec] text-[#7d5a44]">
+                    <div className="relative flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#e3d7cd] bg-[#f7f1ec] text-[#7d5a44]">
                       {hasAvatar ? (
                         <Image src={avatarUrl} alt={displayName} width={44} height={44} unoptimized className="h-full w-full object-cover" />
                       ) : (

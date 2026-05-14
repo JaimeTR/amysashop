@@ -6,7 +6,8 @@
     "dev": "next dev --hostname 0.0.0.0",
     "build": "next build",
     "start": "next start --hostname 0.0.0.0",
-    "lint": "next lint"
+    "lint": "next lint",
+    "optimize-images": "node ./scripts/convert-logos.js"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.4",
@@ -34,5 +35,8 @@
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
+  },
+  "optionalDependencies": {
+    "sharp": "^0.32.0"
   }
 }

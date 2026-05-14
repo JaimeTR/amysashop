@@ -110,26 +110,30 @@ export function UsersInventoryTable({
         <p className="text-sm text-muted-foreground">No se encontraron usuarios con ese criterio.</p>
       ) : (
         <div className="overflow-x-auto rounded-xl border bg-white/80">
-          <table className="min-w-[1320px] w-full text-sm">
+          <table className="w-full text-sm">
             <thead className="bg-[#efe3d8] text-left">
               <tr>
                 <th className="px-3 py-2">Nombre</th>
                 <th className="px-3 py-2">Correo</th>
-                <th className="px-3 py-2">Rol</th>
-                <th className="px-3 py-2">Verificado</th>
-                <th className="px-3 py-2">Estado</th>
-                <th className="px-3 py-2">Registro</th>
+                <th className="px-3 py-2 hidden sm:table-cell">Rol</th>
+                <th className="px-3 py-2 hidden md:table-cell">Verificado</th>
+                <th className="px-3 py-2 hidden lg:table-cell">Estado</th>
+                <th className="px-3 py-2 hidden xl:table-cell">Registro</th>
                 <th className="px-3 py-2">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {filteredRows.map((row) => (
                 <tr key={row.id} className="border-t align-top">
-                  <td className="px-3 py-2">{row.nombre || "Sin nombre"}</td>
-                  <td className="px-3 py-2">{row.email}</td>
-                  <td className="px-3 py-2">
+                  <td className="px-3 py-2 font-medium truncate max-w-[120px]">
+                    <span title={row.nombre || "Sin nombre"}>{row.nombre || "Sin nombre"}</span>
+                  </td>
+                  <td className="px-3 py-2 text-xs truncate max-w-[150px]">
+                    <span title={row.email}>{row.email}</span>
+                  </td>
+                  <td className="px-3 py-2 hidden sm:table-cell">
                     {row.isProtectedSuperadmin ? (
-                      <span className="inline-flex rounded-full bg-indigo-100 px-2 py-1 text-xs font-semibold text-indigo-700">
+                      <span className="inline-flex rounded-full bg-accent/10 px-2 py-1 text-xs font-semibold text-accent-foreground">
                         {getRoleLabel("superadmin")}
                       </span>
                     ) : (
@@ -138,7 +142,7 @@ export function UsersInventoryTable({
                         <select
                           name="role"
                           defaultValue={row.role}
-                          className="h-9 rounded-md border border-input bg-background px-2 text-xs"
+                          className="h-8 rounded-md border border-input bg-background px-2 text-xs"
                           onChange={(event) => event.currentTarget.form?.requestSubmit()}
                         >
                           {editableRoles.map((option) => (
@@ -150,25 +154,25 @@ export function UsersInventoryTable({
                       </form>
                     )}
                   </td>
-                  <td className="px-3 py-2">
+                  <td className="px-3 py-2 hidden md:table-cell">
                     <span
                       className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                        row.verified ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
+                        row.verified ? "bg-success text-success-foreground" : "bg-warning text-warning-foreground"
                       }`}
                     >
                       {row.verified ? "Sí" : "No"}
                     </span>
                   </td>
-                  <td className="px-3 py-2">
+                  <td className="px-3 py-2 hidden lg:table-cell">
                     <span
                       className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                        row.isDisabled ? "bg-rose-100 text-rose-700" : "bg-emerald-100 text-emerald-700"
+                        row.isDisabled ? "bg-destructive text-destructive-foreground" : "bg-success text-success-foreground"
                       }`}
                     >
                       {row.isDisabled ? "Deshabilitado" : "Activo"}
                     </span>
                   </td>
-                  <td className="px-3 py-2 text-xs text-muted-foreground">
+                  <td className="px-3 py-2 text-xs text-muted-foreground hidden xl:table-cell">
                     {row.createdAt ? new Date(row.createdAt).toLocaleDateString("es-PE") : "-"}
                   </td>
                   <td className="px-3 py-2">

@@ -237,6 +237,7 @@ export function AmysaAssistantWidget({ userId, userName }: Props) {
       .subscribe();
 
     return () => {
+      channel.unsubscribe();
       supabase.removeChannel(channel);
     };
   }, [sessionId, supabase]);
@@ -415,16 +416,16 @@ export function AmysaAssistantWidget({ userId, userName }: Props) {
             {messages.map((msg) => (
               <div key={msg.id} className={`flex ${msg.sender === "client" ? "justify-end" : "justify-start"}`}>
                 {msg.sender === "system" ? (
-                  <div className="mx-auto rounded-full border border-slate-300/70 bg-slate-100/90 px-3 py-1 text-[11px] font-semibold text-slate-700">
+                  <div className="mx-auto rounded-full border border-border/70 bg-muted/90 px-3 py-1 text-[11px] font-semibold text-muted-foreground">
                     {msg.content}
                   </div>
                 ) : null}
 
                 {msg.sender !== "system" && (msg.sender === "assistant" || msg.sender === "admin") ? (
                   <div className="mr-2 mt-1">
-                    {msg.sender === "admin" ? (
-                      <div className="grid size-7 place-content-center rounded-full border border-emerald-300/70 bg-emerald-50">
-                        <UserRound className="size-4 text-emerald-700" />
+                      {msg.sender === "admin" ? (
+                      <div className="grid size-7 place-content-center rounded-full border border-success/70 bg-success/90">
+                        <UserRound className="size-4 text-success-foreground" />
                       </div>
                     ) : (
                       <Image
@@ -458,12 +459,12 @@ export function AmysaAssistantWidget({ userId, userName }: Props) {
                 ) : null}
 
                 {msg.sender !== "system" ? (
-                <div
+                    <div
                   className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${
                     msg.sender === "client"
                       ? "order-1 bg-primary text-primary-foreground"
                       : msg.sender === "admin"
-                        ? "border border-emerald-300/70 bg-emerald-50/95 text-foreground"
+                        ? "border border-success/70 bg-success/95 text-foreground"
                         : "border border-white/40 bg-white/90 text-foreground"
                   }`}
                 >

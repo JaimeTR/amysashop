@@ -394,7 +394,7 @@ export default async function InventarioPage({ searchParams }: { searchParams?: 
       <Card>
         <CardContent>
           {productsError ? (
-            <p className="mb-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+            <p className="mb-3 rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive-foreground">
               No se pudo cargar inventario: {productsError.message}
             </p>
           ) : null}

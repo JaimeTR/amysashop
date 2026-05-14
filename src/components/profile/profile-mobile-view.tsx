@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
@@ -65,9 +66,12 @@ export function ProfileMobileView({
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-center gap-4 rounded-2xl border border-white/80 bg-white/80 p-3 shadow-sm">
-          <img
+          <Image
             src={userAvatar}
             alt="Foto de perfil"
+            width={64}
+            height={64}
+            unoptimized
             className="size-16 rounded-full border border-primary/20 object-cover"
           />
           <div className="min-w-0">

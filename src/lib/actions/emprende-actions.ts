@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/server";
 import {
   Salesperson,
   ExternalClient,
@@ -14,17 +14,30 @@ import {
   SalesFilter,
   PaymentStatus,
 } from "@/lib/types";
+import { auth } from "@/lib/auth";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+async function requireAuthenticatedUser() {
+  const supabase = createClient();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  if (error || !user) {
+    throw new Error("Unauthorized");
+  }
+
+  return { supabase, user };
+}
 
 // ============================================================================
 // SALESPEOPLE (VENDEDORAS)
 // ============================================================================
 
 export async function getSalesperson(userId: string): Promise<Salesperson | null> {
+  const { supabase, user } = await requireAuthenticatedUser();
+  if (!user) throw new Error("Unauthorized");
+
   const { data, error } = await supabase
     .from("salespeople")
     .select("*")
@@ -40,6 +53,9 @@ export async function getSalesperson(userId: string): Promise<Salesperson | null
 }
 
 export async function getAllSalespeople(): Promise<Salesperson[]> {
+  const session = await auth();
+  if (!session) throw new Error("Unauthorized");
+  const { supabase } = await requireAuthenticatedUser();
   const { data, error } = await supabase
     .from("salespeople")
     .select("*")
@@ -60,6 +76,9 @@ export async function createSalesperson(
   phone?: string,
   commissionPercentage: number = 5
 ): Promise<Salesperson | null> {
+  const session = await auth();
+  if (!session) throw new Error("Unauthorized");
+  const { supabase } = await requireAuthenticatedUser();
   const { data, error } = await supabase
     .from("salespeople")
     .insert([
@@ -86,6 +105,9 @@ export async function updateSalesperson(
   salespersonId: string,
   updates: UpdateSalespersonInput
 ): Promise<Salesperson | null> {
+  const session = await auth();
+  if (!session) throw new Error("Unauthorized");
+  const { supabase } = await requireAuthenticatedUser();
   const { data, error } = await supabase
     .from("salespeople")
     .update(updates)
@@ -109,6 +131,9 @@ export async function createExternalClient(
   salespersonId: string,
   clientData: CreateExternalClientInput
 ): Promise<ExternalClient | null> {
+  const session = await auth();
+  if (!session) throw new Error("Unauthorized");
+  const { supabase } = await requireAuthenticatedUser();
   const { data, error } = await supabase
     .from("external_clients")
     .insert([
@@ -131,6 +156,9 @@ export async function createExternalClient(
 export async function getExternalClientsBySalesperson(
   salespersonId: string
 ): Promise<ExternalClient[]> {
+  const session = await auth();
+  if (!session) throw new Error("Unauthorized");
+  const { supabase } = await requireAuthenticatedUser();
   const { data, error } = await supabase
     .from("external_clients")
     .select("*")
@@ -149,6 +177,9 @@ export async function updateExternalClient(
   clientId: string,
   updates: Partial<ExternalClient>
 ): Promise<ExternalClient | null> {
+  const session = await auth();
+  if (!session) throw new Error("Unauthorized");
+  const { supabase } = await requireAuthenticatedUser();
   const { data, error } = await supabase
     .from("external_clients")
     .update(updates)
@@ -173,6 +204,9 @@ export async function createSale(
   saleData: CreateSaleInput,
   unitPrice: number
 ): Promise<Sale | null> {
+  const session = await auth();
+  if (!session) throw new Error("Unauthorized");
+  const { supabase } = await requireAuthenticatedUser();
   const totalAmount = unitPrice * saleData.quantity;
 
   const { data, error } = await supabase
@@ -207,6 +241,9 @@ export async function getSalesByMonth(
   month: number,
   year: number
 ): Promise<SaleWithDetails[]> {
+  const session = await auth();
+  if (!session) throw new Error("Unauthorized");
+  const { supabase } = await requireAuthenticatedUser();
   const startDate = new Date(year, month - 1, 1).toISOString();
   const endDate = new Date(year, month, 0, 23, 59, 59).toISOString();
 
@@ -238,6 +275,9 @@ export async function getAllSalesByMonth(
   month: number,
   year: number
 ): Promise<SaleWithDetails[]> {
+  const session = await auth();
+  if (!session) throw new Error("Unauthorized");
+  const { supabase } = await requireAuthenticatedUser();
   const startDate = new Date(year, month - 1, 1).toISOString();
   const endDate = new Date(year, month, 0, 23, 59, 59).toISOString();
 
@@ -265,6 +305,9 @@ export async function getAllSalesByMonth(
 }
 
 export async function getSalesByFilter(filter: SalesFilter): Promise<SaleWithDetails[]> {
+  const session = await auth();
+  if (!session) throw new Error("Unauthorized");
+  const { supabase } = await requireAuthenticatedUser();
   let query = supabase
     .from("sales")
     .select(
@@ -309,6 +352,9 @@ export async function updateSale(
   saleId: string,
   updates: Partial<Sale>
 ): Promise<Sale | null> {
+  const session = await auth();
+  if (!session) throw new Error("Unauthorized");
+  const { supabase } = await requireAuthenticatedUser();
   const { data, error } = await supabase
     .from("sales")
     .update(updates)
@@ -329,6 +375,9 @@ export async function updateSalePayment(
   paymentStatus: PaymentStatus,
   paymentReceived: number
 ): Promise<Sale | null> {
+  const session = await auth();
+  if (!session) throw new Error("Unauthorized");
+  const { supabase } = await requireAuthenticatedUser();
   const { data, error } = await supabase
     .from("sales")
     .update({
@@ -348,6 +397,9 @@ export async function updateSalePayment(
 }
 
 export async function deleteSale(saleId: string): Promise<boolean> {
+  const session = await auth();
+  if (!session) throw new Error("Unauthorized");
+  const { supabase } = await requireAuthenticatedUser();
   const { error } = await supabase.from("sales").delete().eq("id", saleId);
 
   if (error) {
@@ -365,6 +417,9 @@ export async function deleteSale(saleId: string): Promise<boolean> {
 export async function getCommissionsBySalesperson(
   salespersonId: string
 ): Promise<SalesCommission[]> {
+  const session = await auth();
+  if (!session) throw new Error("Unauthorized");
+  const { supabase } = await requireAuthenticatedUser();
   const { data, error } = await supabase
     .from("sales_commissions")
     .select("*")
@@ -384,6 +439,9 @@ export async function getCommissionsByMonth(
   month: number,
   year: number
 ): Promise<SalesCommission[]> {
+  const session = await auth();
+  if (!session) throw new Error("Unauthorized");
+  const { supabase } = await requireAuthenticatedUser();
   const startDate = new Date(year, month - 1, 1).toISOString();
   const endDate = new Date(year, month, 0, 23, 59, 59).toISOString();
 
@@ -408,6 +466,9 @@ export async function getSalespersonStats(
   month?: number,
   year?: number
 ): Promise<SalespersonWithStats | null> {
+  const session = await auth();
+  if (!session) throw new Error("Unauthorized");
+  const { supabase } = await requireAuthenticatedUser();
   const salesperson = await supabase
     .from("salespeople")
     .select("*")
@@ -456,6 +517,9 @@ export async function getTotalCommissionsForMonth(
   month: number,
   year: number
 ): Promise<number> {
+  const session = await auth();
+  if (!session) throw new Error("Unauthorized");
+  const { supabase } = await requireAuthenticatedUser();
   const startDate = new Date(year, month - 1, 1).toISOString();
   const endDate = new Date(year, month, 0, 23, 59, 59).toISOString();
 
@@ -480,6 +544,9 @@ export async function getTotalSalesForMonth(
   month: number,
   year: number
 ): Promise<number> {
+  const session = await auth();
+  if (!session) throw new Error("Unauthorized");
+  const { supabase } = await requireAuthenticatedUser();
   const startDate = new Date(year, month - 1, 1).toISOString();
   const endDate = new Date(year, month, 0, 23, 59, 59).toISOString();
 
@@ -502,6 +569,9 @@ export async function getTotalSalesForMonth(
 export async function getPendingCommissions(
   salespersonId: string
 ): Promise<number> {
+  const session = await auth();
+  if (!session) throw new Error("Unauthorized");
+  const { supabase } = await requireAuthenticatedUser();
   const { data, error } = await supabase
     .from("sales_commissions")
     .select("commission_amount")

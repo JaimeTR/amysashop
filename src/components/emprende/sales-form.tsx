@@ -134,29 +134,28 @@ export default function SalesForm({
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow">
-      <h2 className="text-2xl font-bold mb-6">Registrar Venta</h2>
-
+    <div className="space-y-6">
       {error && (
-        <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+        <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-destructive-foreground text-sm backdrop-blur-md">
           {error}
         </div>
       )}
 
       {success && (
-        <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
+        <div className="rounded-lg border border-success/30 bg-success/10 p-4 text-success-foreground text-sm backdrop-blur-md">
           {success}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Producto */}
-        <div>
-          <label className="block text-sm font-medium mb-2">Producto</label>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Paso 1: Producto */}
+        <div className="space-y-2">
+          <label htmlFor="sales-product" className="block text-sm font-semibold text-foreground">Paso 1: Producto *</label>
           <select
+            id="sales-product"
             value={formData.product_id}
             onChange={(e) => handleProductChange(e.target.value)}
-            className="w-full border rounded px-3 py-2"
+            className="w-full rounded-lg border border-white/20 bg-white/10 px-4 py-2 backdrop-blur-md transition-colors hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-primary"
             required
           >
             <option value="">Selecciona un producto</option>
@@ -168,83 +167,71 @@ export default function SalesForm({
           </select>
         </div>
 
-        {/* Cantidad */}
+        {/* Paso 2: Cantidad */}
         {selectedProduct && (
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              Cantidad (Stock disponible: {selectedProduct.stock})
+          <div className="space-y-2">
+            <label htmlFor="sales-quantity" className="block text-sm font-semibold text-foreground">
+              Paso 2: Cantidad (Max: {selectedProduct.stock}) *
             </label>
             <input
+              id="sales-quantity"
               type="number"
               min="1"
               max={selectedProduct.stock}
               value={formData.quantity}
               onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 0)}
-              className="w-full border rounded px-3 py-2"
+              className="w-full rounded-lg border border-white/20 bg-white/10 px-4 py-2 backdrop-blur-md transition-colors hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-primary"
               required
             />
           </div>
         )}
 
-        {/* Total Amount Display */}
+        {/* Paso 3: Resumen Total */}
         {selectedProduct && (
-          <div className="bg-gray-50 p-4 rounded">
-            <div className="flex justify-between">
-              <span className="font-medium">Precio unitario:</span>
-              <span>${selectedProduct.price.toFixed(2)}</span>
+          <div className="rounded-lg border border-white/20 bg-white/5 p-4 backdrop-blur-md">
+            <div className="flex justify-between mb-2">
+              <span className="text-foreground/70">Precio unitario:</span>
+              <span className="font-semibold">${selectedProduct.price.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between mt-2 text-lg font-bold">
+            <div className="flex justify-between text-lg font-bold text-primary">
               <span>Total:</span>
               <span>${totalAmount.toFixed(2)}</span>
             </div>
           </div>
         )}
 
-        {/* Estado de Pago */}
-        <div>
-          <label className="block text-sm font-medium mb-2">Estado de Pago</label>
-          <div className="space-y-2">
-            <label className="flex items-center">
-              <input
-                type="radio"
-                name="payment_status"
-                value="completed"
-                checked={formData.payment_status === "completed"}
-                onChange={() => handlePaymentStatusChange("completed")}
-                className="mr-2"
-              />
-              <span>Pago Completo</span>
-            </label>
-            <label className="flex items-center">
-              <input
-                type="radio"
-                name="payment_status"
-                value="partial"
-                checked={formData.payment_status === "partial"}
-                onChange={() => handlePaymentStatusChange("partial")}
-                className="mr-2"
-              />
-              <span>Pago Parcial</span>
-            </label>
-            <label className="flex items-center">
-              <input
-                type="radio"
-                name="payment_status"
-                value="pending"
-                checked={formData.payment_status === "pending"}
-                onChange={() => handlePaymentStatusChange("pending")}
-                className="mr-2"
-              />
-              <span>Sin Pago</span>
-            </label>
+        {/* Paso 4: Estado de Pago */}
+        {selectedProduct && (
+          <div className="space-y-3">
+            <div className="block text-sm font-semibold text-foreground">Paso 3: Estado de Pago *</div>
+            <div className="space-y-2">
+              {[
+                { value: "completed", label: "Pago Completo" },
+                { value: "partial", label: "Pago Parcial" },
+                { value: "pending", label: "Sin Pago" },
+              ].map((option) => (
+                <label key={option.value} className="flex items-center rounded-lg border border-white/20 bg-white/10 p-3 cursor-pointer transition-colors hover:bg-white/15 has-[:checked]:border-primary has-[:checked]:bg-primary/20">
+                  <input
+                    type="radio"
+                    name="payment_status"
+                    value={option.value}
+                    checked={formData.payment_status === option.value}
+                    onChange={() => handlePaymentStatusChange(option.value as "pending" | "partial" | "completed")}
+                    className="mr-3"
+                  />
+                  <span className="text-sm font-medium">{option.label}</span>
+                </label>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Monto Pagado (si es parcial) */}
-        {formData.payment_status === "partial" && (
-          <div>
-            <label className="block text-sm font-medium mb-2">Monto Pagado</label>
+        {/* Paso 5: Monto Pagado (si es parcial) */}
+        {formData.payment_status === "partial" && selectedProduct && (
+          <div className="space-y-2">
+            <label htmlFor="sales-payment-received" className="block text-sm font-semibold text-foreground">Paso 4: Monto Pagado *</label>
             <input
+              id="sales-payment-received"
               type="number"
               min="0"
               max={totalAmount}
@@ -256,43 +243,48 @@ export default function SalesForm({
                   payment_received: parseFloat(e.target.value) || 0,
                 }))
               }
-              className="w-full border rounded px-3 py-2"
+              className="w-full rounded-lg border border-white/20 bg-white/10 px-4 py-2 backdrop-blur-md transition-colors hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-primary"
               required
             />
           </div>
         )}
 
-        {/* Comisión Info */}
-        {formData.payment_status !== "completed" && (
-          <div className="p-3 bg-yellow-50 border border-yellow-200 rounded text-sm">
-            ⚠️ Sin comisión hasta que pague cliente
-          </div>
+        {/* Advertencia si no está pagado */}
+        {formData.payment_status !== "completed" && selectedProduct && (
+          <div className="rounded-lg border border-warning/30 bg-warning/10 p-3 text-warning-foreground text-sm backdrop-blur-md">
+              ⚠️ Sin comisión hasta que el cliente pague completamente
+            </div>
         )}
 
         {/* Notas */}
-        <div>
-          <label className="block text-sm font-medium mb-2">Notas (opcional)</label>
-          <textarea
-            value={formData.notes || ""}
-            onChange={(e) =>
-              setFormData((prev) => ({
-                ...prev,
-                notes: e.target.value,
-              }))
-            }
-            className="w-full border rounded px-3 py-2 resize-none"
-            rows={3}
-          />
-        </div>
+        {selectedProduct && (
+          <div className="space-y-2">
+            <label htmlFor="sales-notes" className="block text-sm font-medium text-foreground">Notas (opcional)</label>
+            <textarea
+              id="sales-notes"
+              value={formData.notes || ""}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  notes: e.target.value,
+                }))
+              }
+              className="w-full rounded-lg border border-white/20 bg-white/10 px-4 py-2 backdrop-blur-md transition-colors hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+              rows={3}
+            />
+          </div>
+        )}
 
         {/* Submit Button */}
-        <button
-          type="submit"
-          disabled={loading || !selectedProduct}
-          className="w-full bg-primary text-white py-2 rounded font-medium hover:bg-primary/90 disabled:bg-gray-400"
-        >
-          {loading ? "Registrando..." : "Registrar Venta"}
-        </button>
+        {selectedProduct && (
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-lg bg-primary px-4 py-2 font-semibold text-white transition-colors hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? "Registrando..." : "Registrar Venta"}
+          </button>
+        )}
       </form>
     </div>
   );

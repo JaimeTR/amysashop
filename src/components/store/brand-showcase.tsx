@@ -25,7 +25,7 @@ export function BrandShowcase() {
                       alt={brand.name}
                       width={96}
                       height={96}
-                      className="h-20 w-20 rounded-2xl object-contain sm:h-24 sm:w-24"
+                      className="size-20 rounded-2xl object-contain sm:size-24"
                       unoptimized
                     />
                   )}

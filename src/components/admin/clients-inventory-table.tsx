@@ -1,9 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { Search, MailCheck, KeyRound, Trash2, UserCheck, UserX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ClientEditModal } from "@/components/admin/client-edit-modal";
+import { ConfirmDeleteModal } from "@/components/feedback/confirm-delete-modal";
+import { useNotify } from "@/components/feedback/notification-center";
 
 type ClientRow = {
   id: string;
@@ -32,7 +34,10 @@ export function ClientsInventoryTable({
   sendVerificationEmailAction,
   sendPasswordResetAction,
 }: Props) {
+  const notify = useNotify();
   const [query, setQuery] = useState("");
+  const [deleteConfirm, setDeleteConfirm] = useState<{ clientId: string; clientName: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const filteredRows = useMemo(() => {
     const term = query.trim().toLowerCase();
@@ -80,67 +85,93 @@ export function ClientsInventoryTable({
         <p className="text-sm text-muted-foreground">No se encontraron clientes con ese criterio.</p>
       ) : (
         <div className="overflow-x-auto rounded-xl border bg-white/80">
-          <table className="min-w-[1120px] w-full text-sm">
+          <table className="w-full text-sm">
             <thead className="bg-[#efe3d8] text-left">
               <tr>
                 <th className="px-3 py-2">Nombre</th>
                 <th className="px-3 py-2">Correo</th>
-                <th className="px-3 py-2">Teléfono</th>
-                <th className="px-3 py-2">Dirección</th>
-                <th className="px-3 py-2">Estado</th>
-                <th className="px-3 py-2">Registro</th>
+                <th className="px-3 py-2 hidden sm:table-cell">Teléfono</th>
+                <th className="px-3 py-2 hidden md:table-cell">Dirección</th>
+                <th className="px-3 py-2 hidden lg:table-cell">Estado</th>
+                <th className="px-3 py-2 hidden xl:table-cell">Registro</th>
                 <th className="px-3 py-2">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {filteredRows.map((client) => (
                 <tr key={client.id} className="border-t align-top">
-                  <td className="px-3 py-2 font-medium">{client.nombre || "Sin nombre"}</td>
-                  <td className="px-3 py-2">{client.email || "Sin correo"}</td>
-                  <td className="px-3 py-2">{client.telefono || "Sin teléfono"}</td>
-                  <td className="px-3 py-2">{client.direccion || "Sin dirección"}</td>
-                  <td className="px-3 py-2">
+                  <td className="px-3 py-2 font-medium text-xs truncate max-w-[120px]" title={client.nombre || "Sin nombre"}>{client.nombre || "Sin nombre"}</td>
+                  <td className="px-3 py-2 text-xs truncate max-w-[150px]" title={client.email || "Sin correo"}>{client.email || "Sin correo"}</td>
+                  <td className="px-3 py-2 hidden sm:table-cell text-xs">{client.telefono || "Sin teléfono"}</td>
+                  <td className="px-3 py-2 hidden md:table-cell text-xs truncate max-w-[150px]" title={client.direccion || "Sin dirección"}>{client.direccion || "Sin dirección"}</td>
+                  <td className="px-3 py-2 hidden lg:table-cell">
                     <span
                       className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                        client.isDisabled ? "bg-rose-100 text-rose-700" : "bg-emerald-100 text-emerald-700"
+                        client.isDisabled ? "bg-destructive text-destructive-foreground" : "bg-success text-success-foreground"
                       }`}
                     >
                       {client.isDisabled ? "Deshabilitado" : "Activo"}
                     </span>
                   </td>
-                  <td className="px-3 py-2 text-xs text-muted-foreground">
+                  <td className="px-3 py-2 text-xs text-muted-foreground hidden xl:table-cell">
                     {client.createdAt ? new Date(client.createdAt).toLocaleDateString("es-PE") : "-"}
                   </td>
                   <td className="px-3 py-2">
                     <div className="flex flex-wrap gap-1">
-                      <ClientEditModal client={client} updateClientDataAction={updateClientDataAction} />
+                      <ClientEditModal 
+                        client={client} 
+                        updateClientDataAction={updateClientDataAction}
+                        className="h-8 w-8"
+                      />
                       <form action={setClientStatusAction}>
                         <input type="hidden" name="userId" value={client.id} />
                         <input type="hidden" name="action" value={client.isDisabled ? "enable" : "disable"} />
-                        <Button type="submit" size="sm" variant="outline">
-                          {client.isDisabled ? "Habilitar" : "Deshabilitar"}
+                        <Button 
+                          type="submit" 
+                          size="icon" 
+                          variant="outline" 
+                          className="h-8 w-8"
+                          title={client.isDisabled ? "Habilitar" : "Deshabilitar"}
+                        >
+                          {client.isDisabled ? <UserCheck className="size-3 sm:size-4" /> : <UserX className="size-3 sm:size-4" />}
                         </Button>
                       </form>
                       <form action={sendVerificationEmailAction}>
                         <input type="hidden" name="email" value={client.email} />
-                        <Button type="submit" size="sm" variant="outline">
-                          Enviar verificación
+                        <Button 
+                          type="submit" 
+                          size="icon" 
+                          variant="outline" 
+                          className="h-8 w-8"
+                          title="Enviar verificación"
+                        >
+                          <MailCheck className="size-3 sm:size-4" />
                         </Button>
                       </form>
                       <form action={sendPasswordResetAction}>
                         <input type="hidden" name="email" value={client.email} />
-                        <Button type="submit" size="sm" variant="outline">
-                          Enviar cambio de clave
+                        <Button 
+                          type="submit" 
+                          size="icon" 
+                          variant="outline" 
+                          className="h-8 w-8"
+                          title="Cambiar contraseña"
+                        >
+                          <KeyRound className="size-3 sm:size-4" />
                         </Button>
                       </form>
-                      <form action={deleteClientAction}>
-                        <input type="hidden" name="userId" value={client.id} />
-                        <Button type="submit" size="sm" variant="destructive">
-                          Eliminar
-                        </Button>
-                      </form>
+                      <Button 
+                        type="button"
+                        size="icon" 
+                        variant="destructive" 
+                        className="h-8 w-8"
+                        title="Eliminar"
+                        onClick={() => setDeleteConfirm({ clientId: client.id, clientName: client.nombre })}
+                      >
+                        <Trash2 className="size-3 sm:size-4" />
+                      </Button>
                     </div>
-                    <p className="mt-1 text-[10px] text-muted-foreground">ID: {client.id}</p>
+                    <p className="mt-1 text-[10px] text-muted-foreground">ID: {client.id.slice(0, 8)}...</p>
                   </td>
                 </tr>
               ))}
@@ -148,6 +179,30 @@ export function ClientsInventoryTable({
           </table>
         </div>
       )}
+
+      <ConfirmDeleteModal
+        isOpen={deleteConfirm !== null}
+        title="Eliminar cliente"
+        message="¿Estás seguro de que deseas eliminar este cliente? Esta acción no se puede deshacer."
+        itemName={deleteConfirm?.clientName}
+        isLoading={isDeleting}
+        onConfirm={async () => {
+          if (!deleteConfirm) return;
+          setIsDeleting(true);
+          try {
+            const formData = new FormData();
+            formData.set("userId", deleteConfirm.clientId);
+            deleteClientAction(formData);
+            notify.removed("Cliente eliminado", "El cliente ha sido eliminado correctamente");
+            setDeleteConfirm(null);
+          } catch (error) {
+            notify.error("Error al eliminar", error instanceof Error ? error.message : "No se pudo eliminar el cliente");
+          } finally {
+            setIsDeleting(false);
+          }
+        }}
+        onCancel={() => setDeleteConfirm(null)}
+      />
     </div>
   );
 }

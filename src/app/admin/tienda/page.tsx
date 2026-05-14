@@ -562,7 +562,7 @@ export default async function AdminTiendaPage({ searchParams }: PageProps) {
                         </details>
                         <form action={deleteCategoryAction}>
                           <input type="hidden" name="id" value={category.id} />
-                          <Button type="submit" size="icon" variant="ghost" className="h-8 w-8 text-rose-700 hover:bg-rose-50" aria-label="Eliminar categoría">
+                          <Button type="submit" size="icon" variant="ghost" className="size-8 text-destructive-foreground hover:bg-destructive/10" aria-label="Eliminar categoría">
                             <X className="size-4" />
                           </Button>
                         </form>
@@ -642,7 +642,7 @@ export default async function AdminTiendaPage({ searchParams }: PageProps) {
                                       type="submit"
                                       size="icon"
                                       variant="ghost"
-                                      className="h-8 w-8 text-rose-700 hover:bg-rose-50"
+                                      className="size-8 text-destructive-foreground hover:bg-destructive/10"
                                       aria-label="Eliminar subcategoría"
                                     >
                                       <X className="size-4" />
@@ -709,7 +709,7 @@ export default async function AdminTiendaPage({ searchParams }: PageProps) {
                         </details>
                         <form action={deleteBrandAction}>
                           <input type="hidden" name="id" value={brand.id} />
-                          <Button type="submit" size="icon" variant="ghost" className="h-8 w-8 text-rose-700 hover:bg-rose-50" aria-label="Eliminar marca">
+                          <Button type="submit" size="icon" variant="ghost" className="size-8 text-destructive-foreground hover:bg-destructive/10" aria-label="Eliminar marca">
                             <X className="size-4" />
                           </Button>
                         </form>
@@ -789,7 +789,7 @@ export default async function AdminTiendaPage({ searchParams }: PageProps) {
                                       type="submit"
                                       size="icon"
                                       variant="ghost"
-                                      className="h-8 w-8 text-rose-700 hover:bg-rose-50"
+                                      className="size-8 text-destructive-foreground hover:bg-destructive/10"
                                       aria-label="Eliminar submarca"
                                     >
                                       <X className="size-4" />
@@ -843,7 +843,7 @@ export default async function AdminTiendaPage({ searchParams }: PageProps) {
                         </details>
                         <form action={deleteGenderAction}>
                           <input type="hidden" name="id" value={g.id} />
-                          <Button type="submit" size="icon" variant="ghost" className="h-8 w-8 text-rose-700 hover:bg-rose-50" aria-label="Eliminar género">
+                          <Button type="submit" size="icon" variant="ghost" className="size-8 text-destructive-foreground hover:bg-destructive/10" aria-label="Eliminar género">
                             <X className="size-4" />
                           </Button>
                         </form>
@@ -888,7 +888,7 @@ export default async function AdminTiendaPage({ searchParams }: PageProps) {
                         </details>
                         <form action={deleteAgeGroupAction}>
                           <input type="hidden" name="id" value={a.id} />
-                          <Button type="submit" size="icon" variant="ghost" className="h-8 w-8 text-rose-700 hover:bg-rose-50" aria-label="Eliminar grupo de edad">
+                          <Button type="submit" size="icon" variant="ghost" className="size-8 text-destructive-foreground hover:bg-destructive/10" aria-label="Eliminar grupo de edad">
                             <X className="size-4" />
                           </Button>
                         </form>

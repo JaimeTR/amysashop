@@ -6,6 +6,7 @@ import { X, Upload, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { canonicalizeBrandName } from "@/lib/brands";
 import { useRegisteredTaxonomies } from "@/lib/use-registered-taxonomies";
+import { useNotify } from "@/components/feedback/notification-center";
 
 type CategoryOption = {
   id: string;
@@ -49,10 +50,10 @@ function uniqueCategories(categories: CategoryOption[]) {
 }
 
 export function ProductCreateModal({ categories, brands, subBrands, subCategories, createProductAction }: Props) {
+  const notify = useNotify();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [notification, setNotification] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const mainFileInputRef = useRef<HTMLInputElement>(null);
   const galleryFileInputRef = useRef<HTMLInputElement>(null);
@@ -167,8 +168,7 @@ export function ProductCreateModal({ categories, brands, subBrands, subCategorie
 
       await createProductAction(formData);
 
-      // Mostrar notificación de éxito
-      setNotification({ type: "success", message: "Producto guardado exitosamente" });
+      notify.success("Producto creado", "El nuevo producto se ha guardado correctamente");
 
       // Limpiar formulario y cerrar modal
       setTimeout(() => {
@@ -181,17 +181,15 @@ export function ProductCreateModal({ categories, brands, subBrands, subCategorie
         setSelectedBrand("");
         setSelectedSubCategory("");
         setSelectedSubBrand("");
-        setNotification(null);
         if (formRef.current) {
           formRef.current.reset();
         }
-      }, 1500);
+      }, 500);
     } catch (error) {
-      setNotification({
-        type: "error",
-        message: error instanceof Error ? error.message : "Error al guardar el producto",
-      });
-      setTimeout(() => setNotification(null), 3000);
+      notify.error(
+        "Error al crear producto",
+        error instanceof Error ? error.message : "No se pudo guardar el producto"
+      );
     } finally {
       setLoading(false);
     }
@@ -210,19 +208,6 @@ export function ProductCreateModal({ categories, brands, subBrands, subCategorie
         className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-white/30 bg-white/95 p-6 shadow-2xl backdrop-blur-md"
         onClick={(event) => event.stopPropagation()}
       >
-        {/* Notificación */}
-        {notification && (
-          <div
-            className={`mb-4 rounded-lg p-4 text-sm font-medium ${
-              notification.type === "success"
-                ? "bg-green-100 text-green-800"
-                : "bg-red-100 text-red-800"
-            }`}
-          >
-            {notification.message}
-          </div>
-        )}
-
         {/* Encabezado */}
         <div className="mb-6 flex items-start justify-between">
           <div>
@@ -238,8 +223,9 @@ export function ProductCreateModal({ categories, brands, subBrands, subCategorie
           {/* Fila 1: Nombre | Aviso SKU */}
           <div className="grid gap-3 md:grid-cols-2">
             <div>
-              <label className="block text-xs font-semibold text-black mb-1">Nombre</label>
+              <label htmlFor="product-create-name" className="block text-xs font-semibold text-black mb-1">Nombre</label>
               <input
+                id="product-create-name"
                 name="name"
                 placeholder="Nombre del producto"
                 required
@@ -247,8 +233,8 @@ export function ProductCreateModal({ categories, brands, subBrands, subCategorie
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-semibold text-black">SKU</label>
-              <div className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-900">
+              <p className="mb-1 block text-xs font-semibold text-black">SKU</p>
+              <div className="rounded-lg border border-info/40 bg-info/10 px-3 py-2 text-xs text-info-foreground">
                 El SKU será generado automáticamente con formato AS000001 y no será editable.
               </div>
             </div>
@@ -257,8 +243,9 @@ export function ProductCreateModal({ categories, brands, subBrands, subCategorie
           {/* Fila 2: Categoría | Marca */}
           <div className="grid gap-3 md:grid-cols-2">
             <div>
-              <label className="block text-xs font-semibold text-black mb-1">Categoría</label>
+              <label htmlFor="product-create-category" className="block text-xs font-semibold text-black mb-1">Categoría</label>
               <select
+                id="product-create-category"
                 name="category"
                 required
                 value={selectedCategory}
@@ -275,8 +262,9 @@ export function ProductCreateModal({ categories, brands, subBrands, subCategorie
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-black mb-1">Marca</label>
+              <label htmlFor="product-create-brand" className="block text-xs font-semibold text-black mb-1">Marca</label>
               <select
+                id="product-create-brand"
                 name="brand"
                 required
                 value={selectedBrand}
@@ -297,8 +285,9 @@ export function ProductCreateModal({ categories, brands, subBrands, subCategorie
           {/* Fila 3: Subcategoría | Submarca (opcionales) */}
           <div className="grid gap-3 md:grid-cols-2">
             <div>
-              <label className="block text-xs font-semibold text-black mb-1">Subcategoría</label>
+              <label htmlFor="product-create-subCategory" className="block text-xs font-semibold text-black mb-1">Subcategoría</label>
               <select
+                id="product-create-subCategory"
                 name="subCategory"
                 value={selectedSubCategory}
                 onChange={(event) => setSelectedSubCategory(event.target.value)}
@@ -318,8 +307,9 @@ export function ProductCreateModal({ categories, brands, subBrands, subCategorie
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-black mb-1">Submarca</label>
+              <label htmlFor="product-create-subBrand" className="block text-xs font-semibold text-black mb-1">Submarca</label>
               <select
+                id="product-create-subBrand"
                 name="subBrand"
                 value={selectedSubBrand}
                 onChange={(event) => setSelectedSubBrand(event.target.value)}
@@ -343,8 +333,8 @@ export function ProductCreateModal({ categories, brands, subBrands, subCategorie
           {/* Fila 4: Género | Edad */}
           <div className="grid gap-3 md:grid-cols-2">
             <div>
-              <label className="block text-xs font-semibold text-black mb-1">Género</label>
-              <select name="gender" className={selectInputClass}>
+              <label htmlFor="gender" className="block text-xs font-semibold text-black mb-1">Género</label>
+              <select id="gender" name="gender" className={selectInputClass}>
                 <option value="">Seleccionar género</option>
                 {genderOptions.map((g) => (
                   <option key={g} value={g}>{g}</option>
@@ -352,8 +342,8 @@ export function ProductCreateModal({ categories, brands, subBrands, subCategorie
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-black mb-1">Edad</label>
-              <select name="ageGroup" className={selectInputClass}>
+              <label htmlFor="ageGroup" className="block text-xs font-semibold text-black mb-1">Edad</label>
+              <select id="ageGroup" name="ageGroup" className={selectInputClass}>
                 <option value="">Seleccionar edad</option>
                 {ageGroupOptions.map((a) => (
                   <option key={a} value={a}>{a}</option>
@@ -365,8 +355,9 @@ export function ProductCreateModal({ categories, brands, subBrands, subCategorie
           {/* Fila 5: Precio actual | Precio sugerido | Stock */}
           <div className="grid gap-3 md:grid-cols-3">
             <div>
-              <label className="block text-xs font-semibold text-black mb-1">Precio actual</label>
+              <label htmlFor="price" className="block text-xs font-semibold text-black mb-1">Precio actual</label>
               <input
+                id="price"
                 name="price"
                 type="number"
                 step="0.01"
@@ -377,8 +368,9 @@ export function ProductCreateModal({ categories, brands, subBrands, subCategorie
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-black mb-1">Precio sugerido (opcional)</label>
+              <label htmlFor="priceBefore" className="block text-xs font-semibold text-black mb-1">Precio sugerido (opcional)</label>
               <input
+                id="priceBefore"
                 name="priceBefore"
                 type="number"
                 step="0.01"
@@ -388,8 +380,9 @@ export function ProductCreateModal({ categories, brands, subBrands, subCategorie
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-black mb-1">Stock</label>
+              <label htmlFor="stock" className="block text-xs font-semibold text-black mb-1">Stock</label>
               <input
+                id="stock"
                 name="stock"
                 type="number"
                 min="0"
@@ -402,8 +395,9 @@ export function ProductCreateModal({ categories, brands, subBrands, subCategorie
 
           {/* Descripción corta */}
           <div>
-            <label className="block text-xs font-semibold text-black mb-1">Descripción corta</label>
+            <label htmlFor="product-create-description" className="block text-xs font-semibold text-black mb-1">Descripción corta</label>
             <textarea
+              id="product-create-description"
               name="description"
               placeholder="Descripción breve del producto para la página de detalle"
               rows={2}
@@ -412,13 +406,14 @@ export function ProductCreateModal({ categories, brands, subBrands, subCategorie
           </div>
 
           <div className="space-y-4 rounded-2xl border border-[#e3d7cd] bg-[#fcf8f5] p-4">
-            <div className="space-y-2">
+              <div className="space-y-2">
               <div>
-                <label className="block text-xs font-semibold text-black">Foto principal</label>
+                <p className="block text-xs font-semibold text-black">Foto principal</p>
                 <p className="text-[11px] text-black/60">Se usa como portada en tarjetas, detalle y listados.</p>
               </div>
               <div className="grid gap-3 md:grid-cols-2">
                 <input
+                  id="product-create-mainImageUrls"
                   type="text"
                   value={mainImageUrls}
                   onChange={(e) => setMainImageUrls(e.target.value)}
@@ -445,7 +440,7 @@ export function ProductCreateModal({ categories, brands, subBrands, subCategorie
                   {mainUploadedFiles.map((file, index) => (
                     <div key={`${file.name}-${index}`} className="flex items-center justify-between gap-2 rounded-lg border border-[#e3d7cd] bg-white p-2">
                       <span className="text-xs text-black">{file.name}</span>
-                      <button type="button" onClick={() => removeMainUploadedFile(index)} className="text-rose-600 hover:text-rose-700">
+                      <button type="button" onClick={() => removeMainUploadedFile(index)} className="text-destructive-foreground hover:text-destructive-foreground/90">
                         <X className="size-4" />
                       </button>
                     </div>
@@ -454,13 +449,14 @@ export function ProductCreateModal({ categories, brands, subBrands, subCategorie
               ) : null}
             </div>
 
-            <div className="space-y-2 border-t border-[#e3d7cd] pt-4">
+              <div className="space-y-2 border-t border-[#e3d7cd] pt-4">
               <div>
-                <label className="block text-xs font-semibold text-black">Galería de fotos o videos</label>
+                <p className="block text-xs font-semibold text-black">Galería de fotos o videos</p>
                 <p className="text-[11px] text-black/60">Aquí van los elementos adicionales que se verán en la página del producto.</p>
               </div>
               <div className="grid gap-3 md:grid-cols-2">
                 <input
+                  id="product-create-galleryImageUrls"
                   type="text"
                   value={galleryImageUrls}
                   onChange={(e) => setGalleryImageUrls(e.target.value)}
@@ -488,7 +484,7 @@ export function ProductCreateModal({ categories, brands, subBrands, subCategorie
                   {galleryUploadedFiles.map((file, index) => (
                     <div key={`${file.name}-${index}`} className="flex items-center justify-between gap-2 rounded-lg border border-[#e3d7cd] bg-white p-2">
                       <span className="text-xs text-black">{file.name}</span>
-                      <button type="button" onClick={() => removeGalleryUploadedFile(index)} className="text-rose-600 hover:text-rose-700">
+                      <button type="button" onClick={() => removeGalleryUploadedFile(index)} className="text-destructive-foreground hover:text-destructive-foreground/90">
                         <X className="size-4" />
                       </button>
                     </div>
@@ -502,10 +498,10 @@ export function ProductCreateModal({ categories, brands, subBrands, subCategorie
           {/* Visibilidad (Switch) */}
           <div className="flex items-center gap-3 rounded-lg border border-[#e3d7cd] bg-[#fcf8f5] p-3">
             <div className="flex-1">
-              <label className="text-sm font-semibold text-black">Mostrar al cliente</label>
+              <div className="text-sm font-semibold text-black">Mostrar al cliente</div>
               <p className="text-xs text-black/60">Activar para que el producto sea visible en la tienda</p>
             </div>
-            <label className="relative inline-flex items-center cursor-pointer">
+            <label className="relative inline-flex items-center cursor-pointer" aria-label="Mostrar producto al cliente">
               <input
                 name="active"
                 type="checkbox"

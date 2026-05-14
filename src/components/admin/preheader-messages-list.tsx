@@ -79,15 +79,15 @@ export function PreheaderMessagesList({ messages, updateMessageAction, deleteMes
                   <span
                     className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
                       message.active
-                        ? "bg-green-100 text-green-700"
-                        : "bg-gray-100 text-gray-700"
+                        ? "bg-success text-success-foreground"
+                        : "bg-muted text-muted-foreground"
                     }`}
                   >
                     {message.active ? "Activo" : "Inactivo"}
                   </span>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-2 border-t border-gray-200 pt-3">
+              <div className="flex flex-wrap gap-2 border-t border-border pt-3">
                 <Button
                   type="button"
                   size="sm"
@@ -100,7 +100,7 @@ export function PreheaderMessagesList({ messages, updateMessageAction, deleteMes
                   type="button"
                   onClick={() => handleDelete(message)}
                   disabled={isDeletingId === message.id}
-                  className="inline-flex h-9 items-center rounded-md border border-rose-200 bg-rose-50 px-3 text-sm font-semibold text-rose-700 disabled:opacity-50"
+                  className="inline-flex h-9 items-center rounded-md border border-destructive/40 bg-destructive/10 px-3 text-sm font-semibold text-destructive-foreground disabled:opacity-50"
                   aria-label="Eliminar"
                 >
                   <Trash2 className="mr-2 size-4" /> Eliminar

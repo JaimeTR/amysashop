@@ -379,12 +379,14 @@ async function deleteExpenseAction(formData: FormData) {
   redirect("/admin/caja-amysa?ok=Egreso+eliminado");
 }
 
+const MONEY_FORMATTER = new Intl.NumberFormat("es-PE", {
+  style: "currency",
+  currency: "PEN",
+  minimumFractionDigits: 2,
+});
+
 function toMoney(value: number) {
-  return new Intl.NumberFormat("es-PE", {
-    style: "currency",
-    currency: "PEN",
-    minimumFractionDigits: 2,
-  }).format(Number(value || 0));
+  return MONEY_FORMATTER.format(Number(value || 0));
 }
 
 export default async function AdminCajaAmysaPage({ searchParams }: PageProps) {
@@ -427,8 +429,12 @@ export default async function AdminCajaAmysaPage({ searchParams }: PageProps) {
     .limit(60);
 
   if (incomesResult.error && !isMissingTableError(incomesResult.error, "amysa_cash_income")) {
-    for (const select of incomeSelectCandidates.slice(1)) {
-      const retry = await db.from("amysa_cash_income").select(select).order("created_at", { ascending: false }).limit(60);
+    const retryResults = await Promise.all(
+      incomeSelectCandidates.slice(1).map((select) =>
+        db.from("amysa_cash_income").select(select).order("created_at", { ascending: false }).limit(60)
+      )
+    );
+    for (const retry of retryResults) {
       if (!retry.error) {
         incomesResult = retry;
         break;
@@ -443,8 +449,12 @@ export default async function AdminCajaAmysaPage({ searchParams }: PageProps) {
     .limit(60);
 
   if (expensesResult.error && !isMissingTableError(expensesResult.error, "amysa_cash_expense")) {
-    for (const select of expenseSelectCandidates.slice(1)) {
-      const retry = await db.from("amysa_cash_expense").select(select).order("created_at", { ascending: false }).limit(60);
+    const retryResults = await Promise.all(
+      expenseSelectCandidates.slice(1).map((select) =>
+        db.from("amysa_cash_expense").select(select).order("created_at", { ascending: false }).limit(60)
+      )
+    );
+    for (const retry of retryResults) {
       if (!retry.error) {
         expensesResult = retry;
         break;
@@ -467,19 +477,15 @@ export default async function AdminCajaAmysaPage({ searchParams }: PageProps) {
   })) as ProductOption[];
 
   const sellerSource = !sellerFull.error && sellerFull.data ? sellerFull.data : sellerMinimal.data || [];
-  const sellers = ((sellerSource as Array<{ id: string; nombre?: string | null; role?: string | null; is_admin?: boolean | null }>)
-    .filter((item) => {
-      const role = String(item.role || "").trim().toLowerCase();
-      if (!role) {
-        return Boolean(item.is_admin) || item.id === user.id;
-      }
-      return ["superadmin", "administrador", "duena", "dueña", "vendedora", "socia"].includes(role);
-    })
-    .map((item) => ({
-      id: String(item.id),
-      name: String(item.nombre || "Sin nombre"),
-    }))
-    .filter((item, index, arr) => arr.findIndex((candidate) => candidate.id === item.id) === index)) as SellerOption[];
+  const sellerMap = new Map<string, SellerOption>();
+  for (const item of (sellerSource as Array<{ id: string; nombre?: string | null; role?: string | null; is_admin?: boolean | null }>)) {
+    const role = String(item.role || "").trim().toLowerCase();
+    const shouldInclude = !role ? (Boolean(item.is_admin) || item.id === user.id) : ["superadmin", "administrador", "duena", "dueña", "vendedora", "socia"].includes(role);
+    if (shouldInclude) {
+      sellerMap.set(String(item.id), { id: String(item.id), name: String(item.nombre || "Sin nombre") });
+    }
+  }
+  const sellers = Array.from(sellerMap.values()) as SellerOption[];
 
   const incomesData = !incomesResult.error && Array.isArray(incomesResult.data) ? (incomesResult.data as unknown as IncomeDbRow[]) : [];
   const incomes = incomesData.map((row) => ({
@@ -526,9 +532,9 @@ export default async function AdminCajaAmysaPage({ searchParams }: PageProps) {
       </header>
 
       {missingTables ? (
-        <Card className="glass-card border-amber-300">
+        <Card className="glass-card border-warning/40">
           <CardHeader>
-            <CardTitle className="text-base text-amber-700">Falta aplicar migracion de Caja AMYSA</CardTitle>
+            <CardTitle className="text-base text-warning-foreground">Falta aplicar migracion de Caja AMYSA</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
@@ -545,31 +551,31 @@ export default async function AdminCajaAmysaPage({ searchParams }: PageProps) {
             <Card className="glass-card">
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-sm">
-                  <HandCoins className="size-4 text-emerald-600" /> Ingresos
+                  <HandCoins className="size-4 text-success-foreground" /> Ingresos
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-2xl font-semibold text-emerald-700">{toMoney(incomeTotal)}</p>
+                <p className="text-2xl font-semibold text-success-foreground">{toMoney(incomeTotal)}</p>
               </CardContent>
             </Card>
 
             <Card className="glass-card">
               <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-sm">
-                  <Wallet className="size-4 text-rose-600" /> Egresos
+                  <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+                  <Wallet className="size-4 text-destructive-foreground" /> Egresos
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-2xl font-semibold text-rose-700">{toMoney(expenseTotal)}</p>
+                <p className="text-2xl font-semibold text-foreground">{toMoney(expenseTotal)}</p>
               </CardContent>
             </Card>
 
             <Card className="glass-card">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Balance</CardTitle>
+                <CardTitle className="text-sm font-semibold">Balance</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className={`text-2xl font-semibold ${balance >= 0 ? "text-primary" : "text-rose-700"}`}>{toMoney(balance)}</p>
+                <p className="text-2xl font-semibold text-foreground">{toMoney(balance)}</p>
               </CardContent>
             </Card>
           </section>

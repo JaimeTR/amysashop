@@ -7,6 +7,7 @@ import { CircleDollarSign, Eye, EyeOff, Lock, Mail, MapPin, Phone, User } from "
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
+import { getSiteUrl } from "@/lib/site-url";
 
 const paymentOptions = [
   { value: "transferencia", label: "Transferencia" },
@@ -33,7 +34,7 @@ export default function RegistroPage() {
     setLoading(true);
     setMessage("");
 
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
+    const siteUrl = getSiteUrl();
 
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -45,7 +46,7 @@ export default function RegistroPage() {
           direccion,
           preferred_payment_method: paymentMethod,
         },
-        emailRedirectTo: siteUrl ? `${siteUrl.replace(/\/$/, "")}/cuenta-verificada` : undefined,
+        emailRedirectTo: `${siteUrl.replace(/\/$/, "")}/auth/callback?next=/cuenta-verificada`,
       },
     });
 
@@ -81,11 +82,12 @@ export default function RegistroPage() {
           </div>
 
           <form onSubmit={onSubmit} className="space-y-4">
-            <label className="block space-y-1.5">
+            <label htmlFor="registro-nombre" className="block space-y-1.5">
               <span className="text-xs font-semibold uppercase tracking-wide text-foreground/80">Nombre</span>
               <div className="relative">
                 <User className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
+                  id="registro-nombre"
                   placeholder="Tu nombre completo"
                   value={nombre}
                   onChange={(event) => setNombre(event.target.value)}
@@ -95,11 +97,12 @@ export default function RegistroPage() {
               </div>
             </label>
 
-            <label className="block space-y-1.5">
+            <label htmlFor="registro-telefono" className="block space-y-1.5">
               <span className="text-xs font-semibold uppercase tracking-wide text-foreground/80">Teléfono</span>
               <div className="relative">
                 <Phone className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
+                  id="registro-telefono"
                   placeholder="999 999 999"
                   value={telefono}
                   onChange={(event) => setTelefono(event.target.value)}
@@ -109,11 +112,12 @@ export default function RegistroPage() {
               </div>
             </label>
 
-            <label className="block space-y-1.5">
+            <label htmlFor="registro-direccion" className="block space-y-1.5">
               <span className="text-xs font-semibold uppercase tracking-wide text-foreground/80">Dirección</span>
               <div className="relative">
                 <MapPin className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
+                  id="registro-direccion"
                   placeholder="Tu dirección"
                   value={direccion}
                   onChange={(event) => setDireccion(event.target.value)}
@@ -123,11 +127,12 @@ export default function RegistroPage() {
               </div>
             </label>
 
-            <label className="block space-y-1.5">
+            <label htmlFor="registro-paymentMethod" className="block space-y-1.5">
               <span className="text-xs font-semibold uppercase tracking-wide text-foreground/80">Método de pago preferido</span>
               <div className="relative">
                 <CircleDollarSign className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <select
+                  id="registro-paymentMethod"
                   value={paymentMethod}
                   onChange={(event) => setPaymentMethod(event.target.value)}
                   className="h-11 w-full rounded-xl border border-[#e7d9cf] bg-white/95 pl-10 pr-3 text-sm"
@@ -142,11 +147,12 @@ export default function RegistroPage() {
               </div>
             </label>
 
-            <label className="block space-y-1.5">
+            <label htmlFor="registro-email" className="block space-y-1.5">
               <span className="text-xs font-semibold uppercase tracking-wide text-foreground/80">Correo</span>
               <div className="relative">
                 <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
+                  id="registro-email"
                   placeholder="correo@ejemplo.com"
                   type="email"
                   value={email}
@@ -157,11 +163,12 @@ export default function RegistroPage() {
               </div>
             </label>
 
-            <label className="block space-y-1.5">
+            <label htmlFor="registro-password" className="block space-y-1.5">
               <span className="text-xs font-semibold uppercase tracking-wide text-foreground/80">Contraseña</span>
               <div className="relative">
                 <Lock className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
+                  id="registro-password"
                   placeholder="Mínimo 6 caracteres"
                   type={showPassword ? "text" : "password"}
                   value={password}

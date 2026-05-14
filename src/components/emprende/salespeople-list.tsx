@@ -99,13 +99,13 @@ export default function SalespeopleList() {
       <h2 className="text-2xl font-bold mb-6">Gestionar Vendedoras</h2>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+        <div className="mb-4 p-3 bg-destructive text-destructive-foreground rounded">
           {error}
         </div>
       )}
 
       {success && (
-        <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
+        <div className="mb-4 p-3 bg-success text-success-foreground rounded">
           {success}
         </div>
       )}
@@ -130,9 +130,7 @@ export default function SalespeopleList() {
                 <div className="text-right">
                   <span
                     className={`inline-block px-3 py-1 rounded text-sm font-medium ${
-                      salesperson.status === "active"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-red-100 text-red-800"
+                      salesperson.status === "active" ? "bg-success/10 text-success-foreground" : "bg-destructive/10 text-destructive-foreground"
                     }`}
                   >
                     {salesperson.status === "active" ? "Activa" : "Inactiva"}
@@ -149,7 +147,7 @@ export default function SalespeopleList() {
                 </div>
                 <div>
                   <p className="text-xs text-gray-600">Comisiones (mes)</p>
-                  <p className="text-lg font-bold text-green-600">
+                  <p className="text-lg font-bold text-success-foreground">
                     ${salesperson.month_commission_amount?.toFixed(2) || "0.00"}
                   </p>
                 </div>
@@ -217,10 +215,8 @@ export default function SalespeopleList() {
                         handleToggleStatus(salesperson.id, salesperson.status)
                       }
                       className={`flex-1 px-4 py-2 rounded font-medium ${
-                        salesperson.status === "active"
-                          ? "bg-orange-600 text-white hover:bg-orange-700"
-                          : "bg-green-600 text-white hover:bg-green-700"
-                      }`}
+                          salesperson.status === "active" ? "bg-warning text-white hover:bg-warning/90" : "bg-success text-white hover:bg-success/90"
+                        }`}
                     >
                       {salesperson.status === "active"
                         ? "Desactivar"

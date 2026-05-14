@@ -99,7 +99,7 @@ export default function EmprenderPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full size-12 border-b-2 border-info/70 mx-auto mb-4"></div>
           <p>Cargando...</p>
         </div>
       </div>
@@ -111,8 +111,8 @@ export default function EmprenderPage() {
   const isAdminOrOwner = isAdmin || isOwner;
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-background">
+      <main className="space-y-8 pb-8">
         {/* Header */}
         <header className="glass-card rounded-3xl p-5 mb-8">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -138,24 +138,24 @@ export default function EmprenderPage() {
         {isAdminOrOwner ? (
           <div className="space-y-8">
               {/* Admin Navigation */}
-              <div className="bg-white rounded-lg shadow">
-                <div className="flex gap-4 p-6 border-b">
+              <div className="glass-card rounded-xl">
+                <div className="flex gap-4 p-6 border-b border-white/20">
                   <button
                     onClick={() => setActiveTab("dashboard")}
-                    className={`px-4 py-2 rounded font-medium ${
+                    className={`px-4 py-2 rounded font-medium transition-colors ${
                       activeTab === "dashboard"
                         ? "bg-primary text-white"
-                        : "text-gray-600 hover:bg-gray-100"
+                        : "text-foreground/70 hover:bg-white/10"
                     }`}
                   >
                     Dashboard
                   </button>
                   <button
                     onClick={() => setActiveTab("sales")}
-                    className={`px-4 py-2 rounded font-medium ${
+                    className={`px-4 py-2 rounded font-medium transition-colors ${
                       activeTab === "sales"
                         ? "bg-primary text-white"
-                        : "text-gray-600 hover:bg-gray-100"
+                        : "text-foreground/70 hover:bg-white/10"
                     }`}
                   >
                     Todas las Ventas
@@ -179,46 +179,55 @@ export default function EmprenderPage() {
               )}
 
               {adminModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-                  <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl p-6">
-                    <div className="flex justify-between items-center mb-4">
-                      <h3 className="text-xl font-bold">Registrar Venta (Admin)</h3>
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                  <div className="glass-card rounded-2xl w-full max-w-2xl p-8 max-h-[90vh] overflow-y-auto">
+                    <div className="flex justify-between items-center mb-6">
+                      <h3 className="text-2xl font-semibold">Registrar Venta</h3>
                       <button
                         onClick={() => setAdminModalOpen(false)}
-                        className="text-gray-500 hover:text-gray-700"
+                        className="text-foreground/60 hover:text-foreground transition-colors text-2xl leading-none"
                       >
-                        Cerrar
+                        ✕
                       </button>
                     </div>
 
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium mb-2">Selecciona Vendedora</label>
-                      <select
-                        value={adminSelectedSalespersonId}
-                        onChange={(e) => setAdminSelectedSalespersonId(e.target.value)}
-                        className="w-full border rounded px-3 py-2"
-                      >
-                        <option value="">Selecciona una vendedora</option>
-                        {adminSalespeople.map((sp) => (
-                          <option key={sp.id} value={sp.id}>
-                            {sp.name} ({sp.email || sp.phone})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                    <div className="space-y-6">
+                      {/* Paso 1: Seleccionar Vendedora */}
+                      <div className="space-y-2">
+                        <label htmlFor="admin-select-salesperson" className="block text-sm font-semibold text-foreground">Paso 1: Selecciona Vendedora *</label>
+                        <select
+                          id="admin-select-salesperson"
+                          value={adminSelectedSalespersonId}
+                          onChange={(e) => setAdminSelectedSalespersonId(e.target.value)}
+                          className="w-full rounded-lg border border-white/20 bg-white/10 px-4 py-2 backdrop-blur-md transition-colors hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-primary"
+                        >
+                          <option value="">Selecciona una vendedora</option>
+                          {adminSalespeople.map((sp) => (
+                            <option key={sp.id} value={sp.id}>
+                              {sp.name} ({sp.email || sp.phone})
+                            </option>
+                          ))}
+                        </select>
+                        {!adminSelectedSalespersonId && (
+                          <p className="text-xs text-muted-foreground">Debes seleccionar una vendedora para continuar.</p>
+                        )}
+                      </div>
 
-                    {adminSelectedSalespersonId ? (
-                      <SalesForm
-                        salespersonId={adminSelectedSalespersonId}
-                        products={products}
-                        onSaleCreated={() => {
-                          setAdminModalOpen(false);
-                          handleSaleCreated();
-                        }}
-                      />
-                    ) : (
-                      <div className="text-sm text-gray-600">Selecciona una vendedora para continuar.</div>
-                    )}
+                      {/* Formulario de venta - se muestra cuando se selecciona vendedora */}
+                      {adminSelectedSalespersonId && (
+                        <div className="border-t border-white/20 pt-6">
+                          <SalesForm
+                            salespersonId={adminSelectedSalespersonId}
+                            products={products}
+                            onSaleCreated={() => {
+                              setAdminModalOpen(false);
+                              setAdminSelectedSalespersonId("");
+                              handleSaleCreated();
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
@@ -227,34 +236,34 @@ export default function EmprenderPage() {
           // Salesperson View
           <div className="space-y-8">
             {/* Salesperson Navigation */}
-            <div className="bg-white rounded-lg shadow">
-              <div className="flex gap-4 p-6 border-b overflow-x-auto">
+            <div className="glass-card rounded-xl">
+              <div className="flex gap-4 p-6 border-b border-white/20 overflow-x-auto">
                 <button
                   onClick={() => setActiveTab("dashboard")}
-                  className={`px-4 py-2 rounded font-medium whitespace-nowrap ${
+                  className={`px-4 py-2 rounded font-medium whitespace-nowrap transition-colors ${
                     activeTab === "dashboard"
                       ? "bg-primary text-white"
-                      : "text-gray-600 hover:bg-gray-100"
+                      : "text-foreground/70 hover:bg-white/10"
                   }`}
                 >
                   Mi Dashboard
                 </button>
                 <button
                   onClick={() => setActiveTab("sales")}
-                  className={`px-4 py-2 rounded font-medium whitespace-nowrap ${
+                  className={`px-4 py-2 rounded font-medium whitespace-nowrap transition-colors ${
                     activeTab === "sales"
                       ? "bg-primary text-white"
-                      : "text-gray-600 hover:bg-gray-100"
+                      : "text-foreground/70 hover:bg-white/10"
                   }`}
                 >
                   Registrar Venta
                 </button>
                 <button
                   onClick={() => setActiveTab("clients")}
-                  className={`px-4 py-2 rounded font-medium whitespace-nowrap ${
+                  className={`px-4 py-2 rounded font-medium whitespace-nowrap transition-colors ${
                     activeTab === "clients"
                       ? "bg-primary text-white"
-                      : "text-gray-600 hover:bg-gray-100"
+                      : "text-foreground/70 hover:bg-white/10"
                   }`}
                 >
                   Clientes
@@ -283,9 +292,9 @@ export default function EmprenderPage() {
                   />
                 </div>
                 <div>
-                  <div className="bg-primary/5 border border-primary/30 rounded-lg p-6">
-                    <h3 className="font-bold mb-4">Instrucciones</h3>
-                    <ul className="space-y-2 text-sm">
+                  <div className="glass-card rounded-xl p-6 border border-white/20">
+                    <h3 className="font-semibold mb-4 text-foreground">Instrucciones</h3>
+                    <ul className="space-y-2 text-sm text-foreground/80">
                       <li>✓ Selecciona el producto que vendiste</li>
                       <li>✓ Indica la cantidad vendida</li>
                       <li>✓ Registra el estado del pago</li>
@@ -301,7 +310,7 @@ export default function EmprenderPage() {
             )}
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 }

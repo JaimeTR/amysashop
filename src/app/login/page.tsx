@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { useNotify } from "@/components/feedback/notification-center";
 import { createClient } from "@/lib/supabase/client";
 import { getRedirectPathForRole, resolveRoleFromContext } from "@/lib/access-control";
+import { getSiteUrl } from "@/lib/site-url";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -37,9 +38,14 @@ export default function LoginPage() {
 
     setResendLoading(true);
 
+    const siteUrl = getSiteUrl();
+
     const { error } = await supabase.auth.resend({
       type: "signup",
       email: safeEmail,
+      options: {
+        emailRedirectTo: `${siteUrl.replace(/\/$/, "")}/auth/callback?next=/cuenta-verificada`,
+      },
     });
 
     if (error) {
@@ -128,11 +134,12 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={onSubmit} className="space-y-4">
-            <label className="block space-y-1.5">
+            <label htmlFor="login-email" className="block space-y-1.5">
               <span className="text-xs font-semibold uppercase tracking-wide text-foreground/80">Correo</span>
               <div className="relative">
                 <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
+                  id="login-email"
                   placeholder="correo@ejemplo.com"
                   type="email"
                   value={email}
@@ -148,11 +155,12 @@ export default function LoginPage() {
               </div>
             </label>
 
-            <label className="block space-y-1.5">
+            <label htmlFor="login-password" className="block space-y-1.5">
               <span className="text-xs font-semibold uppercase tracking-wide text-foreground/80">Contraseña</span>
               <div className="relative">
                 <Lock className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
+                  id="login-password"
                   placeholder="Tu contraseña"
                   type={showPassword ? "text" : "password"}
                   value={password}
@@ -176,12 +184,12 @@ export default function LoginPage() {
               {loading ? "Ingresando..." : "Ingresar"}
             </Button>
 
-            {message ? <p className="text-sm text-rose-700">{message}</p> : null}
+            {message ? <p className="text-sm text-destructive-foreground">{message}</p> : null}
 
             {emailNotConfirmed ? (
-              <div className="rounded-xl border border-amber-200 bg-amber-50/90 p-3">
-                <p className="text-sm font-semibold text-amber-800">Email no confirmado</p>
-                <p className="mt-1 text-xs text-amber-700">
+              <div className="rounded-xl border border-warning/40 bg-warning/95 p-3">
+                <p className="text-sm font-semibold text-warning-foreground">Email no confirmado</p>
+                <p className="mt-1 text-xs text-warning-foreground">
                   Debes confirmar tu cuenta por correo para poder iniciar sesión.
                 </p>
                 <div className="mt-3 grid gap-2 sm:grid-cols-2">
@@ -190,11 +198,11 @@ export default function LoginPage() {
                     variant="outline"
                     onClick={handleResendConfirmation}
                     disabled={resendLoading}
-                    className="border-amber-300 bg-white/90 text-amber-800 hover:bg-white"
+                    className="border-warning/40 bg-white/90 text-warning-foreground hover:bg-white"
                   >
                     {resendLoading ? "Reenviando..." : "Reenviar confirmación"}
                   </Button>
-                  <Button type="button" onClick={openGmail} className="bg-amber-700 text-white hover:bg-amber-800">
+                  <Button type="button" onClick={openGmail} className="bg-warning text-white hover:bg-warning/80">
                     Abrir Gmail
                   </Button>
                 </div>

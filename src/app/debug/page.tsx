@@ -28,10 +28,10 @@ export default async function DebugPage() {
       <Card className="p-6 space-y-4">
         <h1 className="text-2xl font-bold">🔍 Debug Admin Access</h1>
 
-        <div className="space-y-2 bg-slate-100 p-4 rounded">
+        <div className="space-y-2 bg-muted/95 p-4 rounded">
           <p>
             <strong>Logueado:</strong>{" "}
-            <span className={user ? "text-green-600" : "text-red-600"}>
+            <span className={user ? "text-success-foreground" : "text-destructive-foreground"}>
               {user ? "✓ SÍ" : "✗ NO"}
             </span>
           </p>
@@ -43,16 +43,16 @@ export default async function DebugPage() {
           </p>
           <p>
             <strong>¿Emailes coinciden?:</strong>{" "}
-            <span className={emailMatch ? "text-green-600 font-bold" : "text-red-600 font-bold"}>
+            <span className={emailMatch ? "text-success-foreground font-bold" : "text-destructive-foreground font-bold"}>
               {emailMatch ? "✓ SÍ" : "✗ NO"}
             </span>
           </p>
         </div>
 
-        <div className="space-y-2 bg-blue-100 p-4 rounded">
+        <div className="space-y-2 bg-info/95 p-4 rounded">
           <p>
             <strong>is_admin en DB:</strong>{" "}
-            <span className={isAdmin ? "text-green-600 font-bold" : "text-red-600 font-bold"}>
+            <span className={isAdmin ? "text-success-foreground font-bold" : "text-destructive-foreground font-bold"}>
               {isAdmin ? "✓ TRUE" : "✗ FALSE"}
             </span>
           </p>
@@ -66,19 +66,19 @@ export default async function DebugPage() {
           )}
         </div>
 
-        <div className="space-y-2 bg-yellow-100 p-4 rounded">
+        <div className="space-y-2 bg-warning/95 p-4 rounded">
           <p className="text-lg font-bold">
             <strong>¿Puede acceder a /admin?:</strong>{" "}
-            <span className={canAccessAdmin ? "text-green-600" : "text-red-600"}>
+            <span className={canAccessAdmin ? "text-success-foreground" : "text-destructive-foreground"}>
               {canAccessAdmin ? "✓ SÍ" : "✗ NO"}
             </span>
           </p>
-          {!emailMatch && <p className="text-red-600">❌ Email no coincide</p>}
-          {!isAdmin && <p className="text-amber-700">⚠ is_admin no está marcado en DB (ya no bloquea el acceso)</p>}
+          {!emailMatch && <p className="text-destructive-foreground">❌ Email no coincide</p>}
+          {!isAdmin && <p className="text-warning-foreground">⚠ is_admin no está marcado en DB (ya no bloquea el acceso)</p>}
         </div>
 
         {user && (
-          <div className="text-xs bg-gray-200 p-3 rounded mt-4">
+          <div className="text-xs bg-card p-3 rounded mt-4">
             <p>
               <strong>User ID:</strong> {user.id}
             </p>

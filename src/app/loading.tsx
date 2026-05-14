@@ -6,7 +6,7 @@ export default function Loading() {
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center" style={{ backgroundColor: "#AE826D" }}>
       <div className="flex flex-col items-center gap-6">
-        <div className="w-36 h-36 flex items-center justify-center">
+        <div className="size-36 flex items-center justify-center">
           <Image
             src="/logos/LOGO%20CLARO%20AMYSA%20SHOP.png"
             alt="AMYSA"

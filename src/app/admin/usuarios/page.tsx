@@ -422,7 +422,7 @@ export default async function AdminUsuariosPage({ searchParams }: PageProps) {
       <main className="space-y-5 pb-8">
         <header className="glass-card rounded-3xl p-5">
           <h1 className="font-[var(--font-display)] text-3xl">Usuarios y roles</h1>
-          <p className="mt-2 text-sm text-rose-700">Falta configurar SUPABASE_SECRET_KEY para gestionar roles.</p>
+          <p className="mt-2 text-sm text-destructive-foreground">Falta configurar SUPABASE_SECRET_KEY para gestionar roles.</p>
         </header>
       </main>
     );

@@ -9,7 +9,7 @@ export default function BannerPage() {
     <div className="relative w-full h-screen bg-[#4f3526] overflow-hidden flex flex-col items-center justify-center">
       {/* Background decorative elements */}
       <div className="absolute inset-0 opacity-5">
-        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-96 h-96 bg-white rounded-full blur-3xl"></div>
+        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 size-96 bg-white rounded-full blur-3xl"></div>
       </div>
 
       {/* Content container */}

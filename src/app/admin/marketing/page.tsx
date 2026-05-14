@@ -277,33 +277,33 @@ export default async function AdminMarketingPage({ searchParams }: PageProps) {
           <CardContent>
             <form action={createCouponAction} className="grid gap-3 text-sm md:grid-cols-2">
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-muted-foreground">Código</label>
-                <input name="code" placeholder="Ej: AMYSA2026" className="h-10 w-full rounded-xl border border-input bg-white px-3" required />
+                <label htmlFor="coupon-code" className="text-xs font-semibold text-muted-foreground">Código</label>
+                <input id="coupon-code" name="code" placeholder="Ej: AMYSA2026" className="h-10 w-full rounded-xl border border-input bg-white px-3" required />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-muted-foreground">Subtotal mínimo (S/)</label>
-                <input name="minSubtotal" type="number" min="0" step="0.1" placeholder="0" className="h-10 w-full rounded-xl border border-input bg-white px-3" />
+                <label htmlFor="coupon-minSubtotal" className="text-xs font-semibold text-muted-foreground">Subtotal mínimo (S/)</label>
+                <input id="coupon-minSubtotal" name="minSubtotal" type="number" min="0" step="0.1" placeholder="0" className="h-10 w-full rounded-xl border border-input bg-white px-3" />
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-muted-foreground">Tipo de descuento</label>
-                <select name="discountType" className="h-10 w-full rounded-xl border border-input bg-white px-3">
+                <label htmlFor="coupon-discountType" className="text-xs font-semibold text-muted-foreground">Tipo de descuento</label>
+                <select id="coupon-discountType" name="discountType" className="h-10 w-full rounded-xl border border-input bg-white px-3">
                   <option value="percent">Porcentaje (%)</option>
                   <option value="fixed">Moneda (S/)</option>
                 </select>
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-muted-foreground">Valor descuento</label>
-                <input name="discountValue" type="number" min="0.1" step="0.1" placeholder="Ej: 10 o 15" className="h-10 w-full rounded-xl border border-input bg-white px-3" required />
+                <label htmlFor="coupon-discountValue" className="text-xs font-semibold text-muted-foreground">Valor descuento</label>
+                <input id="coupon-discountValue" name="discountValue" type="number" min="0.1" step="0.1" placeholder="Ej: 10 o 15" className="h-10 w-full rounded-xl border border-input bg-white px-3" required />
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-muted-foreground">Fecha inicio</label>
-                <input name="startsAt" type="datetime-local" className="h-10 w-full rounded-xl border border-input bg-white px-3" />
+                <label htmlFor="coupon-startsAt" className="text-xs font-semibold text-muted-foreground">Fecha inicio</label>
+                <input id="coupon-startsAt" name="startsAt" type="datetime-local" className="h-10 w-full rounded-xl border border-input bg-white px-3" />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-muted-foreground">Fecha fin</label>
-                <input name="endsAt" type="datetime-local" className="h-10 w-full rounded-xl border border-input bg-white px-3" />
+                <label htmlFor="coupon-endsAt" className="text-xs font-semibold text-muted-foreground">Fecha fin</label>
+                <input id="coupon-endsAt" name="endsAt" type="datetime-local" className="h-10 w-full rounded-xl border border-input bg-white px-3" />
               </div>
 
               <div className="md:col-span-2">
@@ -320,13 +320,14 @@ export default async function AdminMarketingPage({ searchParams }: PageProps) {
           <CardContent>
             <form action={createMessageAction} className="grid gap-2 text-sm">
               <textarea
+                id="preheader-message"
                 name="message"
                 rows={3}
                 placeholder="Mensaje comercial que saldra en el preencabezado"
                 className="rounded-xl border border-input bg-white px-3 py-2"
                 required
               />
-              <input name="sortOrder" type="number" min="0" placeholder="Orden (0, 10, 20...)" className="h-10 rounded-xl border border-input bg-white px-3" />
+              <input id="preheader-sortOrder" name="sortOrder" type="number" min="0" placeholder="Orden (0, 10, 20...)" className="h-10 rounded-xl border border-input bg-white px-3" />
               <Button type="submit">Crear mensaje</Button>
             </form>
           </CardContent>
@@ -354,9 +355,7 @@ export default async function AdminMarketingPage({ searchParams }: PageProps) {
                         </div>
                         <span
                           className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold whitespace-nowrap ${
-                            coupon.active
-                              ? "bg-green-100 text-green-700"
-                              : "bg-gray-100 text-gray-700"
+                            coupon.active ? "bg-success text-success-foreground" : "bg-muted text-muted-foreground"
                           }`}
                         >
                           {coupon.active ? "Activo" : "Inactivo"}
@@ -399,7 +398,7 @@ export default async function AdminMarketingPage({ searchParams }: PageProps) {
                         </div>
                       </div>
 
-                      <div className="flex flex-wrap gap-2 border-t border-gray-200 pt-3">
+                      <div className="flex flex-wrap gap-2 border-t border-border pt-3">
                         <Button type="button" size="sm" asChild>
                           <Link href={`/admin/marketing?editCoupon=${coupon.id}`}>
                             <Pencil className="mr-2 size-4" /> Modificar
@@ -409,7 +408,7 @@ export default async function AdminMarketingPage({ searchParams }: PageProps) {
                           <input type="hidden" name="id" value={coupon.id} />
                           <button
                             type="submit"
-                            className="inline-flex h-9 items-center rounded-md border border-rose-200 bg-rose-50 px-3 text-sm font-semibold text-rose-700"
+                            className="inline-flex h-9 items-center rounded-md border border-destructive/40 bg-destructive/10 px-3 text-sm font-semibold text-destructive-foreground"
                           >
                             <Trash2 className="mr-2 size-4" /> Eliminar
                           </button>

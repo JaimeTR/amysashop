@@ -7,6 +7,7 @@ import { Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { canonicalizeBrandName } from "@/lib/brands";
 import { useRegisteredTaxonomies } from "@/lib/use-registered-taxonomies";
+import { useNotify } from "@/components/feedback/notification-center";
 
 type Props = {
   productId: string;
@@ -32,6 +33,7 @@ type Props = {
   triggerMode?: "text" | "icon";
   triggerIcon?: React.ReactNode;
   triggerAriaLabel?: string;
+  className?: string;
 };
 
 export function ProductEditModal({
@@ -58,6 +60,7 @@ export function ProductEditModal({
   triggerMode = "text",
   triggerIcon,
   triggerAriaLabel,
+  className,
 }: Props) {
   const isVideoMedia = (value: string) => /\.(mp4|webm|ogg|mov|m4v)(?:$|\?)/i.test(String(value || "").trim());
   const firstImage = images.find((item) => item && !isVideoMedia(item)) || "";
@@ -70,10 +73,10 @@ export function ProductEditModal({
       .filter(Boolean);
 
   const router = useRouter();
+  const notify = useNotify();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [notification, setNotification] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [mainImageUrls, setMainImageUrls] = useState(firstImage);
   const [galleryImageUrls, setGalleryImageUrls] = useState(galleryItems.join(", "));
   const [mainUploadedFiles, setMainUploadedFiles] = useState<File[]>([]);
@@ -213,16 +216,16 @@ export function ProductEditModal({
   };
 
   const renderPreviewThumbnail = (src: string, alt: string, onRemove: () => void) => (
-    <div className="relative overflow-hidden rounded-xl border border-[#e3d7cd] bg-white shadow-sm">
+      <div className="relative overflow-hidden rounded-xl border border-[#e3d7cd] bg-white shadow-sm">
       <button
         type="button"
         onClick={onRemove}
-        className="absolute right-1 top-1 z-10 inline-flex h-6 w-6 items-center justify-center rounded-full bg-black/70 text-white transition hover:bg-rose-600"
+        className="absolute right-1 top-1 z-10 inline-flex size-6 items-center justify-center rounded-full bg-black/70 text-white transition hover:bg-destructive/10"
         aria-label={`Eliminar ${alt}`}
       >
         <X className="size-3.5" />
       </button>
-      <img src={src} alt={alt} className="h-24 w-24 object-cover" />
+      <img src={src} alt={alt} className="size-24 object-cover" />
     </div>
   );
 
@@ -249,21 +252,19 @@ export function ProductEditModal({
       });
 
       await updateProductAction(formData);
-      setNotification({ type: "success", message: "Producto actualizado correctamente" });
 
+      notify.success("Producto actualizado", "Los cambios se han guardado correctamente");
       setTimeout(() => {
         setOpen(false);
         setMainUploadedFiles([]);
         setGalleryUploadedFiles([]);
-        setNotification(null);
         router.refresh();
-      }, 900);
+      }, 500);
     } catch (error) {
-      setNotification({
-        type: "error",
-        message: error instanceof Error ? error.message : "No se pudo actualizar el producto",
-      });
-      setTimeout(() => setNotification(null), 2500);
+      notify.error(
+        "Error al actualizar",
+        error instanceof Error ? error.message : "No se pudo actualizar el producto"
+      );
     } finally {
       setLoading(false);
     }
@@ -277,6 +278,7 @@ export function ProductEditModal({
         variant="outline"
         onClick={() => setOpen(true)}
         aria-label={triggerAriaLabel || "Editar"}
+        className={className}
       >
         {triggerMode === "icon" ? triggerIcon || "E" : "Editar"}
       </Button>
@@ -288,15 +290,6 @@ export function ProductEditModal({
         className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-white/30 bg-white/95 p-6 shadow-2xl backdrop-blur-md"
         onClick={(event) => event.stopPropagation()}
       >
-        {notification && (
-          <div
-            className={`mb-4 rounded-lg p-3 text-sm font-medium ${
-              notification.type === "success" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-            }`}
-          >
-            {notification.message}
-          </div>
-        )}
 
         <div className="mb-6 flex items-start justify-between">
           <div>
@@ -314,11 +307,11 @@ export function ProductEditModal({
 
           <div className="grid gap-3 md:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-semibold text-black">Nombre</label>
-              <input name="name" defaultValue={name} placeholder="Nombre del producto" required className={baseInputClass} />
+              <label htmlFor="product-edit-name" className="mb-1 block text-xs font-semibold text-black">Nombre</label>
+              <input id="product-edit-name" name="name" defaultValue={name} placeholder="Nombre del producto" required className={baseInputClass} />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-semibold text-black">SKU generado</label>
+              <p className="mb-1 block text-xs font-semibold text-black">SKU generado</p>
               <div className="flex h-10 items-center rounded-lg border border-[#e3d7cd] bg-[#f4eee9] px-3 text-sm font-semibold text-black/75">
                 {code || "Sin SKU"}
               </div>
@@ -327,8 +320,9 @@ export function ProductEditModal({
 
           <div className="grid gap-3 md:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-semibold text-black">Categoría</label>
+              <label htmlFor="product-edit-category" className="mb-1 block text-xs font-semibold text-black">Categoría</label>
               <select
+                id="product-edit-category"
                 name="category"
                 value={selectedCategory}
                 onChange={(e) => {
@@ -347,8 +341,9 @@ export function ProductEditModal({
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs font-semibold text-black">Marca</label>
+              <label htmlFor="product-edit-brand" className="mb-1 block text-xs font-semibold text-black">Marca</label>
               <select
+                id="product-edit-brand"
                 name="brand"
                 value={selectedBrand}
                 onChange={(e) => {
@@ -370,8 +365,9 @@ export function ProductEditModal({
 
           <div className="grid gap-3 md:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-semibold text-black">Subcategoría</label>
+              <label htmlFor="product-edit-subCategory" className="mb-1 block text-xs font-semibold text-black">Subcategoría</label>
               <select
+                id="product-edit-subCategory"
                 name="subCategory"
                 value={selectedSubCategory}
                 onChange={(e) => setSelectedSubCategory(e.target.value)}
@@ -393,8 +389,9 @@ export function ProductEditModal({
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs font-semibold text-black">Submarca</label>
+              <label htmlFor="product-edit-subBrand" className="mb-1 block text-xs font-semibold text-black">Submarca</label>
               <select
+                id="product-edit-subBrand"
                 name="subBrand"
                 value={selectedSubBrand}
                 onChange={(e) => setSelectedSubBrand(e.target.value)}
@@ -419,8 +416,8 @@ export function ProductEditModal({
 
           <div className="grid gap-3 md:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-semibold text-black">Género</label>
-              <select name="gender" defaultValue={gender} className={selectInputClass}>
+              <label htmlFor="gender" className="mb-1 block text-xs font-semibold text-black">Género</label>
+              <select id="gender" name="gender" defaultValue={gender} className={selectInputClass}>
                 <option value="">Seleccionar género</option>
                 {genderOptions.map((g) => (
                   <option key={g} value={g}>{g}</option>
@@ -428,8 +425,8 @@ export function ProductEditModal({
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs font-semibold text-black">Edad</label>
-              <select name="ageGroup" defaultValue={ageGroup} className={selectInputClass}>
+              <label htmlFor="ageGroup" className="mb-1 block text-xs font-semibold text-black">Edad</label>
+              <select id="ageGroup" name="ageGroup" defaultValue={ageGroup} className={selectInputClass}>
                 <option value="">Seleccionar edad</option>
                 {ageGroupOptions.map((a) => (
                   <option key={a} value={a}>{a}</option>
@@ -440,8 +437,9 @@ export function ProductEditModal({
 
           <div className="grid gap-3 md:grid-cols-3">
             <div>
-              <label className="mb-1 block text-xs font-semibold text-black">Precio actual</label>
+              <label htmlFor="price" className="mb-1 block text-xs font-semibold text-black">Precio actual</label>
               <input
+                id="price"
                 name="price"
                 type="number"
                 step="0.01"
@@ -454,18 +452,19 @@ export function ProductEditModal({
               <p className="mt-1 text-[11px] text-black/55">Precio de venta final (requerido)</p>
             </div>
             <div>
-              <label className="mb-1 block text-xs font-semibold text-black">Precio sugerido</label>
-              <input name="priceBefore" type="number" step="0.01" min="0" defaultValue={priceBefore || ""} placeholder="Referencia visual para marketing" className={baseInputClass} />
+              <label htmlFor="priceBefore" className="mb-1 block text-xs font-semibold text-black">Precio sugerido</label>
+              <input id="priceBefore" name="priceBefore" type="number" step="0.01" min="0" defaultValue={priceBefore || ""} placeholder="Referencia visual para marketing" className={baseInputClass} />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-semibold text-black">Stock</label>
-              <input name="stock" type="number" min="0" defaultValue={stock} required className={baseInputClass} />
+              <label htmlFor="stock" className="mb-1 block text-xs font-semibold text-black">Stock</label>
+              <input id="stock" name="stock" type="number" min="0" defaultValue={stock} required className={baseInputClass} />
             </div>
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-semibold text-black">Descripción corta</label>
+            <label htmlFor="product-edit-description" className="mb-1 block text-xs font-semibold text-black">Descripción corta</label>
             <textarea
+              id="product-edit-description"
               name="description"
               defaultValue={description}
               rows={2}
@@ -476,11 +475,12 @@ export function ProductEditModal({
           <div className="space-y-4 rounded-2xl border border-[#e3d7cd] bg-[#fcf8f5] p-4">
             <div className="space-y-2">
               <div>
-                <label className="block text-xs font-semibold text-black">Foto principal</label>
+                <p className="block text-xs font-semibold text-black">Foto principal</p>
                 <p className="text-[11px] text-black/60">Esta portada se usa primero en la página del producto y en miniaturas generales.</p>
               </div>
               <div className="grid gap-3 md:grid-cols-2">
                 <input
+                  id="product-edit-mainImageUrls"
                   type="text"
                   value={mainImageUrls}
                   onChange={(event) => setMainImageUrls(event.target.value)}
@@ -489,6 +489,7 @@ export function ProductEditModal({
                 />
                 <div className="relative">
                   <input
+                    id="main-file"
                     ref={mainFileInputRef}
                     type="file"
                     accept="image/*"
@@ -509,13 +510,14 @@ export function ProductEditModal({
               ) : null}
             </div>
 
-            <div className="space-y-2 border-t border-[#e3d7cd] pt-4">
+              <div className="space-y-2 border-t border-[#e3d7cd] pt-4">
               <div>
-                <label className="block text-xs font-semibold text-black">Galería de fotos o videos</label>
+                <p className="block text-xs font-semibold text-black">Galería de fotos o videos</p>
                 <p className="text-[11px] text-black/60">Estos elementos se mostrarán en el detalle del producto como miniaturas.</p>
               </div>
               <div className="grid gap-3 md:grid-cols-2">
                 <input
+                  id="product-edit-galleryImageUrls"
                   type="text"
                   value={galleryImageUrls}
                   onChange={(event) => setGalleryImageUrls(event.target.value)}
@@ -524,6 +526,7 @@ export function ProductEditModal({
                 />
                 <div className="relative">
                   <input
+                    id="product-edit-gallery-file"
                     ref={galleryFileInputRef}
                     type="file"
                     multiple
@@ -547,12 +550,12 @@ export function ProductEditModal({
 
                     return (
                       <div key={`${src}-${index}`} className="relative overflow-hidden rounded-xl border border-[#e3d7cd] bg-white shadow-sm">
-                        <button
-                          type="button"
-                          onClick={() => removeGalleryPreviewItem(index)}
-                          className="absolute right-1 top-1 z-10 inline-flex h-6 w-6 items-center justify-center rounded-full bg-black/70 text-white transition hover:bg-rose-600"
-                          aria-label={`Eliminar ${alt}`}
-                        >
+                          <button
+                            type="button"
+                            onClick={() => removeGalleryPreviewItem(index)}
+                            className="absolute right-1 top-1 z-10 inline-flex size-6 items-center justify-center rounded-full bg-black/70 text-white transition hover:bg-destructive/10"
+                            aria-label={`Eliminar ${alt}`}
+                          >
                           <X className="size-3.5" />
                         </button>
                         <img src={src} alt={alt} className="h-24 w-full object-cover" />
@@ -566,10 +569,10 @@ export function ProductEditModal({
 
           <div className="flex items-center gap-3 rounded-lg border border-[#e3d7cd] bg-[#fcf8f5] p-3">
             <div className="flex-1">
-              <label className="text-sm font-semibold text-black">Mostrar al cliente</label>
+              <div className="text-sm font-semibold text-black">Mostrar al cliente</div>
               <p className="text-xs text-black/60">Activar para que el producto sea visible en la tienda</p>
             </div>
-            <label className="relative inline-flex cursor-pointer items-center">
+            <label className="relative inline-flex cursor-pointer items-center" aria-label="Mostrar producto al cliente">
               <input name="active" type="checkbox" defaultChecked={active} className="peer sr-only" />
               <div className="peer h-6 w-11 rounded-full bg-[#d9c7b8] peer-checked:bg-primary peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/30 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-[#d9c7b8] after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
             </label>

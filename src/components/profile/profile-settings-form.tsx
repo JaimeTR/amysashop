@@ -1,6 +1,7 @@
 "use client";
 
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { Loader2, UploadCloud } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
@@ -229,18 +230,33 @@ export function ProfileSettingsForm({ userId, email, initialProfile }: ProfileSe
 
   const avatarSrc = uploadPreview || initialProfile.img_avatar || initialProfile.avatar_url || "/placeholder-product.svg";
 
+  const isBlobOrDataSrc = (src: string) => src.startsWith("blob:") || src.startsWith("data:");
+
   return (
     <div className="space-y-4 text-sm">
       <div className="flex flex-col items-center gap-4 rounded-2xl border border-white/70 bg-white/70 p-4 sm:flex-row sm:items-center">
-        <img
-          src={avatarSrc}
-          alt="Foto de perfil"
-          key={avatarSrc}
-          className="size-[88px] rounded-full border border-primary/20 object-cover"
-        />
+        {isBlobOrDataSrc(avatarSrc) ? (
+          <div
+            role="img"
+            aria-label="Foto de perfil"
+            key={avatarSrc}
+            className="h-[88px] w-[88px] rounded-full border border-primary/20 bg-center bg-cover"
+            style={{ backgroundImage: `url(${avatarSrc})` }}
+          />
+        ) : (
+          <Image
+            src={avatarSrc}
+            alt="Foto de perfil"
+            key={avatarSrc}
+            width={88}
+            height={88}
+            className="rounded-full border border-primary/20 object-cover"
+            sizes="88px"
+          />
+        )}
         <div className="w-full space-y-3 sm:flex-1">
-          <label className="block text-xs font-semibold text-muted-foreground">Imagen de perfil</label>
-          <input type="file" accept="image/*" onChange={handleFileChange} className="block w-full text-xs" />
+          <label htmlFor="profile-avatar-file" className="block text-xs font-semibold text-muted-foreground">Imagen de perfil</label>
+          <input id="profile-avatar-file" type="file" accept="image/*" onChange={handleFileChange} className="block w-full text-xs" />
           <Button type="button" variant="outline" onClick={handleUploadAvatar} disabled={!selectedFile || uploadingAvatar} className="w-full sm:w-auto">
             {uploadingAvatar ? <Loader2 className="mr-2 size-4 animate-spin" /> : <UploadCloud className="mr-2 size-4" />}
             Subir imagen
@@ -250,36 +266,40 @@ export function ProfileSettingsForm({ userId, email, initialProfile }: ProfileSe
 
       <div className="grid gap-2 md:grid-cols-2">
         <div className="space-y-1">
-          <label className="text-xs font-semibold text-muted-foreground">Correo</label>
-          <input value={email} disabled className="h-10 w-full rounded-xl border border-input bg-muted px-3 text-sm" />
+          <label htmlFor="profile-email" className="text-xs font-semibold text-muted-foreground">Correo</label>
+          <input id="profile-email" value={email} disabled className="h-10 w-full rounded-xl border border-input bg-muted px-3 text-sm" />
         </div>
         <div className="space-y-1">
-          <label className="text-xs font-semibold text-muted-foreground">Nombre</label>
+          <label htmlFor="profile-nombre" className="text-xs font-semibold text-muted-foreground">Nombre</label>
           <input
+            id="profile-nombre"
             value={draft.nombre}
             onChange={(event) => setDraft((prev) => ({ ...prev, nombre: event.target.value }))}
             className="h-10 w-full rounded-xl border border-input bg-white px-3 text-sm"
           />
         </div>
         <div className="space-y-1">
-          <label className="text-xs font-semibold text-muted-foreground">Telefono</label>
+          <label htmlFor="profile-telefono" className="text-xs font-semibold text-muted-foreground">Telefono</label>
           <input
+            id="profile-telefono"
             value={draft.telefono}
             onChange={(event) => setDraft((prev) => ({ ...prev, telefono: event.target.value }))}
             className="h-10 w-full rounded-xl border border-input bg-white px-3 text-sm"
           />
         </div>
         <div className="space-y-1">
-          <label className="text-xs font-semibold text-muted-foreground">Direccion</label>
+          <label htmlFor="profile-direccion" className="text-xs font-semibold text-muted-foreground">Direccion</label>
           <input
+            id="profile-direccion"
             value={draft.direccion}
             onChange={(event) => setDraft((prev) => ({ ...prev, direccion: event.target.value }))}
             className="h-10 w-full rounded-xl border border-input bg-white px-3 text-sm"
           />
         </div>
         <div className="space-y-1 md:col-span-2">
-          <label className="text-xs font-semibold text-muted-foreground">Genero</label>
+          <label htmlFor="profile-genero" className="text-xs font-semibold text-muted-foreground">Genero</label>
           <select
+            id="profile-genero"
             value={draft.gender}
             onChange={(event) => setDraft((prev) => ({ ...prev, gender: event.target.value }))}
             className="h-10 w-full rounded-xl border border-input bg-white px-3 text-sm"

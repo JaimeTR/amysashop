@@ -733,10 +733,12 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
                   className="border border-primary/20 bg-primary/10 hover:bg-primary/20"
                 >
                   {profileAvatarUrl ? (
-                    <img
+                    <Image
                       src={profileAvatarUrl}
                       alt="Perfil"
-                      key={profileAvatarUrl}
+                      width={28}
+                      height={28}
+                      unoptimized
                       className="size-7 rounded-full object-cover"
                     />
                   ) : (
@@ -1039,7 +1041,7 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
                   }}
                   className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-white/75 px-4 py-2 text-sm font-semibold text-foreground transition hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
                 >
-                  <Heart className="size-3.5 text-rose-500" />
+                  <Heart className="size-3.5 text-destructive-foreground" />
                   Favoritos <span className="text-xs text-muted-foreground">({favoriteItems.length})</span>
                 </button>
 
@@ -1218,7 +1220,7 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
                   <div className="mt-3 border-t border-white/20 pt-3">
                     <button
                       onClick={handleSignOut}
-                      className="w-full rounded-lg bg-rose-50 px-2 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-100"
+                      className="w-full rounded-lg bg-destructive/10 px-2 py-1.5 text-xs font-semibold text-destructive-foreground transition hover:bg-destructive/20"
                     >
                       Cerrar sesión
                     </button>
@@ -1283,7 +1285,7 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
                 <div className="relative">
                   <Icon className="size-4" />
                   {isCarrito && cartSummary.count > 0 ? (
-                    <span className="absolute -right-2 -top-2 grid size-4 place-content-center rounded-full bg-rose-500 text-[8px] font-bold text-white">
+                    <span className="absolute -right-2 -top-2 grid size-4 place-content-center rounded-full bg-destructive text-[8px] font-bold text-white">
                       {cartSummary.count}
                     </span>
                   ) : null}
@@ -1318,10 +1320,12 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
                   <div className="space-y-3 text-sm">
                     <div className="flex items-center gap-3">
                       {editingAvatarUrl ? (
-                        <img
+                        <Image
                           src={editingAvatarUrl}
                           alt="Foto de perfil"
-                          key={editingAvatarUrl}
+                          width={72}
+                          height={72}
+                          unoptimized
                           className="size-[72px] rounded-full border border-primary/20 object-cover"
                         />
                       ) : (

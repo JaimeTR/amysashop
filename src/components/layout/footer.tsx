@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-const socialIconClassName = "h-5 w-5";
+const socialIconClassName = "size-5";
 
 export default function Footer() {
   return (
@@ -9,7 +9,7 @@ export default function Footer() {
       <div className="mx-auto max-w-[1200px] px-6 py-10">
         <div className="flex flex-col gap-8 sm:flex-row sm:justify-between">
           <div className="flex flex-col items-center text-center">
-            <Image src="/logos/amysa-square-primary.png" alt="AMYSA" width={96} height={96} className="h-24 w-24 object-contain sm:h-28 sm:w-28" />
+            <Image src="/logos/amysa-square-primary.png" alt="AMYSA" width={96} height={96} className="size-24 object-contain sm:size-28" />
           </div>
 
           <div className="grid grid-cols-2 gap-6 sm:grid-cols-2">

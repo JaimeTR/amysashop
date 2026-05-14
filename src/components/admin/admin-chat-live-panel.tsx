@@ -288,6 +288,7 @@ export function AdminChatLivePanel({ sessionId, initialMessages, initiallyJoined
       });
 
     return () => {
+      channel.unsubscribe();
       supabase.removeChannel(channel);
     };
   }, [sessionId, supabase, currentUserId, refreshMessages]);
@@ -565,7 +566,7 @@ export function AdminChatLivePanel({ sessionId, initialMessages, initiallyJoined
           return (
             <article key={message.id} className={`flex items-start gap-2 ${isSystem ? "justify-center" : ""}`}>
               {isSystem ? (
-                <div className="rounded-full border border-slate-300/70 bg-slate-100/90 px-3 py-1 text-[11px] font-semibold text-slate-700">
+                  <div className="rounded-full border border-border/70 bg-muted/90 px-3 py-1 text-[11px] font-semibold text-muted-foreground">
                   {message.content}
                 </div>
               ) : null}
@@ -598,11 +599,11 @@ export function AdminChatLivePanel({ sessionId, initialMessages, initiallyJoined
                           width={28}
                           height={28}
                           unoptimized
-                          className="size-7 rounded-full border border-emerald-300/70 object-cover"
+                          className="size-7 rounded-full border border-success/70 object-cover"
                         />
                       ) : (
-                        <div className="grid size-7 place-content-center rounded-full border border-emerald-300/70 bg-emerald-50">
-                          <UserRound className="size-4 text-emerald-700" />
+                        <div className="grid size-7 place-content-center rounded-full border border-success/70 bg-success/90">
+                          <UserRound className="size-4 text-success-foreground" />
                         </div>
                       )
                     ) : null}
@@ -617,11 +618,11 @@ export function AdminChatLivePanel({ sessionId, initialMessages, initiallyJoined
                   <div
                     className={`min-w-0 flex-1 rounded-2xl border px-3 py-2 text-sm ${
                       isClient
-                        ? "border-primary/30 bg-primary/10"
+                            ? "border-primary/30 bg-primary/10"
                         : isAssistant
                           ? "border-white/40 bg-white/70"
                           : isAdmin
-                            ? "border-emerald-300/70 bg-emerald-50/90"
+                            ? "border-success/70 bg-success/90"
                             : "border-white/30 bg-white/50"
                     }`}
                   >
@@ -651,7 +652,7 @@ export function AdminChatLivePanel({ sessionId, initialMessages, initiallyJoined
         </Button>
       </form>
 
-      {errorMsg ? <p className="text-xs text-rose-700">{errorMsg}</p> : null}
+      {errorMsg ? <p className="text-xs text-destructive-foreground">{errorMsg}</p> : null}
 
       {mounted && showSwitchChatModal
         ? createPortal(

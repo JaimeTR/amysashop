@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Pencil, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useNotify } from "@/components/feedback/notification-center";
 
 type UserRow = {
   id: string;
@@ -21,10 +22,10 @@ type Props = {
 
 export function UserEditModal({ user, updateUserDataAction }: Props) {
   const router = useRouter();
+  const notify = useNotify();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [notification, setNotification] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   const baseInputClass =
     "w-full h-10 rounded-lg border border-[#e3d7cd] bg-white/95 px-3 text-sm text-black placeholder-black/40 focus:outline-none focus:ring-2 focus:ring-primary/25";
@@ -43,19 +44,17 @@ export function UserEditModal({ user, updateUserDataAction }: Props) {
       formData.set("userId", user.id);
       await updateUserDataAction(formData);
 
-      setNotification({ type: "success", message: "Usuario actualizado correctamente" });
+      notify.success("Usuario actualizado", "Los datos se han guardado correctamente");
 
       setTimeout(() => {
         setOpen(false);
-        setNotification(null);
         router.refresh();
       }, 900);
     } catch (error) {
-      setNotification({
-        type: "error",
-        message: error instanceof Error ? error.message : "No se pudo actualizar el usuario",
-      });
-      setTimeout(() => setNotification(null), 2500);
+      notify.error(
+        "Error al actualizar",
+        error instanceof Error ? error.message : "No se pudo actualizar el usuario"
+      );
     } finally {
       setLoading(false);
     }
@@ -64,16 +63,6 @@ export function UserEditModal({ user, updateUserDataAction }: Props) {
   const modalContent = open ? (
     <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/40 p-4">
       <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-white/30 bg-white/95 p-6 shadow-2xl backdrop-blur-md">
-        {notification ? (
-          <div
-            className={`mb-4 rounded-lg p-3 text-sm font-medium ${
-              notification.type === "success" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-            }`}
-          >
-            {notification.message}
-          </div>
-        ) : null}
-
         <div className="mb-6 flex items-start justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-black/60">Registro</p>
@@ -86,25 +75,25 @@ export function UserEditModal({ user, updateUserDataAction }: Props) {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="mb-1 block text-xs font-semibold text-black">Correo</label>
-            <input value={user.email || ""} disabled className={`${baseInputClass} cursor-not-allowed bg-[#f6f2ee] text-black/70`} />
+            <label htmlFor="user-edit-email" className="mb-1 block text-xs font-semibold text-black">Correo</label>
+            <input id="user-edit-email" value={user.email || ""} disabled className={`${baseInputClass} cursor-not-allowed bg-[#f6f2ee] text-black/70`} />
             <p className="mt-1 text-[11px] text-black/55">El correo se mantiene desde autenticacion.</p>
           </div>
 
           <div className="grid gap-3 md:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-semibold text-black">Nombre completo</label>
-              <input name="nombre" defaultValue={user.nombre || ""} required className={baseInputClass} />
+              <label htmlFor="user-edit-nombre" className="mb-1 block text-xs font-semibold text-black">Nombre completo</label>
+              <input id="user-edit-nombre" name="nombre" defaultValue={user.nombre || ""} required className={baseInputClass} />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-semibold text-black">Telefono</label>
-              <input name="telefono" defaultValue={user.telefono || ""} className={baseInputClass} />
+              <label htmlFor="user-edit-telefono" className="mb-1 block text-xs font-semibold text-black">Telefono</label>
+              <input id="user-edit-telefono" name="telefono" defaultValue={user.telefono || ""} className={baseInputClass} />
             </div>
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-semibold text-black">Direccion</label>
-            <input name="direccion" defaultValue={user.direccion || ""} className={baseInputClass} />
+            <label htmlFor="user-edit-direccion" className="mb-1 block text-xs font-semibold text-black">Direccion</label>
+            <input id="user-edit-direccion" name="direccion" defaultValue={user.direccion || ""} className={baseInputClass} />
           </div>
 
           <div className="flex gap-3 border-t border-[#e3d7cd] pt-4">

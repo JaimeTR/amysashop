@@ -3,7 +3,7 @@
 import { AlertTriangle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createPortal } from "react-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 type ConfirmDeleteModalProps = {
   isOpen: boolean;
@@ -25,11 +25,18 @@ export function ConfirmDeleteModal({
   onCancel,
 }: ConfirmDeleteModalProps) {
   const [mounted, setMounted] = useState(false);
+  const confirmRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     setMounted(true);
     return () => setMounted(false);
   }, []);
+
+  useEffect(() => {
+    if (mounted && confirmRef.current) {
+      confirmRef.current.focus();
+    }
+  }, [mounted]);
 
   if (!isOpen || !mounted) {
     return null;
@@ -41,20 +48,24 @@ export function ConfirmDeleteModal({
       onClick={onCancel}
     >
       <div
-        className="w-full max-w-md rounded-3xl border border-rose-200/50 bg-white/95 p-6 shadow-2xl backdrop-blur-md"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="confirm-delete-title"
+        aria-describedby="confirm-delete-desc"
+        className="w-full max-w-md rounded-3xl border border-destructive/50 bg-white/95 p-6 shadow-2xl backdrop-blur-md"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="mb-4 flex items-start gap-3">
-          <div className="rounded-full bg-rose-100 p-3">
-            <AlertTriangle className="size-6 text-rose-600" />
+          <div className="rounded-full bg-destructive p-3">
+            <AlertTriangle className="size-6 text-destructive-foreground" />
           </div>
           <div className="flex-1">
-            <h2 className="font-[var(--font-display)] text-xl font-semibold text-foreground">
+            <h2 id="confirm-delete-title" className="font-[var(--font-display)] text-xl font-semibold text-foreground">
               {title}
             </h2>
-            <p className="mt-2 text-sm text-foreground/80">{message}</p>
+            <p id="confirm-delete-desc" className="mt-2 text-sm text-foreground/80">{message}</p>
             {itemName && (
-              <p className="mt-2 rounded-lg bg-rose-50 px-3 py-2 text-sm font-medium text-rose-900">
+              <p className="mt-2 rounded-lg bg-destructive px-3 py-2 text-sm font-medium text-destructive-foreground">
                 {itemName}
               </p>
             )}
@@ -71,7 +82,7 @@ export function ConfirmDeleteModal({
           </Button>
         </div>
 
-        <div className="flex gap-2 border-t border-rose-100 pt-4">
+        <div className="flex gap-2 border-t border-destructive/30 pt-4">
           <Button
             type="button"
             variant="outline"
@@ -85,7 +96,8 @@ export function ConfirmDeleteModal({
             type="button"
             onClick={onConfirm}
             disabled={isLoading}
-            className="flex-1 bg-rose-600 text-white hover:bg-rose-700"
+            className="flex-1 bg-destructive text-white hover:bg-destructive/80"
+            ref={confirmRef}
           >
             {isLoading ? "Eliminando..." : "Eliminar"}
           </Button>

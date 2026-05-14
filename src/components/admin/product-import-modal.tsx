@@ -4,17 +4,18 @@ import { createPortal } from "react-dom";
 import { useEffect, useRef, useState } from "react";
 import { FileSpreadsheet, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useNotify } from "@/components/feedback/notification-center";
 
 type Props = {
   importProductsAction: (formData: FormData) => Promise<void>;
 };
 
 export function ProductImportModal({ importProductsAction }: Props) {
+  const notify = useNotify();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
-  const [notification, setNotification] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -34,21 +35,20 @@ export function ProductImportModal({ importProductsAction }: Props) {
     try {
       const formData = new FormData(event.currentTarget);
       await importProductsAction(formData);
-      setNotification({ type: "success", message: "Importación completada correctamente" });
+      notify.success("Importación completada", "Los productos se han importado correctamente");
 
       setTimeout(() => {
         setOpen(false);
-        setNotification(null);
         setFileName(null);
         if (fileInputRef.current) {
           fileInputRef.current.value = "";
         }
-      }, 1200);
+      }, 500);
     } catch (error) {
-      setNotification({
-        type: "error",
-        message: error instanceof Error ? error.message : "No se pudo importar el archivo CSV",
-      });
+      notify.error(
+        "Error en importación",
+        error instanceof Error ? error.message : "No se pudo importar el archivo CSV"
+      );
     } finally {
       setLoading(false);
     }
@@ -89,9 +89,10 @@ export function ProductImportModal({ importProductsAction }: Props) {
                   </div>
 
                   <div>
-                    <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-foreground/80">Archivo CSV</label>
+                    <label htmlFor="csvFile" className="mb-1 block text-xs font-semibold uppercase tracking-wide text-foreground/80">Archivo CSV</label>
                     <div className="relative">
                       <input
+                        id="csvFile"
                         ref={fileInputRef}
                         type="file"
                         name="csvFile"
@@ -100,22 +101,12 @@ export function ProductImportModal({ importProductsAction }: Props) {
                         required
                         className="absolute inset-0 cursor-pointer opacity-0"
                       />
-                      <div className={`flex h-11 items-center justify-center gap-2 rounded-xl border-2 border-dashed ${fileName ? "border-emerald-300 bg-emerald-50" : "border-primary/35 bg-[#fcf8f5]"} text-sm ${fileName ? "text-emerald-700 font-medium" : "text-foreground/80"}`}>
-                        <Upload className={`size-4 ${fileName ? "text-emerald-600" : "text-primary"}`} />
+                      <div className={`flex h-11 items-center justify-center gap-2 rounded-xl border-2 border-dashed ${fileName ? "border-success/70 bg-success/90" : "border-primary/35 bg-card"} text-sm ${fileName ? "text-success-foreground font-medium" : "text-foreground/80"}`}>
+                        <Upload className={`size-4 ${fileName ? "text-success-foreground" : "text-primary"}`} />
                         {fileName ? `✓ ${fileName}` : "Seleccionar archivo CSV"}
                       </div>
                     </div>
                   </div>
-
-                  {notification ? (
-                    <div
-                      className={`rounded-lg px-3 py-2 text-sm ${
-                        notification.type === "success" ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"
-                      }`}
-                    >
-                      {notification.message}
-                    </div>
-                  ) : null}
 
                   <div className="flex gap-2 border-t border-[#e3d7cd] pt-3">
                     <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={loading} className="flex-1">

@@ -15,9 +15,9 @@ type BrandLogoProps = {
 };
 
 const sizeMap = {
-  sm: { container: "w-12 h-12", text: "text-xs" },
-  md: { container: "w-16 h-16", text: "text-sm" },
-  lg: { container: "w-24 h-24", text: "text-base" },
+  sm: { container: "size-12", text: "text-xs" },
+  md: { container: "size-16", text: "text-sm" },
+  lg: { container: "size-24", text: "text-base" },
 };
 
 export function BrandLogo({ 

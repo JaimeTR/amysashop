@@ -512,7 +512,7 @@ export function TiendaClientGrid({ products, allProducts, categories = [], initi
             {subcategories.map((subcat) => {
               const checked = selectedSubcategories.includes(subcat.name);
               return (
-                <label key={subcat.id} className="flex items-center justify-between gap-2 text-sm">
+                <label key={subcat.id} className="flex items-center justify-between gap-2 text-sm" aria-label={`Seleccionar subcategoría ${subcat.name}`}>
                   <span className="flex items-center gap-2">
                     <input
                       type="checkbox"
@@ -575,7 +575,7 @@ export function TiendaClientGrid({ products, allProducts, categories = [], initi
             {subbrands.map((subbrand) => {
               const checked = selectedSubbrands.includes(subbrand.name);
               return (
-                <label key={subbrand.id} className="flex items-center justify-between gap-2 text-sm">
+                <label key={subbrand.id} className="flex items-center justify-between gap-2 text-sm" aria-label={`Seleccionar submarca ${subbrand.name}`}>
                   <span className="flex items-center gap-2">
                     <input
                       type="checkbox"
@@ -710,9 +710,9 @@ export function TiendaClientGrid({ products, allProducts, categories = [], initi
             }
           `}</style>
           <div className="space-y-2">
-            <label className="block text-xs font-medium text-muted-foreground">
+            <div className="block text-xs font-medium text-muted-foreground">
               Rango: S/ {priceMin || "0"} - S/ {priceMax || maxPrice}
-            </label>
+            </div>
             <div className="price-slider-track">
               <input
                 type="range"
@@ -886,7 +886,7 @@ export function TiendaClientGrid({ products, allProducts, categories = [], initi
                   ) : null}
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="text-base font-bold text-primary">S/ {product.price.toFixed(2)}</p>
-                    {hasDiscount ? <Badge className="border border-emerald-300 bg-emerald-100 text-emerald-700">{discountPercent}% OFF</Badge> : null}
+                    {hasDiscount ? <Badge className="border border-success/70 bg-success/90 text-success-foreground">{discountPercent}% OFF</Badge> : null}
                   </div>
                 </div>
                 <div className="grid grid-cols-[1fr_auto] gap-2">

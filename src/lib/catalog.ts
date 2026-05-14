@@ -167,7 +167,10 @@ export async function getRegisteredCategories(): Promise<string[]> {
 
   if (!error && data) {
     const categories = uniqueLabels(
-      (data as Array<{ id: string; name: string | null }>).map((item) => String(item.name || "").trim()).filter(Boolean)
+      (data as Array<{ id: string; name: string | null }>).flatMap((item) => {
+        const name = String(item.name || "").trim();
+        return name ? [name] : [];
+      })
     );
 
     if (categories.length > 0) {
@@ -175,7 +178,7 @@ export async function getRegisteredCategories(): Promise<string[]> {
     }
   }
 
-  return uniqueLabels(productSamples.map((item) => item.category).filter(Boolean));
+  return uniqueLabels(productSamples.flatMap((item) => item.category ? [item.category] : []));
 }
 
 export async function getProductsPage(

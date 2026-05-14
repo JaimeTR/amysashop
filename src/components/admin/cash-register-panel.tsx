@@ -141,11 +141,12 @@ function IncomeEditModal({ income, products, sellers, paymentMethods, onClose, o
         <input type="hidden" name="productId" value={selectedProductId} />
 
         <div className="grid gap-2">
-          <label className="text-sm font-medium">Buscar producto</label>
+          <label htmlFor="income-edit-product-query" className="text-sm font-medium">Buscar producto</label>
           <div className="space-y-2">
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
+                id="income-edit-product-query"
                 value={productQuery}
                 onChange={(event) => {
                   const nextValue = event.target.value;
@@ -195,8 +196,8 @@ function IncomeEditModal({ income, products, sellers, paymentMethods, onClose, o
         </div>
 
         {selectedProduct ? (
-          <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">Vista previa</p>
+          <div className="rounded-md border border-success/40 bg-success/90 p-3">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-success-foreground">Vista previa</p>
             <div className="flex items-center gap-3">
               <Image
                 src={selectedProduct.imageUrl || "/logos/amysa%20shop.png"}
@@ -206,9 +207,9 @@ function IncomeEditModal({ income, products, sellers, paymentMethods, onClose, o
                 className="size-16 rounded-md object-cover"
               />
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-emerald-800">{selectedProduct.name}</p>
-                <p className="text-xs text-emerald-700">SKU: {selectedProduct.sku || "SIN SKU"}</p>
-                <p className="text-sm font-semibold text-emerald-700">Precio base: {toMoney(selectedProduct.price)}</p>
+                <p className="truncate text-sm font-semibold text-success-foreground">{selectedProduct.name}</p>
+                <p className="text-xs text-success-foreground">SKU: {selectedProduct.sku || "SIN SKU"}</p>
+                <p className="text-sm font-semibold text-success-foreground">Precio base: {toMoney(selectedProduct.price)}</p>
               </div>
             </div>
           </div>
@@ -216,8 +217,8 @@ function IncomeEditModal({ income, products, sellers, paymentMethods, onClose, o
 
         <div className="grid gap-3 md:grid-cols-2">
           <div className="grid gap-2">
-            <label className="text-sm font-medium">Asesora de venta</label>
-            <select name="sellerId" required defaultValue={income.sellerId || ""} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+            <label htmlFor="income-edit-sellerId" className="text-sm font-medium">Asesora de venta</label>
+            <select id="income-edit-sellerId" name="sellerId" required defaultValue={income.sellerId || ""} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
               <option value="">Selecciona quien vendio</option>
               {sellers.map((seller) => (
                 <option key={seller.id} value={seller.id}>
@@ -228,8 +229,8 @@ function IncomeEditModal({ income, products, sellers, paymentMethods, onClose, o
           </div>
 
           <div className="grid gap-2">
-            <label className="text-sm font-medium">Metodo de pago</label>
-            <select name="paymentMethod" defaultValue={income.paymentMethod || "efectivo"} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+            <label htmlFor="income-edit-paymentMethod" className="text-sm font-medium">Metodo de pago</label>
+            <select id="income-edit-paymentMethod" name="paymentMethod" defaultValue={income.paymentMethod || "efectivo"} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
               {paymentMethods.map((method) => (
                 <option key={method} value={method}>
                   {paymentMethodLabel(method)}
@@ -241,13 +242,13 @@ function IncomeEditModal({ income, products, sellers, paymentMethods, onClose, o
 
         <div className="grid gap-3 sm:grid-cols-3">
           <div className="grid gap-2">
-            <label className="text-sm font-medium">Cantidad</label>
-            <Input name="quantity" type="number" min="0.01" step="0.01" required value={quantity} onChange={(event) => setQuantity(event.target.value)} />
+            <label htmlFor="income-edit-quantity" className="text-sm font-medium">Cantidad</label>
+            <Input id="income-edit-quantity" name="quantity" type="number" min="0.01" step="0.01" required value={quantity} onChange={(event) => setQuantity(event.target.value)} />
           </div>
 
           <div className="grid gap-2">
-            <label className="text-sm font-medium">Unidad</label>
-            <select name="unitType" defaultValue={income.unitType} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+            <label htmlFor="income-edit-unitType" className="text-sm font-medium">Unidad</label>
+            <select id="income-edit-unitType" name="unitType" defaultValue={income.unitType} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
               <option value="unidad">Unidad</option>
               <option value="caja">Caja</option>
               <option value="paquete">Paquete</option>
@@ -255,8 +256,9 @@ function IncomeEditModal({ income, products, sellers, paymentMethods, onClose, o
           </div>
 
           <div className="grid gap-2">
-            <label className="text-sm font-medium">Precio</label>
+            <label htmlFor="income-edit-unitPrice" className="text-sm font-medium">Precio</label>
             <Input
+              id="income-edit-unitPrice"
               name="unitPrice"
               type="number"
               min="0"
@@ -268,14 +270,14 @@ function IncomeEditModal({ income, products, sellers, paymentMethods, onClose, o
           </div>
         </div>
 
-        <label className="inline-flex items-center gap-2 text-sm font-medium text-foreground">
-          <input type="checkbox" name="wasSold" value="true" defaultChecked={income.wasSold} className="size-4 rounded border-input" />
+        <label htmlFor="income-edit-wasSold" className="inline-flex items-center gap-2 text-sm font-medium text-foreground">
+          <input id="income-edit-wasSold" type="checkbox" name="wasSold" value="true" defaultChecked={income.wasSold} className="size-4 rounded border-input" />
           Se vendio este producto
         </label>
 
         <div className="grid gap-2">
-          <label className="text-sm font-medium">Notas (opcional)</label>
-          <textarea name="notes" rows={3} defaultValue={income.notes} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+          <label htmlFor="income-edit-notes" className="text-sm font-medium">Notas (opcional)</label>
+          <textarea id="income-edit-notes" name="notes" rows={3} defaultValue={income.notes} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
         </div>
 
         <div className="flex items-center justify-end gap-2">
@@ -303,22 +305,22 @@ function ExpenseEditModal({ expense, paymentMethods, onClose, onSubmitAction }: 
         <input type="hidden" name="expenseId" value={expense.id} />
 
         <div className="grid gap-2">
-          <label className="text-sm font-medium">Concepto del gasto</label>
-          <Input name="concept" required defaultValue={expense.concept} />
+          <label htmlFor="expense-edit-concept" className="text-sm font-medium">Concepto del gasto</label>
+          <Input id="expense-edit-concept" name="concept" required defaultValue={expense.concept} />
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="grid gap-2">
-            <label className="text-sm font-medium">Tipo</label>
-            <select name="expenseType" defaultValue={expense.expenseType} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+            <label htmlFor="expense-edit-type" className="text-sm font-medium">Tipo</label>
+            <select id="expense-edit-type" name="expenseType" defaultValue={expense.expenseType} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
               <option value="compra">Compra</option>
               <option value="general">General</option>
             </select>
           </div>
 
           <div className="grid gap-2">
-            <label className="text-sm font-medium">Metodo de gasto</label>
-            <select name="paymentMethod" defaultValue={expense.paymentMethod || "efectivo"} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+            <label htmlFor="expense-edit-paymentMethod" className="text-sm font-medium">Metodo de gasto</label>
+            <select id="expense-edit-paymentMethod" name="paymentMethod" defaultValue={expense.paymentMethod || "efectivo"} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
               {paymentMethods.map((method) => (
                 <option key={method} value={method}>
                   {paymentMethodLabel(method)}
@@ -329,13 +331,13 @@ function ExpenseEditModal({ expense, paymentMethods, onClose, onSubmitAction }: 
         </div>
 
         <div className="grid gap-2">
-          <label className="text-sm font-medium">Monto total</label>
-          <Input name="amount" type="number" min="0" step="0.01" required value={amount} onChange={(event) => setAmount(event.target.value)} />
+          <label htmlFor="expense-edit-amount" className="text-sm font-medium">Monto total</label>
+          <Input id="expense-edit-amount" name="amount" type="number" min="0" step="0.01" required value={amount} onChange={(event) => setAmount(event.target.value)} />
         </div>
 
         <div className="grid gap-2">
-          <label className="text-sm font-medium">Notas (opcional)</label>
-          <textarea name="notes" rows={3} defaultValue={expense.notes} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+          <label htmlFor="expense-edit-notes" className="text-sm font-medium">Notas (opcional)</label>
+          <textarea id="expense-edit-notes" name="notes" rows={3} defaultValue={expense.notes} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
         </div>
 
         <div className="flex items-center justify-end gap-2">
@@ -411,11 +413,12 @@ export function CashRegisterPanel({
               <input type="hidden" name="productId" value={selectedProductId} required />
 
               <div className="grid gap-2">
-                <label className="text-sm font-medium">Buscar producto</label>
+                <label htmlFor="income-create-product-query" className="text-sm font-medium">Buscar producto</label>
                 <div className="space-y-2">
                   <div className="relative">
                     <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
+                      id="income-create-product-query"
                       value={productQuery}
                       onChange={(event) => {
                         const nextValue = event.target.value;
@@ -467,8 +470,8 @@ export function CashRegisterPanel({
               </div>
 
               {selectedProduct ? (
-                <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3">
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">Vista previa</p>
+                <div className="rounded-md border border-success/40 bg-success/90 p-3">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-success-foreground">Vista previa</p>
                   <div className="flex items-center gap-3">
                     <Image
                       src={selectedProduct.imageUrl || "/logos/amysa%20shop.png"}
@@ -478,20 +481,20 @@ export function CashRegisterPanel({
                       className="size-16 rounded-md object-cover"
                     />
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-emerald-800">{selectedProduct.name}</p>
-                      <p className="text-xs text-emerald-700">SKU: {selectedProduct.sku || "SIN SKU"}</p>
-                      <p className="text-sm font-semibold text-emerald-700">Precio base: {toMoney(selectedProduct.price)}</p>
+                      <p className="truncate text-sm font-semibold text-success-foreground">{selectedProduct.name}</p>
+                      <p className="text-xs text-success-foreground">SKU: {selectedProduct.sku || "SIN SKU"}</p>
+                      <p className="text-sm font-semibold text-success-foreground">Precio base: {toMoney(selectedProduct.price)}</p>
                     </div>
                   </div>
                 </div>
               ) : (
-                <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">Selecciona un producto desde la lista mientras escribes.</p>
+                <p className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-warning-foreground">Selecciona un producto desde la lista mientras escribes.</p>
               )}
 
-              <div className="grid gap-3 md:grid-cols-2">
+                <div className="grid gap-3 md:grid-cols-2">
                 <div className="grid gap-2">
-                  <label className="text-sm font-medium">Asesora de venta</label>
-                  <select name="sellerId" required className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+                  <label htmlFor="income-create-sellerId" className="text-sm font-medium">Asesora de venta</label>
+                  <select id="income-create-sellerId" name="sellerId" required className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
                     <option value="">Selecciona quien vendio</option>
                     {sellers.map((seller) => (
                       <option key={seller.id} value={seller.id}>
@@ -501,9 +504,9 @@ export function CashRegisterPanel({
                   </select>
                 </div>
 
-                <div className="grid gap-2">
-                  <label className="text-sm font-medium">Metodo de pago</label>
-                  <select name="paymentMethod" defaultValue="efectivo" className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+                  <div className="grid gap-2">
+                    <label htmlFor="income-create-paymentMethod" className="text-sm font-medium">Metodo de pago</label>
+                    <select id="income-create-paymentMethod" name="paymentMethod" defaultValue="efectivo" className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
                     {paymentMethods.map((method) => (
                       <option key={method} value={method}>
                         {paymentMethodLabel(method)}
@@ -513,44 +516,45 @@ export function CashRegisterPanel({
                 </div>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-3">
-                <div className="grid gap-2">
-                  <label className="text-sm font-medium">Cantidad</label>
-                  <Input name="quantity" type="number" min="0.01" step="0.01" required value={quantity} onChange={(event) => setQuantity(event.target.value)} />
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="grid gap-2">
+                    <label htmlFor="income-create-quantity" className="text-sm font-medium">Cantidad</label>
+                    <Input id="income-create-quantity" name="quantity" type="number" min="0.01" step="0.01" required value={quantity} onChange={(event) => setQuantity(event.target.value)} />
+                  </div>
+
+                  <div className="grid gap-2">
+                    <label htmlFor="income-create-unitType" className="text-sm font-medium">Unidad</label>
+                    <select id="income-create-unitType" name="unitType" defaultValue="unidad" className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+                      <option value="unidad">Unidad</option>
+                      <option value="caja">Caja</option>
+                      <option value="paquete">Paquete</option>
+                    </select>
+                  </div>
+
+                  <div className="grid gap-2">
+                    <label htmlFor="income-create-unitPrice" className="text-sm font-medium">Precio manual</label>
+                    <Input
+                      id="income-create-unitPrice"
+                      name="unitPrice"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      required
+                      value={unitPrice}
+                      onChange={(event) => setUnitPrice(event.target.value)}
+                      placeholder="0.00"
+                    />
+                  </div>
                 </div>
 
-                <div className="grid gap-2">
-                  <label className="text-sm font-medium">Unidad</label>
-                  <select name="unitType" defaultValue="unidad" className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
-                    <option value="unidad">Unidad</option>
-                    <option value="caja">Caja</option>
-                    <option value="paquete">Paquete</option>
-                  </select>
-                </div>
-
-                <div className="grid gap-2">
-                  <label className="text-sm font-medium">Precio manual</label>
-                  <Input
-                    name="unitPrice"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    required
-                    value={unitPrice}
-                    onChange={(event) => setUnitPrice(event.target.value)}
-                    placeholder="0.00"
-                  />
-                </div>
-              </div>
-
-              <label className="inline-flex items-center gap-2 text-sm font-medium text-foreground">
-                <input type="checkbox" name="wasSold" value="true" defaultChecked className="size-4 rounded border-input" />
+              <label htmlFor="income-create-wasSold" className="inline-flex items-center gap-2 text-sm font-medium text-foreground">
+                <input id="income-create-wasSold" type="checkbox" name="wasSold" value="true" defaultChecked className="size-4 rounded border-input" />
                 Se vendio este producto
               </label>
 
               <div className="grid gap-2">
-                <label className="text-sm font-medium">Notas (opcional)</label>
-                <textarea name="notes" rows={2} placeholder="Ejemplo: venta por delivery o contraentrega" className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+                <label htmlFor="income-create-notes" className="text-sm font-medium">Notas (opcional)</label>
+                <textarea id="income-create-notes" name="notes" rows={2} placeholder="Ejemplo: venta por delivery o contraentrega" className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
               </div>
 
               <p className="rounded-lg bg-primary/10 px-3 py-2 text-sm font-semibold text-primary">Total estimado: {toMoney(quickTotal)}</p>
@@ -568,28 +572,28 @@ export function CashRegisterPanel({
           <CardContent>
             <form action={createExpenseAction} className="grid gap-3">
               <div className="grid gap-2">
-                <label className="text-sm font-medium">Concepto del gasto</label>
-                <Input name="concept" required placeholder="Ejemplo: Compra de mercaderia" />
-              </div>
+                  <label htmlFor="expense-create-concept" className="text-sm font-medium">Concepto del gasto</label>
+                  <Input id="expense-create-concept" name="concept" required placeholder="Ejemplo: Compra de mercaderia" />
+                </div>
 
-              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-3 sm:grid-cols-2">
                 <div className="grid gap-2">
-                  <label className="text-sm font-medium">Tipo</label>
-                  <select name="expenseType" defaultValue="general" className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+                  <label htmlFor="expense-create-type" className="text-sm font-medium">Tipo</label>
+                  <select id="expense-create-type" name="expenseType" defaultValue="general" className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
                     <option value="compra">Compra</option>
                     <option value="general">General</option>
                   </select>
                 </div>
 
                 <div className="grid gap-2">
-                  <label className="text-sm font-medium">Monto total</label>
-                  <Input name="amount" type="number" min="0" step="0.01" required placeholder="0.00" />
+                  <label htmlFor="expense-create-amount" className="text-sm font-medium">Monto total</label>
+                  <Input id="expense-create-amount" name="amount" type="number" min="0" step="0.01" required placeholder="0.00" />
                 </div>
               </div>
 
               <div className="grid gap-2">
-                <label className="text-sm font-medium">Metodo de gasto</label>
-                <select name="paymentMethod" defaultValue="efectivo" className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+                <label htmlFor="expense-create-paymentMethod" className="text-sm font-medium">Metodo de gasto</label>
+                <select id="expense-create-paymentMethod" name="paymentMethod" defaultValue="efectivo" className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
                   {paymentMethods.map((method) => (
                     <option key={method} value={method}>
                       {paymentMethodLabel(method)}
@@ -599,8 +603,8 @@ export function CashRegisterPanel({
               </div>
 
               <div className="grid gap-2">
-                <label className="text-sm font-medium">Notas (opcional)</label>
-                <textarea name="notes" rows={3} placeholder="Detalle adicional del gasto" className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+                <label htmlFor="expense-create-notes" className="text-sm font-medium">Notas (opcional)</label>
+                <textarea id="expense-create-notes" name="notes" rows={3} placeholder="Detalle adicional del gasto" className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
               </div>
 
               <Button type="submit" variant="secondary">Registrar egreso</Button>
@@ -694,7 +698,7 @@ export function CashRegisterPanel({
                         <td className="px-3 py-2 font-medium">{item.concept}</td>
                         <td className="px-3 py-2 capitalize">{item.expenseType}</td>
                         <td className="px-3 py-2">{paymentMethodLabel(item.paymentMethod || "efectivo")}</td>
-                        <td className="px-3 py-2 font-semibold text-rose-600">{toMoney(item.amount)}</td>
+                        <td className="px-3 py-2 font-semibold text-foreground">{toMoney(item.amount)}</td>
                         <td className="px-3 py-2 text-xs text-muted-foreground">{toDateOnly(item.createdAt)}</td>
                         <td className="px-3 py-2">
                           <div className="flex items-center gap-1">

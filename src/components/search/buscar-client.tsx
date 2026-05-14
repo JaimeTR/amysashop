@@ -48,7 +48,7 @@ export function BuscarClient({ products }: Props) {
   const { genderOptions } = useRegisteredTaxonomies();
   const { brandNames } = useBrandNamesFromDB();
 
-  const categories = useMemo(() => uniqueLabels(products.map((product) => product.category).filter(Boolean)), [products]);
+  const categories = useMemo(() => uniqueLabels(products.flatMap((product) => (product.category ? [product.category] : []))), [products]);
   const brands = useMemo(() => brandNames, [brandNames]);
 
   function normalizeGender(value: string) {
@@ -84,7 +84,7 @@ export function BuscarClient({ products }: Props) {
           <Button
             type="button"
             variant="outline"
-            className="h-10 w-10 shrink-0 rounded-md p-0"
+            className="size-10 shrink-0 rounded-md p-0"
             onClick={() => setShowQuickFilters((current) => !current)}
             aria-label="Abrir filtros"
           >

@@ -108,8 +108,9 @@ export function InventoryCreateModal({ categories, createProductAction }: Invent
             <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-2">
               {/* Fila 1: Nombre | Género */}
               <div>
-                <label className="block text-sm font-semibold text-black mb-1">Nombre *</label>
+                <label htmlFor="name" className="block text-sm font-semibold text-black mb-1">Nombre *</label>
                 <input
+                  id="name"
                   name="name"
                   placeholder="Nombre del producto"
                   className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
@@ -118,8 +119,9 @@ export function InventoryCreateModal({ categories, createProductAction }: Invent
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-black mb-1">Género (Opcional)</label>
+                <label htmlFor="gender" className="block text-sm font-semibold text-black mb-1">Género (Opcional)</label>
                 <select
+                  id="gender"
                   name="gender"
                   className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
                 >
@@ -131,8 +133,9 @@ export function InventoryCreateModal({ categories, createProductAction }: Invent
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-black mb-1">Edad (Opcional)</label>
+                <label htmlFor="ageGroup" className="block text-sm font-semibold text-black mb-1">Edad (Opcional)</label>
                 <select
+                  id="ageGroup"
                   name="ageGroup"
                   className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
                 >
@@ -145,8 +148,9 @@ export function InventoryCreateModal({ categories, createProductAction }: Invent
 
               {/* Fila 2: Categoría | Número */}
               <div>
-                <label className="block text-sm font-semibold text-black mb-1">Categoría</label>
+                <label htmlFor="categoryId" className="block text-sm font-semibold text-black mb-1">Categoría</label>
                 <select
+                  id="categoryId"
                   name="categoryId"
                   className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
                 >
@@ -160,8 +164,9 @@ export function InventoryCreateModal({ categories, createProductAction }: Invent
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-black mb-1">Marca (Opcional)</label>
+                <label htmlFor="brand" className="block text-sm font-semibold text-black mb-1">Marca (Opcional)</label>
                 <select
+                  id="brand"
                   name="brand"
                   className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
                 >
@@ -175,8 +180,9 @@ export function InventoryCreateModal({ categories, createProductAction }: Invent
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-black mb-1">Número/Referencia</label>
+                <label htmlFor="number" className="block text-sm font-semibold text-black mb-1">Número/Referencia</label>
                 <input
+                  id="number"
                   name="number"
                   placeholder="Ej: REF-001"
                   className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
@@ -185,8 +191,9 @@ export function InventoryCreateModal({ categories, createProductAction }: Invent
 
               {/* Fila 3: Imagen URL */}
               <div className="md:col-span-2">
-                <label className="block text-sm font-semibold text-black mb-1">URL de Imagen (Opcional)</label>
+                <label htmlFor="image" className="block text-sm font-semibold text-black mb-1">URL de Imagen (Opcional)</label>
                 <input
+                  id="image"
                   name="image"
                   type="url"
                   placeholder="https://ejemplo.com/imagen.jpg"
@@ -196,8 +203,9 @@ export function InventoryCreateModal({ categories, createProductAction }: Invent
 
               {/* Fila 4: Costo | Costo Operativo */}
               <div>
-                <label className="block text-sm font-semibold text-black mb-1">Precio Costo *</label>
+                <label htmlFor="cost" className="block text-sm font-semibold text-black mb-1">Precio Costo *</label>
                 <input
+                  id="cost"
                   name="cost"
                   type="number"
                   step="0.01"
@@ -208,8 +216,9 @@ export function InventoryCreateModal({ categories, createProductAction }: Invent
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-black mb-1">Costo Operativo *</label>
+                <label htmlFor="operating_cost" className="block text-sm font-semibold text-black mb-1">Costo Operativo *</label>
                 <input
+                  id="operating_cost"
                   name="operating_cost"
                   type="number"
                   step="0.01"
@@ -221,8 +230,9 @@ export function InventoryCreateModal({ categories, createProductAction }: Invent
 
               {/* Fila 5: Margen de Ganancia | Precio Sugerido */}
               <div>
-                <label className="block text-sm font-semibold text-black mb-1">Margen de Ganancia (%) *</label>
+                <label htmlFor="profit_margin" className="block text-sm font-semibold text-black mb-1">Margen de Ganancia (%) *</label>
                 <input
+                  id="profit_margin"
                   name="profit_margin"
                   type="number"
                   step="0.01"
@@ -234,8 +244,9 @@ export function InventoryCreateModal({ categories, createProductAction }: Invent
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-black mb-1">Precio Sugerido (Opcional)</label>
+                <label htmlFor="price_before" className="block text-sm font-semibold text-black mb-1">Precio Sugerido (Opcional)</label>
                 <input
+                  id="price_before"
                   name="price_before"
                   type="number"
                   step="0.01"
@@ -246,7 +257,7 @@ export function InventoryCreateModal({ categories, createProductAction }: Invent
 
               {/* Nota sobre SKU */}
               <div className="md:col-span-2">
-                <p className="text-xs text-muted-foreground bg-blue-50 border border-blue-200 rounded-md p-2">
+                <p className="text-xs text-muted-foreground bg-popover/95 border border-border rounded-md p-2">
                   ℹ️ El SKU será generado automáticamente por el sistema de forma única, con formato AS000001.
                 </p>
               </div>

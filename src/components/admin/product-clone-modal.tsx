@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useNotify } from "@/components/feedback/notification-center";
 
 type Props = {
   productId: string;
@@ -50,10 +51,10 @@ export function ProductCloneModal({
   triggerAriaLabel,
 }: Props) {
   const router = useRouter();
+  const notify = useNotify();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [notification, setNotification] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const mainFileInputRef = useRef<HTMLInputElement>(null);
   const galleryFileInputRef = useRef<HTMLInputElement>(null);
   const mainImageUrls = images.find((item) => item && !/\.(mp4|webm|ogg|mov|m4v)(?:$|\?)/i.test(item)) || "";
@@ -127,20 +128,19 @@ export function ProductCloneModal({
       }
 
       await cloneProductAction(data);
-      setNotification({ type: "success", message: "Producto clonado correctamente" });
+      notify.success("Producto clonado", "El producto se ha duplicado correctamente");
 
       setTimeout(() => {
         setOpen(false);
         setMainUploadedFiles([]);
         setGalleryUploadedFiles([]);
-        setNotification(null);
         router.refresh();
-      }, 900);
+      }, 500);
     } catch (error) {
-      setNotification({
-        type: "error",
-        message: error instanceof Error ? error.message : "No se pudo clonar el producto",
-      });
+      notify.error(
+        "Error al clonar",
+        error instanceof Error ? error.message : "No se pudo clonar el producto"
+      );
     } finally {
       setLoading(false);
     }
@@ -185,8 +185,9 @@ export function ProductCloneModal({
 
                 <div className="space-y-3">
                   <div>
-                    <label className="text-xs font-semibold uppercase">Nombre</label>
+                    <label htmlFor="product-clone-name" className="text-xs font-semibold uppercase">Nombre</label>
                     <input
+                      id="product-clone-name"
                       type="text"
                       name="name"
                       value={formData.name}
@@ -196,10 +197,11 @@ export function ProductCloneModal({
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs font-semibold uppercase">Código</label>
+                      <label htmlFor="product-clone-code" className="text-xs font-semibold uppercase">Código</label>
                       <input
+                        id="product-clone-code"
                         type="text"
                         name="code"
                         value={formData.code}
@@ -209,8 +211,9 @@ export function ProductCloneModal({
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-semibold uppercase">Marca</label>
+                      <label htmlFor="product-clone-brand" className="text-xs font-semibold uppercase">Marca</label>
                       <select
+                        id="product-clone-brand"
                         name="brand"
                         value={formData.brand}
                         onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
@@ -227,10 +230,11 @@ export function ProductCloneModal({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs font-semibold uppercase">Categoría</label>
+                      <label htmlFor="product-clone-category" className="text-xs font-semibold uppercase">Categoría</label>
                       <select
+                        id="product-clone-category"
                         name="category"
                         value={formData.category}
                         onChange={(e) => setFormData({ ...formData, category: e.target.value })}
@@ -249,10 +253,11 @@ export function ProductCloneModal({
                   </div>
 
                   <div className="space-y-4 rounded-2xl border border-[#e3d7cd] bg-white/40 p-4">
-                    <div className="space-y-2">
-                      <label className="text-xs font-semibold uppercase">Foto principal</label>
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold uppercase">Foto principal</p>
                       <div className="grid gap-3 md:grid-cols-2">
                         <input
+                          id="product-clone-mainImageUrls"
                           type="text"
                           name="mainImageUrls"
                           defaultValue={mainImageUrls}
@@ -278,7 +283,7 @@ export function ProductCloneModal({
                           {mainUploadedFiles.map((file, index) => (
                             <div key={`${file.name}-${index}`} className="flex items-center justify-between rounded-lg border border-[#e3d7cd] bg-white px-3 py-2">
                               <span className="text-sm">{file.name}</span>
-                              <button type="button" onClick={() => removeMainUploadedFile(index)} className="text-rose-600 hover:text-rose-700">
+                              <button type="button" onClick={() => removeMainUploadedFile(index)} className="text-destructive-foreground hover:text-destructive-foreground/80">
                                 <X className="size-4" />
                               </button>
                             </div>
@@ -288,9 +293,10 @@ export function ProductCloneModal({
                     </div>
 
                     <div className="space-y-2 border-t border-[#e3d7cd] pt-4">
-                      <label className="text-xs font-semibold uppercase">Galería de fotos o videos</label>
+                      <p className="text-xs font-semibold uppercase">Galería de fotos o videos</p>
                       <div className="grid gap-3 md:grid-cols-2">
                         <input
+                          id="product-clone-galleryImageUrls"
                           type="text"
                           name="galleryImageUrls"
                           value={galleryImageUrls}
@@ -319,7 +325,7 @@ export function ProductCloneModal({
                           {galleryUploadedFiles.map((file, index) => (
                             <div key={`${file.name}-${index}`} className="flex items-center justify-between rounded-lg border border-[#e3d7cd] bg-white px-3 py-2">
                               <span className="text-sm">{file.name}</span>
-                              <button type="button" onClick={() => removeGalleryUploadedFile(index)} className="text-rose-600 hover:text-rose-700">
+                              <button type="button" onClick={() => removeGalleryUploadedFile(index)} className="text-destructive-foreground hover:text-destructive-foreground/80">
                                 <X className="size-4" />
                               </button>
                             </div>
@@ -333,8 +339,9 @@ export function ProductCloneModal({
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs font-semibold uppercase">Precio</label>
+                      <label htmlFor="product-clone-price" className="text-xs font-semibold uppercase">Precio</label>
                       <input
+                        id="product-clone-price"
                         type="number"
                         name="price"
                         value={formData.price}
@@ -346,8 +353,9 @@ export function ProductCloneModal({
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-semibold uppercase">Precio Sugerido</label>
+                      <label htmlFor="priceBefore" className="text-xs font-semibold uppercase">Precio Sugerido</label>
                       <input
+                        id="priceBefore"
                         type="number"
                         name="priceBefore"
                         value={formData.priceBefore}
@@ -361,8 +369,9 @@ export function ProductCloneModal({
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold uppercase">Stock</label>
+                    <label htmlFor="stock" className="text-xs font-semibold uppercase">Stock</label>
                     <input
+                      id="stock"
                       type="number"
                       name="stock"
                       value={formData.stock}
@@ -374,8 +383,9 @@ export function ProductCloneModal({
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold uppercase">Descripción</label>
+                    <label htmlFor="description" className="text-xs font-semibold uppercase">Descripción</label>
                     <textarea
+                      id="description"
                       name="description"
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -383,8 +393,9 @@ export function ProductCloneModal({
                     />
                   </div>
 
-                  <label className="flex items-center gap-2 pt-2">
+                  <label htmlFor="active" className="flex items-center gap-2 pt-2">
                     <input
+                      id="active"
                       type="checkbox"
                       name="active"
                       checked={formData.active}
@@ -394,18 +405,6 @@ export function ProductCloneModal({
                     <span className="text-sm">Visible en tienda</span>
                   </label>
                 </div>
-
-                {notification && (
-                  <div
-                    className={`rounded-lg px-4 py-2 text-sm ${
-                      notification.type === "success"
-                        ? "bg-emerald-100 text-emerald-700"
-                        : "bg-rose-100 text-rose-700"
-                    }`}
-                  >
-                    {notification.message}
-                  </div>
-                )}
 
                 <div className="flex gap-2 border-t border-[#e3d7cd] pt-3">
                   <Button

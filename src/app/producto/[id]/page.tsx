@@ -1,10 +1,12 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { ProductDetailPurchase } from "@/components/product/product-detail-purchase";
 import { ProductGallery } from "@/components/product/product-gallery";
 import { RelatedProductsCarousel } from "@/components/product/related-products-carousel";
 import { getActiveProducts, getProductById } from "@/lib/catalog";
 import { getSafeProductImageSrc } from "@/lib/product-images";
 import { DEFAULT_WHATSAPP_PHONE } from "@/lib/whatsapp";
+import { getSiteUrl } from "@/lib/site-url";
 
 type Props = {
   params: { id: string };
@@ -105,6 +107,28 @@ export default async function ProductoPage({ params }: Props) {
 
   return (
     <main className="space-y-5 pb-8">
+      {/* JSON-LD schema.org Product */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org/",
+            "@type": "Product",
+            name: product.name,
+            image: mainImage ? [mainImage] : [],
+            description: descriptionClean,
+            sku: skuLabel,
+            brand: product.brand ? { "@type": "Brand", name: product.brand } : undefined,
+            offers: {
+              "@type": "Offer",
+              priceCurrency: "PEN",
+              price: product.price?.toFixed(2),
+              availability: product.stock && product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+              url: `${getSiteUrl()}/producto/${product.id}`,
+            },
+          }),
+        }}
+      />
       <section className="grid gap-3 px-3 lg:px-0 lg:grid-cols-[minmax(0,600px)_minmax(0,600px)] lg:items-start lg:justify-center">
         <article className="rounded-3xl p-0">
           <ProductGallery images={product.images} name={product.name} />
@@ -152,4 +176,34 @@ export default async function ProductoPage({ params }: Props) {
       <RelatedProductsCarousel products={carouselProducts} />
     </main>
   );
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const product = await getProductById(params.id);
+
+  if (!product) {
+    return { title: "Producto no encontrado" };
+  }
+
+  const mainImage = getPrimaryPhoto(product.images);
+  const description = (product.summary && product.summary.trim()) || product.description || "Compra en Amysa Accesorios";
+
+  const metadata: Metadata = {
+    title: product.name,
+    description,
+    openGraph: {
+      title: product.name,
+      description,
+      type: "website",
+      images: mainImage ? [{ url: mainImage, alt: product.name }] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: product.name,
+      description,
+      images: mainImage ? [mainImage] : undefined,
+    },
+  };
+
+  return metadata;
 }

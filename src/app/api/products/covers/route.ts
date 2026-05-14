@@ -21,7 +21,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ covers: {} });
   }
 
-  const ids = Array.from(new Set(idsParam.split(",").map((value) => value.trim()).filter(Boolean)));
+  const ids = Array.from(new Set(idsParam.split(",").flatMap((value) => {
+    const trimmed = value.trim();
+    return trimmed ? [trimmed] : [];
+  })));
   if (ids.length === 0) {
     return NextResponse.json({ covers: {} });
   }

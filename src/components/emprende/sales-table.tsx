@@ -75,11 +75,11 @@ export default function SalesTable({
   const getPaymentStatusBadge = (status: string) => {
     switch (status) {
       case "completed":
-        return <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">Pagado</span>;
+        return <span className="bg-success/10 text-success-foreground px-2 py-1 rounded text-xs">Pagado</span>;
       case "partial":
-        return <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs">Parcial</span>;
+        return <span className="bg-warning/10 text-warning-foreground px-2 py-1 rounded text-xs">Parcial</span>;
       case "pending":
-        return <span className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">Pendiente</span>;
+        return <span className="bg-destructive/10 text-destructive-foreground px-2 py-1 rounded text-xs">Pendiente</span>;
       default:
         return <span>{status}</span>;
     }
@@ -87,7 +87,7 @@ export default function SalesTable({
 
   const getCommissionBadge = (paymentStatus: string) => {
     if (paymentStatus !== "completed") {
-      return <span className="text-red-600 text-xs">Sin comisión</span>;
+      return <span className="text-destructive-foreground text-xs">Sin comisión</span>;
     }
     return null;
   };
@@ -99,8 +99,9 @@ export default function SalesTable({
       {/* Filtros */}
       <div className="flex gap-4 mb-6">
         <div>
-          <label className="block text-sm font-medium mb-1">Mes</label>
+          <label htmlFor="sales-month" className="block text-sm font-medium mb-1">Mes</label>
           <select
+            id="sales-month"
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
             className="border rounded px-3 py-2"
@@ -113,8 +114,9 @@ export default function SalesTable({
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Año</label>
+          <label htmlFor="sales-year" className="block text-sm font-medium mb-1">Año</label>
           <select
+            id="sales-year"
             value={selectedYear}
             onChange={(e) => setSelectedYear(parseInt(e.target.value))}
             className="border rounded px-3 py-2"
@@ -130,15 +132,15 @@ export default function SalesTable({
 
       {/* Resumen */}
       <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="bg-blue-50 p-4 rounded">
+        <div className="bg-info/10 p-4 rounded">
           <p className="text-sm text-gray-600">Total Vendido</p>
           <p className="text-2xl font-bold">${totalAmount.toFixed(2)}</p>
         </div>
-        <div className="bg-green-50 p-4 rounded">
+        <div className="bg-success/10 p-4 rounded">
           <p className="text-sm text-gray-600">Comisiones</p>
           <p className="text-2xl font-bold">${totalCommission.toFixed(2)}</p>
         </div>
-        <div className="bg-purple-50 p-4 rounded">
+        <div className="bg-accent/10 p-4 rounded">
           <p className="text-sm text-gray-600">Pagos Completados</p>
           <p className="text-2xl font-bold">{completedPayments}</p>
         </div>

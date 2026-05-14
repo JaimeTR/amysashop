@@ -5,6 +5,7 @@ import { DevServiceWorkerCleanup } from "@/components/pwa/dev-service-worker-cle
 import { NotificationProvider } from "@/components/feedback/notification-center";
 import { getActiveProductsForNav, getRegisteredCategories } from "@/lib/catalog";
 import { LayoutWrapper } from "@/components/layout/layout-wrapper";
+import { getSiteUrl } from "@/lib/site-url";
 
 const APP_VERSION = "0.1.1";
 const APP_ICON = "/icon.svg";
@@ -24,6 +25,7 @@ export const metadata: Metadata = {
   applicationName: "AMYSA SHOP",
   title: "AMYSA SHOP",
   description: "AMYSA SHOP, tu tienda virtual",
+  metadataBase: new URL(getSiteUrl()),
   manifest: "/manifest.json",
   icons: {
     icon: [

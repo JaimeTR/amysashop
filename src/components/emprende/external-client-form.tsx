@@ -102,13 +102,13 @@ export default function ExternalClientForm({
       <h2 className="text-2xl font-bold mb-6">Clientes Externos</h2>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+        <div className="mb-4 p-3 bg-destructive text-destructive-foreground rounded">
           {error}
         </div>
       )}
 
       {success && (
-        <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
+        <div className="mb-4 p-3 bg-success text-success-foreground rounded">
           {success}
         </div>
       )}
@@ -125,8 +125,9 @@ export default function ExternalClientForm({
         {showForm && (
           <form onSubmit={handleSubmit} className="mt-4 space-y-4 border-t pt-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Nombre *</label>
+              <label htmlFor="external-client-name" className="block text-sm font-medium mb-1">Nombre *</label>
               <input
+                id="external-client-name"
                 type="text"
                 name="name"
                 value={formData.name}
@@ -137,8 +138,9 @@ export default function ExternalClientForm({
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Email</label>
+              <label htmlFor="external-client-email" className="block text-sm font-medium mb-1">Email</label>
               <input
+                id="external-client-email"
                 type="email"
                 name="email"
                 value={formData.email}
@@ -148,8 +150,9 @@ export default function ExternalClientForm({
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Teléfono *</label>
+              <label htmlFor="external-client-phone" className="block text-sm font-medium mb-1">Teléfono *</label>
               <input
+                id="external-client-phone"
                 type="tel"
                 name="phone"
                 value={formData.phone}
@@ -160,8 +163,9 @@ export default function ExternalClientForm({
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Dirección</label>
+              <label htmlFor="external-client-address" className="block text-sm font-medium mb-1">Dirección</label>
               <textarea
+                id="external-client-address"
                 name="address"
                 value={formData.address}
                 onChange={handleInputChange}
@@ -173,7 +177,7 @@ export default function ExternalClientForm({
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-green-600 text-white py-2 rounded font-medium hover:bg-green-700 disabled:bg-gray-400"
+              className="w-full bg-success text-white py-2 rounded font-medium hover:bg-success/90 disabled:bg-muted/40"
             >
               {loading ? "Creando..." : "Crear Cliente"}
             </button>

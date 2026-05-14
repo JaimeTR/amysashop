@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 
 export default function IosInstallHint() {
   const [show, setShow] = useState(false);
@@ -27,7 +28,7 @@ export default function IosInstallHint() {
   return (
     <div className="fixed bottom-4 left-1/2 z-[1000] w-[min(920px,calc(100%-32px))] -translate-x-1/2 rounded-2xl px-4 py-3 shadow-lg" style={{ backgroundColor: "#AE826D" }}>
       <div className="flex items-center gap-3 text-white">
-        <img src="/logos/LOGO%20CLARO%20AMYSA%20SHOP.png" alt="AMYSA" className="h-10 w-10 object-contain" />
+        <Image src="/logos/LOGO%20CLARO%20AMYSA%20SHOP.png" alt="AMYSA" width={40} height={40} className="size-10 object-contain" />
         <div className="flex-1 text-sm">
           <div className="font-semibold">Instalar AMYSA</div>
           <div className="mt-0.5">Pulsa compartir y selecciona &quot;Agregar a pantalla de inicio&quot; en Safari.</div>

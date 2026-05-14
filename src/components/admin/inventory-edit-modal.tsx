@@ -5,12 +5,16 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useNotify } from "@/components/feedback/notification-center";
 
 export type InventoryEditItem = {
   id: string;
   name: string;
   sku?: string;
-  category: string;
+  category?: string;
+  brand?: string;
+  gender?: string;
+  ageGroup?: string;
   stock: number;
   cost: number;
   operating_cost: number;
@@ -42,9 +46,9 @@ function calculateSalePrice(item: Pick<InventoryEditItem, "cost" | "operating_co
 
 export function InventoryEditModal({ item, updateInventoryAction, onClose }: Props) {
   const router = useRouter();
+  const notify = useNotify();
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [notification, setNotification] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [formState, setFormState] = useState({
     stock: String(item?.stock ?? 0),
     cost: String(item?.cost ?? 0),
@@ -99,18 +103,16 @@ export function InventoryEditModal({ item, updateInventoryAction, onClose }: Pro
 
       await updateInventoryAction(formData);
 
-      setNotification({ type: "success", message: "Producto actualizado correctamente" });
+      notify.success("Inventario actualizado", "El stock y precios se han guardado correctamente");
       setTimeout(() => {
         onClose();
-        setNotification(null);
         router.refresh();
-      }, 900);
+      }, 500);
     } catch (error) {
-      setNotification({
-        type: "error",
-        message: error instanceof Error ? error.message : "No se pudo actualizar el producto",
-      });
-      setTimeout(() => setNotification(null), 2500);
+      notify.error(
+        "Error al actualizar",
+        error instanceof Error ? error.message : "No se pudo actualizar el inventario"
+      );
     } finally {
       setLoading(false);
     }
@@ -123,16 +125,6 @@ export function InventoryEditModal({ item, updateInventoryAction, onClose }: Pro
   return createPortal(
     <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/40 p-4">
       <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-white/30 bg-white/95 p-6 shadow-2xl backdrop-blur-md">
-        {notification ? (
-          <div
-            className={`mb-4 rounded-lg p-3 text-sm font-medium ${
-              notification.type === "success" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-            }`}
-          >
-            {notification.message}
-          </div>
-        ) : null}
-
         <div className="mb-6 flex items-start justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-black/60">Registro</p>
@@ -149,13 +141,17 @@ export function InventoryEditModal({ item, updateInventoryAction, onClose }: Pro
             <p><span className="font-semibold">Producto:</span> {item.name}</p>
             <p><span className="font-semibold">SKU:</span> {item.sku || "-"}</p>
             <p><span className="font-semibold">Categoría:</span> {item.category || "Sin categoría"}</p>
+            <p><span className="font-semibold">Marca:</span> {item.brand || "-"}</p>
+            <p><span className="font-semibold">Género:</span> {item.gender || "-"}</p>
+            <p><span className="font-semibold">Edades:</span> {item.ageGroup || "-"}</p>
           </div>
 
           <div className="grid gap-3 md:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-semibold text-black">Stock</label>
+              <label htmlFor="stock" className="mb-1 block text-xs font-semibold text-black">Stock</label>
               <input
                 name="stock"
+                 id="stock"
                 type="number"
                 min="0"
                 value={formState.stock}
@@ -168,9 +164,10 @@ export function InventoryEditModal({ item, updateInventoryAction, onClose }: Pro
 
           <div className="grid gap-3 md:grid-cols-3">
             <div>
-              <label className="mb-1 block text-xs font-semibold text-black">Precio costo</label>
+              <label htmlFor="cost" className="mb-1 block text-xs font-semibold text-black">Precio costo</label>
               <input
                 name="cost"
+                 id="cost"
                 type="number"
                 step="0.01"
                 min="0"
@@ -181,9 +178,10 @@ export function InventoryEditModal({ item, updateInventoryAction, onClose }: Pro
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-semibold text-black">Costo operativo</label>
+              <label htmlFor="operating_cost" className="mb-1 block text-xs font-semibold text-black">Costo operativo</label>
               <input
                 name="operating_cost"
+                 id="operating_cost"
                 type="number"
                 step="0.01"
                 min="0"
@@ -194,9 +192,10 @@ export function InventoryEditModal({ item, updateInventoryAction, onClose }: Pro
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-semibold text-black">Margen %</label>
+              <label htmlFor="profit_margin" className="mb-1 block text-xs font-semibold text-black">Margen %</label>
               <input
                 name="profit_margin"
+                 id="profit_margin"
                 type="number"
                 step="0.01"
                 min="0"
@@ -210,9 +209,10 @@ export function InventoryEditModal({ item, updateInventoryAction, onClose }: Pro
 
           <div className="grid gap-3 md:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-semibold text-black">Precio sugerido</label>
+              <label htmlFor="price_before" className="mb-1 block text-xs font-semibold text-black">Precio sugerido</label>
               <input
                 name="price_before"
+                 id="price_before"
                 type="number"
                 step="0.01"
                 min="0"
@@ -227,8 +227,9 @@ export function InventoryEditModal({ item, updateInventoryAction, onClose }: Pro
             </div>
           </div>
 
-          <label className="inline-flex items-center gap-2 text-sm font-medium text-foreground">
+          <label htmlFor="inventory-active" className="inline-flex items-center gap-2 text-sm font-medium text-foreground">
             <input
+              id="inventory-active"
               type="checkbox"
               checked={formState.active}
               onChange={(event) => setFormState((prev) => ({ ...prev, active: event.target.checked }))}

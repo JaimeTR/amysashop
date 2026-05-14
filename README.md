@@ -67,6 +67,26 @@ Configura redirect URL:
 
 Crea bucket para imágenes de productos, por ejemplo `products`.
 
+## SEO e imágenes
+
+- Usa `next/image` para imágenes locales y remotas compatibles.
+- El avatar de perfil conserva fallback para `blob:` y `data:` mientras sube el archivo.
+- Las imágenes `png` y `jpg` dentro de `public/logos` se pueden convertir a `webp` y `avif` con:
+
+```bash
+npm run optimize-images
+```
+
+- `next.config.mjs` ya habilita `image/avif` y `image/webp`, además de `Cache-Control` para imágenes y `/_next/static`.
+- La ruta `producto/[id]` publica metadata Open Graph/Twitter y JSON-LD de tipo `Product`.
+- `sitemap.xml` y `robots.txt` se generan automáticamente desde `src/app/sitemap.ts` y `src/app/robots.ts`.
+
+Variables recomendadas:
+
+- `NEXT_PUBLIC_SITE_URL`: dominio canónico del sitio.
+- `NEXT_PUBLIC_VERCEL_URL`: fallback automático si despliegas en Vercel.
+- `NEXT_PUBLIC_WHATSAPP_PHONE`: número para links del producto.
+
 ## Checkout
 
 - Flujo inicial: WhatsApp dinámico

@@ -87,8 +87,9 @@ export default function EmpendeAdminDashboard() {
         <h3 className="text-lg font-bold mb-4">Filtros</h3>
         <div className="flex gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Mes</label>
+            <label htmlFor="emprende-month" className="block text-sm font-medium mb-1">Mes</label>
             <select
+              id="emprende-month"
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
               className="border rounded px-3 py-2"
@@ -101,8 +102,9 @@ export default function EmpendeAdminDashboard() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Año</label>
+            <label htmlFor="emprende-year" className="block text-sm font-medium mb-1">Año</label>
             <select
+              id="emprende-year"
               value={selectedYear}
               onChange={(e) => setSelectedYear(parseInt(e.target.value))}
               className="border rounded px-3 py-2"
@@ -115,8 +117,9 @@ export default function EmpendeAdminDashboard() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Vendedora</label>
+            <label htmlFor="emprende-salesperson" className="block text-sm font-medium mb-1">Vendedora</label>
             <select
+              id="emprende-salesperson"
               value={selectedSalesperson || ""}
               onChange={(e) => setSelectedSalesperson(e.target.value || null)}
               className="border rounded px-3 py-2"
@@ -134,46 +137,46 @@ export default function EmpendeAdminDashboard() {
 
       {/* Resumen */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-lg shadow">
-          <p className="text-sm text-blue-600 font-medium mb-1">Total Vendido</p>
-          <p className="text-3xl font-bold text-blue-900">
+        <div className="bg-gradient-to-br from-info/10 to-info/20 p-6 rounded-lg shadow">
+          <p className="text-sm text-info-foreground font-medium mb-1">Total Vendido</p>
+          <p className="text-3xl font-bold text-info-foreground">
             ${totalSales.toFixed(2)}
           </p>
-          <p className="text-xs text-blue-600 mt-2">Período: {months.find(m => m.value === selectedMonth)?.label}</p>
+          <p className="text-xs text-info-foreground mt-2">Período: {months.find(m => m.value === selectedMonth)?.label}</p>
         </div>
 
-        <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-lg shadow">
-          <p className="text-sm text-green-600 font-medium mb-1">
+        <div className="bg-gradient-to-br from-success/10 to-success/20 p-6 rounded-lg shadow">
+          <p className="text-sm text-success-foreground font-medium mb-1">
             Comisiones a Pagar
           </p>
-          <p className="text-3xl font-bold text-green-900">
+          <p className="text-3xl font-bold text-success-foreground">
             ${totalCommissions.toFixed(2)}
           </p>
-          <p className="text-xs text-green-600 mt-2">
+          <p className="text-xs text-success-foreground mt-2">
             {filteredSales.length} transacciones
           </p>
         </div>
 
-        <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-lg shadow">
-          <p className="text-sm text-purple-600 font-medium mb-1">
+        <div className="bg-gradient-to-br from-accent/10 to-accent/20 p-6 rounded-lg shadow">
+          <p className="text-sm text-accent-foreground font-medium mb-1">
             Pagos Completados
           </p>
-          <p className="text-3xl font-bold text-purple-900">
+          <p className="text-3xl font-bold text-accent-foreground">
             {completedPayments}
           </p>
-          <p className="text-xs text-purple-600 mt-2">
+          <p className="text-xs text-accent-foreground mt-2">
             {pendingPayments} pendientes
           </p>
         </div>
 
-        <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-6 rounded-lg shadow">
-          <p className="text-sm text-orange-600 font-medium mb-1">
+        <div className="bg-gradient-to-br from-warning/10 to-warning/20 p-6 rounded-lg shadow">
+          <p className="text-sm text-warning-foreground font-medium mb-1">
             Vendedoras Activas
           </p>
-          <p className="text-3xl font-bold text-orange-900">
+          <p className="text-3xl font-bold text-warning-foreground">
             {salespeople.filter((sp) => sp.status === "active").length}
           </p>
-          <p className="text-xs text-orange-600 mt-2">
+          <p className="text-xs text-warning-foreground mt-2">
             Total: {salespeople.length}
           </p>
         </div>
@@ -217,15 +220,15 @@ export default function EmpendeAdminDashboard() {
                     </td>
                     <td className="text-center px-4 py-2">
                       {sale.payment_status === "completed" ? (
-                        <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">
+                        <span className="bg-success/10 text-success-foreground px-2 py-1 rounded text-xs">
                           Pagado
                         </span>
                       ) : sale.payment_status === "partial" ? (
-                        <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs">
+                        <span className="bg-warning/10 text-warning-foreground px-2 py-1 rounded text-xs">
                           Parcial
                         </span>
                       ) : (
-                        <span className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">
+                        <span className="bg-destructive/10 text-destructive-foreground px-2 py-1 rounded text-xs">
                           Pendiente
                         </span>
                       )}
@@ -255,10 +258,10 @@ export default function EmpendeAdminDashboard() {
             </thead>
             <tbody>
               {salespeople.map((sp) => (
-                <tr
+                  <tr
                   key={sp.id}
                   className={`border-b hover:bg-gray-50 cursor-pointer ${
-                    selectedSalesperson === sp.id ? "bg-blue-50" : ""
+                    selectedSalesperson === sp.id ? "bg-info/10" : ""
                   }`}
                   onClick={() =>
                     setSelectedSalesperson(
@@ -267,12 +270,10 @@ export default function EmpendeAdminDashboard() {
                   }
                 >
                   <td className="px-4 py-2 font-medium">{sp.name}</td>
-                  <td className="text-center px-4 py-2">
+                    <td className="text-center px-4 py-2">
                     <span
                       className={`inline-block px-2 py-1 rounded text-xs font-medium ${
-                        sp.status === "active"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
+                        sp.status === "active" ? "bg-success/10 text-success-foreground" : "bg-destructive/10 text-destructive-foreground"
                       }`}
                     >
                       {sp.status === "active" ? "Activa" : "Inactiva"}
@@ -284,7 +285,7 @@ export default function EmpendeAdminDashboard() {
                   <td className="text-right px-4 py-2 font-bold">
                     ${sp.month_total_amount?.toFixed(2) || "0.00"}
                   </td>
-                  <td className="text-right px-4 py-2 text-green-600 font-bold">
+                  <td className="text-right px-4 py-2 text-success-foreground font-bold">
                     ${sp.month_commission_amount?.toFixed(2) || "0.00"}
                   </td>
                   <td className="text-center px-4 py-2">

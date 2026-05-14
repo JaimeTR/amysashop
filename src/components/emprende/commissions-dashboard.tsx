@@ -78,8 +78,9 @@ export default function CommissionsDashboard({
       {/* Filtros */}
       <div className="flex gap-4">
         <div>
-          <label className="block text-sm font-medium mb-1">Mes</label>
+          <label htmlFor="commissions-month" className="block text-sm font-medium mb-1">Mes</label>
           <select
+            id="commissions-month"
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
             className="border rounded px-3 py-2"
@@ -92,8 +93,9 @@ export default function CommissionsDashboard({
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Año</label>
+          <label htmlFor="commissions-year" className="block text-sm font-medium mb-1">Año</label>
           <select
+            id="commissions-year"
             value={selectedYear}
             onChange={(e) => setSelectedYear(parseInt(e.target.value))}
             className="border rounded px-3 py-2"
@@ -110,51 +112,51 @@ export default function CommissionsDashboard({
       {/* Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Ventas del Mes */}
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-lg shadow">
-          <p className="text-sm text-blue-600 font-medium mb-1">Ventas del Mes</p>
-          <p className="text-3xl font-bold text-blue-900">
+        <div className="bg-gradient-to-br from-info/10 to-info/20 p-6 rounded-lg shadow">
+          <p className="text-sm text-info-foreground font-medium mb-1">Ventas del Mes</p>
+          <p className="text-3xl font-bold text-info-foreground">
             ${monthlySales.toFixed(2)}
           </p>
-          <p className="text-xs text-blue-600 mt-2">
+          <p className="text-xs text-info-foreground mt-2">
             {stats?.month_sales_count || 0} transacciones
           </p>
         </div>
 
         {/* Comisiones del Mes */}
-        <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-lg shadow">
-          <p className="text-sm text-green-600 font-medium mb-1">
+        <div className="bg-gradient-to-br from-success/10 to-success/20 p-6 rounded-lg shadow">
+          <p className="text-sm text-success-foreground font-medium mb-1">
             Comisiones del Mes
           </p>
-          <p className="text-3xl font-bold text-green-900">
+          <p className="text-3xl font-bold text-success-foreground">
             ${monthlyComissions.toFixed(2)}
           </p>
-          <p className="text-xs text-green-600 mt-2">
+          <p className="text-xs text-success-foreground mt-2">
             {stats?.commission_percentage || 5}% de comisión
           </p>
         </div>
 
         {/* Comisiones Pendientes */}
-        <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-6 rounded-lg shadow">
-          <p className="text-sm text-yellow-600 font-medium mb-1">
+        <div className="bg-gradient-to-br from-warning/10 to-warning/20 p-6 rounded-lg shadow">
+          <p className="text-sm text-warning-foreground font-medium mb-1">
             Comisiones Pendientes
           </p>
-          <p className="text-3xl font-bold text-yellow-900">
+          <p className="text-3xl font-bold text-warning-foreground">
             ${pendingComissions.toFixed(2)}
           </p>
-          <p className="text-xs text-yellow-600 mt-2">
+          <p className="text-xs text-warning-foreground mt-2">
             Pendiente de pago de cliente
           </p>
         </div>
 
         {/* Porcentaje de Comisión */}
-        <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-lg shadow">
-          <p className="text-sm text-purple-600 font-medium mb-1">
+        <div className="bg-gradient-to-br from-accent/10 to-accent/20 p-6 rounded-lg shadow">
+          <p className="text-sm text-accent-foreground font-medium mb-1">
             Tu Comisión
           </p>
-          <p className="text-3xl font-bold text-purple-900">
+          <p className="text-3xl font-bold text-accent-foreground">
             {stats?.commission_percentage || 5}%
           </p>
-          <p className="text-xs text-purple-600 mt-2">
+          <p className="text-xs text-accent-foreground mt-2">
             {stats?.status === "active" ? "Activa" : "Inactiva"}
           </p>
         </div>
@@ -180,9 +182,7 @@ export default function CommissionsDashboard({
             <span className="text-gray-600">Estado:</span>
             <span
               className={`font-medium ${
-                stats?.status === "active"
-                  ? "text-green-600"
-                  : "text-red-600"
+                stats?.status === "active" ? "text-success-foreground" : "text-destructive-foreground"
               }`}
             >
               {stats?.status === "active" ? "Activa" : "Inactiva"}

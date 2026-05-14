@@ -1,7 +1,7 @@
 "use client";
 
 import { createPortal } from "react-dom";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ type InventoryItem = {
   gender?: string;
   ageGroup?: string;
   brand?: string;
-  category: string;
+  category?: string;
   stock: number;
   cost: number;
   operating_cost: number;
@@ -27,26 +27,6 @@ type InventoryItem = {
   images?: string[];
   active?: boolean;
 };
-
-type EditingItem = InventoryItem & {
-  _isDirty: boolean;
-};
-
-type Props = {
-  rows: InventoryItem[];
-  categoryOptions: string[];
-  updateInventoryAction: (formData: FormData) => Promise<void>;
-  currentPage?: number;
-  pageSize?: number;
-  totalCount?: number;
-  initialSearchTerm?: string;
-};
-
-type GenderFilter = "" | "Hombre" | "Mujer" | "Unisex";
-
-function getSafeImageSrc(images?: string[]) {
-  return getSafeProductImageSrc(images || []);
-}
 
 function calculateSalePrice(item: Pick<InventoryItem, "cost" | "operating_cost" | "profit_margin">) {
   const totalCost = Math.max(0, Number(item.cost) || 0) + Math.max(0, Number(item.operating_cost) || 0);
@@ -95,6 +75,22 @@ function uniqueLabels(values: string[]) {
   }
 
   return Array.from(seen.values()).sort((a, b) => a.localeCompare(b, "es"));
+}
+
+type GenderFilter = "" | "Hombre" | "Mujer" | "Unisex";
+
+type Props = {
+  rows: InventoryItem[];
+  categoryOptions: string[];
+  updateInventoryAction: (formData: FormData) => Promise<void>;
+  currentPage?: number;
+  pageSize?: number;
+  totalCount?: number;
+  initialSearchTerm?: string;
+};
+
+function getSafeImageSrc(images?: string[]) {
+  return getSafeProductImageSrc(images || []);
 }
 
 export function InventoryTable({
@@ -158,6 +154,53 @@ export function InventoryTable({
 
   const previewItem = useMemo(() => items.find((item) => item.id === previewId) || null, [items, previewId]);
   const brandOptions = useMemo(() => uniqueLabels(items.map((item) => String(item.brand || "").trim()).filter(Boolean)), [items]);
+
+  const modalRef = useRef<HTMLDivElement | null>(null);
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    if (!previewItem) return;
+    const prevActive = document.activeElement as HTMLElement | null;
+    const modal = modalRef.current;
+    const selector = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    const focusable = modal ? Array.from(modal.querySelectorAll<HTMLElement>(selector)) : [];
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setPreviewId(null);
+        return;
+      }
+      if (e.key === "Tab") {
+        if (!focusable.length) {
+          e.preventDefault();
+          return;
+        }
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last?.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first?.focus();
+          }
+        }
+      }
+    }
+
+    document.addEventListener("keydown", onKey);
+    setTimeout(() => {
+      (closeButtonRef.current ?? modal)?.focus();
+    }, 0);
+
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      prevActive?.focus();
+    };
+  }, [previewItem]);
   // Subcategorías/submarcas no usadas en la tabla: usamos sólo `brand` y `category` registrados
   const genderOptions: GenderFilter[] = ["Hombre", "Mujer", "Unisex"];
 
@@ -175,7 +218,7 @@ export function InventoryTable({
             <Button
               type="button"
               variant="outline"
-              className="h-10 w-10 shrink-0 rounded-md p-0"
+              className="size-10 shrink-0 rounded-md p-0"
               onClick={() => setShowQuickFilters((current) => !current)}
               aria-label="Abrir filtros"
             >
@@ -280,60 +323,57 @@ export function InventoryTable({
         <p className="text-sm text-muted-foreground">No se encontraron productos con ese criterio.</p>
       ) : (
         <div className="overflow-x-auto rounded-xl border bg-white">
-          <table className="min-w-[1400px] w-full text-sm">
+          <table className="w-full text-sm">
             <thead className="bg-[#efe3d8] text-left">
               <tr>
                 <th className="px-3 py-2">N°</th>
                 <th className="px-3 py-2">Imagen</th>
-                <th className="px-3 py-2">SKU</th>
-                <th className="px-3 py-2">Nombre</th>
-                <th className="px-3 py-2">Categoría</th>
-                <th className="px-3 py-2">Marca</th>
+                <th className="px-3 py-2 hidden sm:table-cell">SKU</th>
+                <th className="px-3 py-2 min-w-[150px]">Nombre</th>
                 <th className="px-3 py-2">Stock</th>
-                <th className="px-3 py-2">P. Costo</th>
-                <th className="px-3 py-2">Costo Op.</th>
-                <th className="px-3 py-2">Margen %</th>
-                <th className="px-3 py-2">P. Sugerido</th>
-                <th className="px-3 py-2">P. Venta</th>
+                <th className="px-3 py-2 hidden md:table-cell">P. Costo</th>
+                <th className="px-3 py-2 hidden lg:table-cell">Costo Op.</th>
+                <th className="px-3 py-2 hidden lg:table-cell">Margen %</th>
+                <th className="px-3 py-2 hidden xl:table-cell">P. Sugerido</th>
+                <th className="px-3 py-2 hidden md:table-cell">P. Venta</th>
                 <th className="px-3 py-2">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {filteredItems.map((item, index) => (
                 <tr key={item.id} className="border-t align-middle hover:bg-gray-50">
-                  <td className="px-3 py-2 text-muted-foreground">{baseIndex + index + 1}</td>
+                  <td className="px-3 py-2 text-muted-foreground text-xs">{baseIndex + index + 1}</td>
                   <td className="px-3 py-2">
-                    <div className="overflow-hidden rounded-lg border border-[#e3d7cd] bg-white w-[52px] h-[52px]">
+                    <div className="overflow-hidden rounded-lg border border-[#e3d7cd] bg-white w-[40px] h-[40px] sm:w-[52px] sm:h-[52px]">
                       <Image
                         src={getSafeImageSrc(item.images)}
                         alt={item.name}
                         width={52}
                         height={52}
-                        className="h-[52px] w-[52px] object-cover"
+                        className="h-full w-full object-cover"
                       />
                     </div>
                   </td>
-                  <td className="px-3 py-2 font-semibold text-primary">{item.sku || "Sin SKU"}</td>
+                  <td className="px-3 py-2 font-semibold text-primary hidden sm:table-cell text-xs">{item.sku || "Sin SKU"}</td>
                   <td className="px-3 py-2 font-medium">
                     <button
                       type="button"
                       onClick={() => setPreviewId(item.id)}
-                      className="text-left text-foreground transition hover:text-primary"
+                      className="text-left text-foreground transition hover:text-primary truncate max-w-xs block"
+                      title={item.name}
                     >
                       {item.name}
                     </button>
                   </td>
-                  <td className="px-3 py-2 text-sm">{item.category}</td>
-                  <td className="px-3 py-2 text-sm">{item.brand || "-"}</td>
                   <td className="px-3 py-2">
-                    <span className="inline-flex rounded-full px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-700">
+                    <span className="inline-flex rounded-full px-2 py-1 text-xs font-semibold bg-info/10 text-info-foreground">
                       {item.stock}
                     </span>
                   </td>
-                  <td className="px-3 py-2">S/ {Number(item.cost || 0).toFixed(2)}</td>
-                  <td className="px-3 py-2">S/ {Number(item.operating_cost || 0).toFixed(2)}</td>
-                  <td className="px-3 py-2">{Number(item.profit_margin || 0).toFixed(2)}%</td>
-                  <td className="px-3 py-2">
+                  <td className="px-3 py-2 hidden md:table-cell text-xs">S/ {Number(item.cost || 0).toFixed(2)}</td>
+                  <td className="px-3 py-2 hidden lg:table-cell text-xs">S/ {Number(item.operating_cost || 0).toFixed(2)}</td>
+                  <td className="px-3 py-2 hidden lg:table-cell text-xs">{Number(item.profit_margin || 0).toFixed(2)}%</td>
+                  <td className="px-3 py-2 hidden xl:table-cell text-xs">
                     {item.priceBefore != null && Number(item.priceBefore) > 0 ? (
                       <span className="text-xs text-muted-foreground line-through">
                         S/ {Number(item.priceBefore).toFixed(2)}
@@ -342,7 +382,7 @@ export function InventoryTable({
                       <span className="text-xs text-muted-foreground">-</span>
                     )}
                   </td>
-                  <td className="px-3 py-2 font-semibold text-primary">S/ {Number(item.price || 0).toFixed(2)}</td>
+                  <td className="px-3 py-2 hidden md:table-cell font-semibold text-primary text-xs">S/ {Number(item.price || 0).toFixed(2)}</td>
                   <td className="px-3 py-2">
                     <div className="flex flex-wrap gap-1">
                       <Button
@@ -351,8 +391,9 @@ export function InventoryTable({
                         variant="outline"
                         onClick={() => setPreviewId(item.id)}
                         aria-label="Visualizar"
+                        className="h-8 w-8"
                       >
-                        <Eye className="size-4" />
+                        <Eye className="size-3 sm:size-4" />
                       </Button>
                       <Button
                         type="button"
@@ -360,8 +401,9 @@ export function InventoryTable({
                         variant="outline"
                         onClick={() => handleEdit(item)}
                         aria-label="Editar"
+                        className="h-8 w-8"
                       >
-                        <Pencil className="size-4" />
+                        <Pencil className="size-3 sm:size-4" />
                       </Button>
                     </div>
                   </td>
@@ -396,7 +438,11 @@ export function InventoryTable({
         item={editingItem ? {
           id: editingItem.id,
           name: editingItem.name,
+          sku: editingItem.sku,
           category: editingItem.category,
+          brand: editingItem.brand,
+          gender: editingItem.gender,
+          ageGroup: editingItem.ageGroup,
           stock: editingItem.stock,
           cost: editingItem.cost,
           operating_cost: editingItem.operating_cost,
@@ -412,35 +458,88 @@ export function InventoryTable({
         ? createPortal(
             <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/45 p-4" onClick={() => setPreviewId(null)}>
               <div
-                className="w-full max-w-xl rounded-3xl border border-white/30 bg-white/95 p-5 shadow-2xl backdrop-blur-md"
+                ref={modalRef}
+                tabIndex={-1}
+                className="relative w-full max-w-3xl overflow-hidden rounded-3xl border border-white/30 bg-[#fcf8f5] shadow-2xl max-h-[90vh] overflow-y-auto"
                 onClick={(event) => event.stopPropagation()}
               >
-                <div className="mb-4 flex items-center justify-between">
-                  <h3 className="font-[var(--font-display)] text-2xl text-foreground">{previewItem.name}</h3>
-                  <Button type="button" variant="ghost" size="icon" onClick={() => setPreviewId(null)} aria-label="Cerrar">
+                <div className="flex items-center justify-between border-b border-[#e3d7cd] px-5 py-4">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Vista de inventario</p>
+                    <h3 className="font-[var(--font-display)] text-2xl text-foreground">{previewItem.name}</h3>
+                  </div>
+                  <Button type="button" variant="ghost" size="icon" onClick={() => setPreviewId(null)} aria-label="Cerrar vista" className="absolute top-3 right-3" ref={closeButtonRef}>
                     <X className="size-4" />
                   </Button>
                 </div>
-                <div className="grid gap-4 sm:grid-cols-[120px_minmax(0,1fr)]">
-                  <div className="overflow-hidden rounded-xl border border-[#e3d7cd] bg-white">
-                    <Image
-                      src={getSafeImageSrc(previewItem.images)}
-                      alt={previewItem.name}
-                      width={120}
-                      height={120}
-                      className="h-[120px] w-[120px] object-cover"
-                    />
+
+                <div className="grid gap-5 p-4 md:p-5 grid-cols-1 md:grid-cols-[280px_minmax(0,1fr)] items-start">
+                  <div className="space-y-2">
+                    <div className="overflow-hidden rounded-2xl border border-[#e3d7cd] bg-white">
+                      <Image
+                        src={getSafeImageSrc(previewItem.images)}
+                        alt={previewItem.name}
+                        width={420}
+                        height={420}
+                        className="h-56 md:h-[260px] lg:h-[420px] w-full object-cover"
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-1 text-sm">
-                    <p><span className="font-semibold">Género:</span> {previewItem.gender || "-"}</p>
-                    <p><span className="font-semibold">Edad:</span> {previewItem.ageGroup || "-"}</p>
-                    <p><span className="font-semibold">Categoría:</span> {previewItem.category || "Sin categoría"}</p>
-                    <p><span className="font-semibold">Stock:</span> {previewItem.stock}</p>
-                    <p><span className="font-semibold">Precio costo:</span> S/ {Number(previewItem.cost || 0).toFixed(2)}</p>
-                    <p><span className="font-semibold">Costo operativo:</span> S/ {Number(previewItem.operating_cost || 0).toFixed(2)}</p>
-                    <p><span className="font-semibold">Margen:</span> {Number(previewItem.profit_margin || 0).toFixed(2)}%</p>
-                    <p><span className="font-semibold">Precio sugerido:</span> {previewItem.priceBefore != null ? `S/ ${Number(previewItem.priceBefore).toFixed(2)}` : "-"}</p>
-                    <p><span className="font-semibold">Precio venta:</span> S/ {Number(previewItem.price || 0).toFixed(2)}</p>
+
+                  <div className="space-y-3">
+                    <h4 className="font-[var(--font-display)] text-2xl text-foreground">{previewItem.name}</h4>
+
+                    <div className="flex flex-wrap gap-2">
+                      {previewItem.category ? (
+                        <span className="inline-flex rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+                          {previewItem.category}
+                        </span>
+                      ) : null}
+                      {previewItem.brand ? (
+                        <span className="inline-flex rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+                          {previewItem.brand}
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <div className="space-y-1">
+                      {previewItem.priceBefore && previewItem.priceBefore > previewItem.price ? (
+                        <p className="text-sm font-medium text-muted-foreground line-through">S/ {Number(previewItem.priceBefore).toFixed(2)}</p>
+                      ) : null}
+                      <p className="text-2xl font-bold text-primary">S/ {Number(previewItem.price || 0).toFixed(2)}</p>
+                    </div>
+
+                    <p className="text-sm text-foreground">{previewItem.sku ? `SKU: ${previewItem.sku}` : 'Sin SKU'}</p>
+
+                    <div className="grid gap-2 rounded-2xl border border-[#e3d7cd] bg-white/80 p-3 text-sm">
+                      <p>
+                        <span className="font-semibold">Género:</span> {previewItem.gender || "-"}
+                      </p>
+
+                      <p>
+                        <span className="font-semibold">Edad:</span> {previewItem.ageGroup || "-"}
+                      </p>
+
+                      <p>
+                        <span className="font-semibold">Categoría:</span> {previewItem.category || "Sin categoría"}
+                      </p>
+
+                      <p>
+                        <span className="font-semibold">Stock:</span> {previewItem.stock ?? "-"}
+                      </p>
+                    </div>
+
+                    <div className="grid gap-2 rounded-2xl border border-[#e3d7cd] bg-white/80 p-3 text-sm">
+                      <p>
+                        <span className="font-semibold">Precio costo:</span> S/ {Number(previewItem.cost || 0).toFixed(2)}
+                      </p>
+                      <p>
+                        <span className="font-semibold">Costo operativo:</span> S/ {Number(previewItem.operating_cost || 0).toFixed(2)}
+                      </p>
+                      <p>
+                        <span className="font-semibold">Margen:</span> {Number(previewItem.profit_margin || 0).toFixed(2)}%
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>

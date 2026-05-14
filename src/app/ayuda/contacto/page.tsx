@@ -25,7 +25,7 @@ export default function ContactoPage() {
 
               <div className="flex items-start gap-3">
                 <div className="rounded-xl bg-primary/10 p-2">
-                  <Phone className="h-5 w-5 text-primary" />
+                  <Phone className="size-5 text-primary" />
                 </div>
                 <div>
                   <p className="text-sm font-medium">Teléfono</p>
@@ -35,7 +35,7 @@ export default function ContactoPage() {
 
               <div className="flex items-start gap-3">
                 <div className="rounded-xl bg-primary/10 p-2">
-                  <Mail className="h-5 w-5 text-primary" />
+                  <Mail className="size-5 text-primary" />
                 </div>
                 <div>
                   <p className="text-sm font-medium">Correo</p>
@@ -45,7 +45,7 @@ export default function ContactoPage() {
 
               <div className="flex items-start gap-3">
                 <div className="rounded-xl bg-primary/10 p-2">
-                  <Clock3 className="h-5 w-5 text-primary" />
+                  <Clock3 className="size-5 text-primary" />
                 </div>
                 <div>
                   <p className="text-sm font-medium">Horario de atención</p>
@@ -63,8 +63,8 @@ export default function ContactoPage() {
                     className="inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/70 px-3 py-2 text-sm text-foreground transition hover:border-primary/30 hover:text-primary"
                     aria-label="Instagram"
                   >
-                    <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-primary">
-                      <InstagramIcon className="h-4 w-4" />
+                    <span className="inline-flex size-7 items-center justify-center rounded-full bg-primary/10 text-primary">
+                      <InstagramIcon className="size-4" />
                     </span>
                     Instagram
                   </a>
@@ -75,8 +75,8 @@ export default function ContactoPage() {
                     className="inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/70 px-3 py-2 text-sm text-foreground transition hover:border-primary/30 hover:text-primary"
                     aria-label="TikTok"
                   >
-                    <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-primary">
-                      <TikTokIcon className="h-4 w-4" />
+                    <span className="inline-flex size-7 items-center justify-center rounded-full bg-primary/10 text-primary">
+                      <TikTokIcon className="size-4" />
                     </span>
                     TikTok
                   </a>

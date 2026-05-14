@@ -10,7 +10,7 @@ export function BrandManagementPanel() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="mb-2 text-2xl font-bold">Gestión de Marcas</h2>
+        <h2 className="mb-2 text-2xl font-semibold">Gestión de Marcas</h2>
         <p className="text-sm text-muted-foreground">
           Marcas registradas actualmente en el sistema
         </p>
@@ -31,7 +31,7 @@ export function BrandManagementPanel() {
             {brand.color && (
               <div className="mb-4 flex items-center justify-center gap-2">
                 <div
-                  className="h-6 w-6 rounded border border-border"
+                  className="size-6 rounded border border-border"
                   style={{ backgroundColor: brand.color }}
                 />
                 <code className="text-xs text-muted-foreground">{brand.color}</code>
