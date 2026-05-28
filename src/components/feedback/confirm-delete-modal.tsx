@@ -44,7 +44,7 @@ export function ConfirmDeleteModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/55 p-4"
       onClick={onCancel}
     >
       <div
@@ -52,55 +52,63 @@ export function ConfirmDeleteModal({
         aria-modal="true"
         aria-labelledby="confirm-delete-title"
         aria-describedby="confirm-delete-desc"
-        className="w-full max-w-md rounded-3xl border border-destructive/50 bg-white/95 p-6 shadow-2xl backdrop-blur-md"
+        className="w-full max-w-md overflow-hidden rounded-3xl border border-primary/20 bg-white/95 shadow-2xl backdrop-blur-md"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="mb-4 flex items-start gap-3">
-          <div className="rounded-full bg-destructive p-3">
-            <AlertTriangle className="size-6 text-destructive-foreground" />
+        <div className="border-b border-primary/10 bg-primary/5 px-6 py-5">
+          <div className="flex items-start gap-3">
+            <div className="rounded-full bg-primary p-3 shadow-sm">
+              <AlertTriangle className="size-6 text-white" />
+            </div>
+            <div className="flex-1">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary/70">Alerta de confirmación</p>
+              <h2 id="confirm-delete-title" className="mt-1 font-[var(--font-display)] text-xl text-foreground">
+                {title}
+              </h2>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={onCancel}
+              disabled={isLoading}
+              className="shrink-0"
+            >
+              <X className="size-4" />
+            </Button>
           </div>
-          <div className="flex-1">
-            <h2 id="confirm-delete-title" className="font-[var(--font-display)] text-xl font-semibold text-foreground">
-              {title}
-            </h2>
-            <p id="confirm-delete-desc" className="mt-2 text-sm text-foreground/80">{message}</p>
+        </div>
+
+        <div className="space-y-4 px-6 py-5">
+          <div id="confirm-delete-desc" className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-foreground shadow-sm">
+            <p className="font-medium text-foreground">{message}</p>
             {itemName && (
-              <p className="mt-2 rounded-lg bg-destructive px-3 py-2 text-sm font-medium text-destructive-foreground">
+              <p className="mt-2 rounded-xl bg-white px-3 py-2 text-sm font-semibold text-primary ring-1 ring-primary/15">
                 {itemName}
               </p>
             )}
           </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={onCancel}
-            disabled={isLoading}
-            className="shrink-0"
-          >
-            <X className="size-4" />
-          </Button>
-        </div>
 
-        <div className="flex gap-2 border-t border-destructive/30 pt-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onCancel}
-            disabled={isLoading}
-            className="flex-1"
-          >
-            Cancelar
-          </Button>
-          <Button
-            type="button"
-            onClick={onConfirm}
-            disabled={isLoading}
-            className="flex-1 bg-destructive text-white hover:bg-destructive/80"
-            ref={confirmRef}
-          >
-            {isLoading ? "Eliminando..." : "Eliminar"}
-          </Button>
+          <div className="flex gap-2 border-t border-primary/10 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              disabled={isLoading}
+              className="flex-1 border-primary/20 text-primary hover:bg-primary/5"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              onClick={onConfirm}
+              disabled={isLoading}
+              className="flex-1 bg-primary text-white hover:bg-primary/90"
+              ref={confirmRef}
+            >
+              {isLoading ? "Eliminando..." : "Eliminar"}
+            </Button>
+          </div>
         </div>
       </div>
     </div>,

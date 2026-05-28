@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNotify } from "@/components/feedback/notification-center";
+import { calculateBaseSalePrice, calculateFinalSalePrice } from "@/lib/inventory-pricing";
 
 export type InventoryEditItem = {
   id: string;
@@ -19,6 +20,7 @@ export type InventoryEditItem = {
   cost: number;
   operating_cost: number;
   profit_margin: number;
+  seller_markup_percentage: number;
   priceBefore?: number | null;
   active?: boolean;
 };
@@ -28,21 +30,6 @@ type Props = {
   updateInventoryAction: (formData: FormData) => Promise<void>;
   onClose: () => void;
 };
-
-function calculateSalePrice(item: Pick<InventoryEditItem, "cost" | "operating_cost" | "profit_margin">) {
-  const totalCost = Math.max(0, Number(item.cost) || 0) + Math.max(0, Number(item.operating_cost) || 0);
-  const margin = Math.max(0, Number(item.profit_margin) || 0);
-
-  if (margin <= 0) return Number(totalCost.toFixed(2));
-
-  const normalizedMargin = margin >= 1 ? margin / 100 : margin;
-  if (normalizedMargin >= 1) return Number(totalCost.toFixed(2));
-
-  const divisor = 1 - normalizedMargin;
-  if (divisor <= 0) return Number(totalCost.toFixed(2));
-
-  return Number((totalCost / divisor).toFixed(2));
-}
 
 export function InventoryEditModal({ item, updateInventoryAction, onClose }: Props) {
   const router = useRouter();
@@ -54,6 +41,7 @@ export function InventoryEditModal({ item, updateInventoryAction, onClose }: Pro
     cost: String(item?.cost ?? 0),
     operating_cost: String(item?.operating_cost ?? 0),
     profit_margin: String(item?.profit_margin ?? 0),
+    seller_markup_percentage: String(item?.seller_markup_percentage ?? 0),
     priceBefore: item?.priceBefore == null ? "" : String(item.priceBefore),
     active: Boolean(item?.active),
   });
@@ -70,6 +58,7 @@ export function InventoryEditModal({ item, updateInventoryAction, onClose }: Pro
       cost: String(item.cost ?? 0),
       operating_cost: String(item.operating_cost ?? 0),
       profit_margin: String(item.profit_margin ?? 0),
+      seller_markup_percentage: String(item.seller_markup_percentage ?? 0),
       priceBefore: item.priceBefore == null ? "" : String(item.priceBefore),
       active: Boolean(item.active),
     });
@@ -77,12 +66,23 @@ export function InventoryEditModal({ item, updateInventoryAction, onClose }: Pro
 
   const salePrice = useMemo(
     () =>
-      calculateSalePrice({
+      calculateBaseSalePrice({
         cost: Number(formState.cost || 0),
         operating_cost: Number(formState.operating_cost || 0),
         profit_margin: Number(formState.profit_margin || 0),
       }),
     [formState.cost, formState.operating_cost, formState.profit_margin]
+  );
+
+  const finalSalePrice = useMemo(
+    () =>
+      calculateFinalSalePrice({
+        cost: Number(formState.cost || 0),
+        operating_cost: Number(formState.operating_cost || 0),
+        profit_margin: Number(formState.profit_margin || 0),
+        seller_markup_percentage: Number(formState.seller_markup_percentage || 0),
+      }),
+    [formState.cost, formState.operating_cost, formState.profit_margin, formState.seller_markup_percentage]
   );
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -98,16 +98,15 @@ export function InventoryEditModal({ item, updateInventoryAction, onClose }: Pro
       formData.set("cost", formState.cost);
       formData.set("operating_cost", formState.operating_cost);
       formData.set("profit_margin", formState.profit_margin);
+      formData.set("seller_markup_percentage", formState.seller_markup_percentage);
       formData.set("price_before", formState.priceBefore);
       formData.set("active", formState.active ? "on" : "off");
 
       await updateInventoryAction(formData);
 
       notify.success("Inventario actualizado", "El stock y precios se han guardado correctamente");
-      setTimeout(() => {
-        onClose();
-        router.refresh();
-      }, 500);
+      onClose();
+      router.refresh();
     } catch (error) {
       notify.error(
         "Error al actualizar",
@@ -162,7 +161,7 @@ export function InventoryEditModal({ item, updateInventoryAction, onClose }: Pro
             </div>
           </div>
 
-          <div className="grid gap-3 md:grid-cols-3">
+          <div className="grid gap-3 md:grid-cols-4">
             <div>
               <label htmlFor="cost" className="mb-1 block text-xs font-semibold text-black">Precio costo</label>
               <input
@@ -205,9 +204,23 @@ export function InventoryEditModal({ item, updateInventoryAction, onClose }: Pro
                 required
               />
             </div>
+            <div>
+              <label htmlFor="seller_markup_percentage" className="mb-1 block text-xs font-semibold text-black">Porcentaje vendedoras (%)</label>
+              <input
+                name="seller_markup_percentage"
+                id="seller_markup_percentage"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formState.seller_markup_percentage}
+                onChange={(event) => setFormState((prev) => ({ ...prev, seller_markup_percentage: event.target.value }))}
+                placeholder="10"
+                className="w-full h-10 rounded-lg border border-[#e3d7cd] bg-white/95 px-3 text-sm text-black placeholder-black/40 focus:outline-none focus:ring-2 focus:ring-primary/25"
+              />
+            </div>
           </div>
 
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
             <div>
               <label htmlFor="price_before" className="mb-1 block text-xs font-semibold text-black">Precio sugerido</label>
               <input
@@ -222,8 +235,10 @@ export function InventoryEditModal({ item, updateInventoryAction, onClose }: Pro
                 className="w-full h-10 rounded-lg border border-[#e3d7cd] bg-white/95 px-3 text-sm text-black placeholder-black/40 focus:outline-none focus:ring-2 focus:ring-primary/25"
               />
             </div>
-            <div className="rounded-lg border border-primary/20 bg-primary/10 px-3 py-2 text-sm font-semibold text-primary self-end">
-              Precio venta calculado: S/ {salePrice.toFixed(2)}
+            <div className="rounded-2xl border border-primary/40 bg-primary/20 px-5 py-5 shadow-md self-end ring-1 ring-primary/10">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/80">Precio venta final</p>
+              <p className="mt-1 text-3xl font-extrabold leading-none text-primary md:text-4xl">S/ {finalSalePrice.toFixed(2)}</p>
+              <p className="mt-2 text-xs text-primary/70">Incluye el porcentaje de vendedoras y el redondeo al siguiente medio.</p>
             </div>
           </div>
 

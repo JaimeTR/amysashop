@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import type { Metadata } from "next";
 import { ArrowRight, Droplets, Gem, Package, Palette, ShoppingBag, Sparkles, Star, Tag, Store } from "lucide-react";
 import { AddToCartButton } from "@/components/product/add-to-cart-button";
 import { BrandShowcase } from "@/components/store/brand-showcase";
@@ -10,6 +11,7 @@ import { getActiveProducts, getRegisteredCategories } from "@/lib/catalog";
 import { DiscountCarouselClient } from "@/components/store/discount-carousel-client";
 import { HomeHeroTypingSlogan } from "@/components/store/home-hero-typing-slogan";
 import { getSafeProductImageSrc } from "@/lib/product-images";
+import { getProductUrl } from "@/lib/product-url";
 
 function extractTagValue(description: string, key: string) {
   const regex = new RegExp(`\\[${key}:\\s*(.*?)\\]`, "i");
@@ -123,6 +125,12 @@ function getDiscountPercent(priceBefore: number | null | undefined, price: numbe
 
   return Math.round(((basePrice - currentPrice) / basePrice) * 100);
 }
+
+export const metadata: Metadata = {
+  title: "Inicio",
+  description: "Descubre novedades, descuentos y marcas destacadas en perfumes, maquillaje y cuidado personal en AMYSA SHOP.",
+  keywords: ["inicio AMYSA SHOP", "descuentos", "novedades", "marcas destacadas", "perfumes", "maquillaje", "cuidado personal"],
+};
 
 export default async function Home() {
   const [products, categories] = await Promise.all([getActiveProducts(), getRegisteredCategories()]);
@@ -285,7 +293,7 @@ export default async function Home() {
 
                 return (
                   <>
-              <Link href={`/producto/${product.id}`}>
+              <Link href={getProductUrl(product)}>
                 <Image
                   src={getSafeImageSrc(product.images)}
                   alt={product.name}
@@ -297,7 +305,7 @@ export default async function Home() {
 
               <div className="space-y-2 p-3">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">{product.category}</p>
-                <Link href={`/producto/${product.id}`} className="block">
+                <Link href={getProductUrl(product)} className="block">
                   <h3 className="line-clamp-1 truncate font-semibold text-foreground hover:text-primary">{product.name}</h3>
                 </Link>
 
@@ -330,7 +338,7 @@ export default async function Home() {
                 </div>
 
                 <Button asChild size="sm" variant="outline" className="w-full">
-                  <Link href={`/producto/${product.id}`}>
+                  <Link href={getProductUrl(product)}>
                     Ver producto <ShoppingBag className="ml-2 size-4" />
                   </Link>
                 </Button>

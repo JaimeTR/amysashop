@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowRight, Boxes, ClipboardList } from "lucide-react";
+import { ArrowRight, BadgeDollarSign, Boxes, ClipboardList } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { requireAdminUser } from "@/lib/admin";
@@ -49,6 +49,23 @@ export default async function DashboardVendedoraPage() {
       </section>
 
       <section className="grid gap-3 lg:grid-cols-2">
+        <Card className="glass-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <BadgeDollarSign className="size-4 text-primary" />
+              Emprende
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="mb-3 text-sm text-muted-foreground">Registra ventas, calcula comisión y descuenta stock en una sola vista.</p>
+            <Button asChild size="sm">
+              <Link href="/admin/emprende">
+                Abrir módulo <ArrowRight className="ml-2 size-4" />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+
         <Card className="glass-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">

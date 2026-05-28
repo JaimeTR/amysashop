@@ -4,6 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { InventoryTable } from "../../../components/admin/inventory-table";
 import { requireAdminUser } from "@/lib/admin";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
+import { calculateFinalSalePrice } from "@/lib/inventory-pricing";
+import { getProductSlug } from "@/lib/product-url";
 
 export const metadata = {
   title: "Gestión de Inventario | Admin",
@@ -21,6 +23,7 @@ type InventoryRow = {
   cost: number;
   operating_cost: number;
   profit_margin: number;
+  seller_markup_percentage: number;
   price: number;
   priceBefore?: number | null;
   images?: string[];
@@ -208,6 +211,7 @@ async function updateInventoryAction(formData: FormData) {
   const cost = Math.max(0, toNumber(formData.get("cost"), 0));
   const operatingCost = Math.max(0, toNumber(formData.get("operating_cost"), 0));
   const profitMargin = Math.max(0, toNumber(formData.get("profit_margin"), 0));
+  const sellerMarkupPercentage = Math.max(0, toNumber(formData.get("seller_markup_percentage"), 0));
 
   const db = createServiceRoleClient();
   if (!db) {
@@ -220,6 +224,7 @@ async function updateInventoryAction(formData: FormData) {
     cost,
     operating_cost: operatingCost,
     profit_margin: profitMargin,
+    seller_markup_percentage: sellerMarkupPercentage,
     price_before: (() => {
       const raw = String(formData.get("price_before") || "").trim();
       if (!raw) return null;
@@ -228,11 +233,7 @@ async function updateInventoryAction(formData: FormData) {
     })(),
   };
 
-  const totalBaseCost = payload.cost + payload.operating_cost;
-  const normalizedMargin = payload.profit_margin >= 1 ? payload.profit_margin / 100 : payload.profit_margin;
-  const divisor = 1 - normalizedMargin;
-  const computedFinalPrice = divisor > 0 && normalizedMargin < 1 ? totalBaseCost / divisor : totalBaseCost;
-  const roundedFinalPrice = Number(Math.max(0, computedFinalPrice).toFixed(2));
+  const roundedFinalPrice = calculateFinalSalePrice(payload);
 
   let result = await db
     .from("products")
@@ -242,6 +243,7 @@ async function updateInventoryAction(formData: FormData) {
       cost: payload.cost,
       operating_cost: payload.operating_cost,
       profit_margin: payload.profit_margin,
+      seller_markup_percentage: payload.seller_markup_percentage,
       price: roundedFinalPrice,
       price_before: payload.price_before,
     })
@@ -256,6 +258,7 @@ async function updateInventoryAction(formData: FormData) {
         cost: payload.cost,
         operating_cost: payload.operating_cost,
         profit_margin: payload.profit_margin,
+        seller_markup_percentage: payload.seller_markup_percentage,
         price: roundedFinalPrice,
       })
       .eq("id", productId);
@@ -265,7 +268,22 @@ async function updateInventoryAction(formData: FormData) {
     throw new Error(result.error.message || "No se pudo actualizar inventario.");
   }
 
+  // Revalidate admin inventory and public product pages so store shows updated price
   revalidatePath("/admin/inventario");
+  try {
+    // revalidate listing and home
+    revalidatePath("/tienda");
+    revalidatePath("/");
+
+    // try to revalidate the product detail page (uses slugified name)
+    const nameResult = await db.from("products").select("name").eq("id", productId).maybeSingle();
+    if (!nameResult.error && nameResult.data?.name) {
+      const slug = getProductSlug({ name: String(nameResult.data.name) });
+      revalidatePath(`/producto/${slug}`);
+    }
+  } catch (err) {
+    // ignore revalidation errors
+  }
 }
 
 export default async function InventarioPage({ searchParams }: { searchParams?: { page?: string; q?: string } }) {
@@ -290,7 +308,10 @@ export default async function InventarioPage({ searchParams }: { searchParams?: 
 
   let productsQuery = db
     .from("products")
-    .select("id, name, sku, gender, age_group, brand, stock, cost, operating_cost, profit_margin, price, price_before, images, active, created_at, categories(name)", { count: "exact" });
+    .select(
+      "id, name, sku, gender, age_group, brand, stock, cost, operating_cost, profit_margin, seller_markup_percentage, price, price_before, images, active, created_at, categories(name)",
+      { count: "exact" }
+    );
 
   // Aplicar búsqueda en servidor si existe
   if (searchQuery) {
@@ -303,10 +324,17 @@ export default async function InventarioPage({ searchParams }: { searchParams?: 
     .order("created_at", { ascending: false })
     .range(start, end);
 
-  if (productsError && (isMissingColumnError(productsError, "price_before") || isMissingColumnError(productsError, "age_group"))) {
+  if (
+    productsError &&
+    (isMissingColumnError(productsError, "price_before") ||
+      isMissingColumnError(productsError, "age_group") ||
+      isMissingColumnError(productsError, "seller_markup_percentage"))
+  ) {
     const fallbackNoPriceBefore = await db
       .from("products")
-      .select("id, name, sku, gender, brand, stock, cost, operating_cost, profit_margin, price, images, active, created_at, categories(name)", { count: "exact" })
+      .select("id, name, sku, gender, brand, stock, cost, operating_cost, profit_margin, price, images, active, created_at, categories(name)", {
+        count: "exact",
+      })
       .order("created_at", { ascending: false })
       .range(start, end);
 
@@ -315,6 +343,7 @@ export default async function InventarioPage({ searchParams }: { searchParams?: 
       ...row,
       age_group: null,
       price_before: null,
+      seller_markup_percentage: 0,
     }));
     productsCount = fallbackNoPriceBefore.count ?? productsCount;
   }
@@ -323,7 +352,8 @@ export default async function InventarioPage({ searchParams }: { searchParams?: 
     productsError &&
     (isMissingColumnError(productsError, "cost") ||
       isMissingColumnError(productsError, "operating_cost") ||
-      isMissingColumnError(productsError, "profit_margin"))
+      isMissingColumnError(productsError, "profit_margin") ||
+      isMissingColumnError(productsError, "seller_markup_percentage"))
   ) {
     const fallback = await db
       .from("products")
@@ -337,6 +367,7 @@ export default async function InventarioPage({ searchParams }: { searchParams?: 
       cost: 0,
       operating_cost: 0,
       profit_margin: 0,
+      seller_markup_percentage: 0,
       price_before: null,
     }));
     productsCount = fallback.count ?? productsCount;
@@ -362,6 +393,7 @@ export default async function InventarioPage({ searchParams }: { searchParams?: 
     cost: Number((product as { cost?: number | null }).cost) || 0,
     operating_cost: Number((product as { operating_cost?: number | null }).operating_cost) || 0,
     profit_margin: Number((product as { profit_margin?: number | null }).profit_margin) || 0,
+    seller_markup_percentage: Number((product as { seller_markup_percentage?: number | null }).seller_markup_percentage) || 0,
     price: Number(product.price) || 0,
     priceBefore: (product as { price_before?: number | null }).price_before
       ? Number((product as { price_before?: number | null }).price_before)

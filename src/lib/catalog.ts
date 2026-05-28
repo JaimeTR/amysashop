@@ -3,6 +3,7 @@ import { landingSamples, productSamples } from "@/lib/mock-data";
 import { canonicalizeBrandName } from "@/lib/brands";
 import { createClient } from "@/lib/supabase/server";
 import { LandingPage, NavProduct, Product } from "@/lib/types";
+import { slugifyProductName } from "@/lib/product-url";
 
 type ProductRow = {
   id: string;
@@ -262,6 +263,40 @@ export const getProductById = cache(async (id: string): Promise<Product | null> 
   }
 
   return productSamples.find((item) => item.id === id) ?? null;
+});
+
+export const getProductBySlug = cache(async (slug: string): Promise<Product | null> => {
+  const supabase = createClient();
+  let result: {
+    data: Array<Record<string, unknown>> | null;
+    error: { message?: string } | null;
+  } = await supabase
+    .from("products")
+    .select("id,name,description,resumen,contenido,price,price_before,images,stock,active,brand,gender,age_group,categories(name)")
+    .eq("active", true)
+    .gt("stock", 0)
+    .order("created_at", { ascending: false });
+
+  if (result.error && hasMissingColumns(result.error, ["price_before", "resumen", "contenido", "age_group"])) {
+    result = await supabase
+      .from("products")
+      .select("id,name,description,price,images,stock,active,brand,gender,categories(name)")
+      .eq("active", true)
+      .gt("stock", 0)
+      .order("created_at", { ascending: false });
+  }
+
+  const { data, error } = result;
+
+  if (!error && data) {
+    const products = (data as ProductRow[]).map(mapProductRow);
+    const normalizedSlug = String(slug || "").trim().toLowerCase();
+    const matched = products.find((p) => slugifyProductName(p.name) === normalizedSlug);
+    return matched ?? null;
+  }
+
+  const normalizedSlug = String(slug || "").trim().toLowerCase();
+  return productSamples.find((item) => slugifyProductName(item.name) === normalizedSlug) ?? null;
 });
 
 

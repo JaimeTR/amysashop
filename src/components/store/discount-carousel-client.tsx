@@ -7,6 +7,7 @@ import { useRef, useEffect, useState } from "react";
 import { AddToCartButton } from "@/components/product/add-to-cart-button";
 import { ToggleFavoriteButton } from "@/components/product/toggle-favorite-button";
 import { getSafeProductImageSrc, DEFAULT_PRODUCT_IMAGE } from "@/lib/product-images";
+import { getProductUrl } from "@/lib/product-url";
 
 type Product = {
   id: string;
@@ -144,7 +145,7 @@ export function DiscountCarouselClient({ products }: { products: Product[] }) {
               >
                 <div className="space-y-2 p-3 h-full flex flex-col">
                   <div className="relative -m-3 mb-0">
-                    <Link href={`/producto/${product.id}`}>
+                    <Link href={getProductUrl(product)}>
                       <div className="relative w-full aspect-square bg-muted/95 overflow-hidden">
                         <Image
                           src={imageSrc}
@@ -164,7 +165,7 @@ export function DiscountCarouselClient({ products }: { products: Product[] }) {
                     </div>
                   </div>
 
-                  <Link href={`/producto/${product.id}`} className="mt-2 block flex-shrink-0">
+                  <Link href={getProductUrl(product)} className="mt-2 block flex-shrink-0">
                     <h3 className="line-clamp-1 truncate font-semibold text-foreground text-sm">{product.name}</h3>
                   </Link>
 

@@ -9,6 +9,7 @@ import { ToggleFavoriteButton } from "@/components/product/toggle-favorite-butto
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getSafeProductImageSrc } from "@/lib/product-images";
+import { getProductUrl } from "@/lib/product-url";
 import type { Product } from "@/lib/types";
 
 type Props = {
@@ -101,7 +102,7 @@ export function RelatedProductsCarousel({ products }: Props) {
       >
         {loopProducts.map((item, index) => (
           <Card key={`${item.id}-${index}`} className="glass-card w-[260px] shrink-0 overflow-hidden">
-            <Link href={`/producto/${item.id}`}>
+            <Link href={getProductUrl(item)}>
               <Image
                 src={getSafeImageSrc(item.images)}
                 alt={item.name}
@@ -113,7 +114,7 @@ export function RelatedProductsCarousel({ products }: Props) {
             </Link>
             <CardContent className="space-y-2 p-3">
               <p className="line-clamp-1 text-xs uppercase tracking-wide text-muted-foreground">{item.category}</p>
-              <Link href={`/producto/${item.id}`} className="block">
+              <Link href={getProductUrl(item)} className="block">
                 <h3 className="line-clamp-1 truncate text-sm font-semibold text-foreground hover:text-primary">{item.name}</h3>
               </Link>
               <p className="text-base font-semibold text-primary">S/ {item.price.toFixed(2)}</p>

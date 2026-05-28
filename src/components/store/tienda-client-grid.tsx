@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { canonicalizeBrandName, getRegisteredBrandNames } from "@/lib/brands";
 import { getSafeProductImageSrc } from "@/lib/product-images";
+import { getProductUrl } from "@/lib/product-url";
 import { useRegisteredTaxonomies } from "@/lib/use-registered-taxonomies";
 import { useHierarchicalTaxonomies } from "@/lib/use-hierarchical-taxonomies";
 import { useBrandNamesFromDB } from "@/lib/use-db-taxonomies";
@@ -101,8 +102,8 @@ function normalizeAgeGroup(value: string) {
   return String(value || "").trim();
 }
 
-function navigateToProduct(productId: string) {
-  window.location.href = `/producto/${productId}`;
+function navigateToProduct(product: Product) {
+  window.location.href = getProductUrl(product);
 }
 
 export function TiendaClientGrid({ products, allProducts, categories = [], initialCategory, initialBrand, showFeatured = false }: Props) {
@@ -838,12 +839,12 @@ export function TiendaClientGrid({ products, allProducts, categories = [], initi
                 const target = e.target as HTMLElement | null;
                 const interactive = target?.closest("a,button,[role='button']");
                 if (!interactive) {
-                  window.location.href = `/producto/${product.id}`;
+                  window.location.href = getProductUrl(product);
                 }
               }}
             >
               <div className="relative">
-                <Link href={`/producto/${product.id}`} onClick={() => navigateToProduct(product.id)}>
+                <Link href={getProductUrl(product)} onClick={() => navigateToProduct(product)}>
                   <Image
                     src={getSafeImageSrc(product.images)}
                     alt={product.name}
@@ -876,7 +877,7 @@ export function TiendaClientGrid({ products, allProducts, categories = [], initi
                   <p className="text-xs uppercase tracking-wide text-muted-foreground">{product.category}</p>
                   {marketingLabel ? <Badge className="bg-primary/10 text-primary">{marketingLabel}</Badge> : null}
                 </div>
-                <Link href={`/producto/${product.id}`} className="block" onClick={() => navigateToProduct(product.id)}>
+                <Link href={getProductUrl(product)} className="block" onClick={() => navigateToProduct(product)}>
                   <h2 className="line-clamp-1 truncate font-semibold text-foreground hover:text-primary">{product.name}</h2>
                 </Link>
                 <p className="line-clamp-2 text-xs text-muted-foreground">{product.description}</p>
@@ -908,11 +909,11 @@ export function TiendaClientGrid({ products, allProducts, categories = [], initi
                 </div>
                 <Button asChild size="sm" variant="outline" className="w-full">
                   <a
-                      href={`/producto/${product.id}`}
+                      href={getProductUrl(product)}
                       onClick={(e) => {
                         e.stopPropagation();
                         // Forzar navegación clásica en caso de que la SPA no responda
-                        window.location.href = `/producto/${product.id}`;
+                        window.location.href = getProductUrl(product);
                       }}
                       className="inline-flex items-center"
                     >

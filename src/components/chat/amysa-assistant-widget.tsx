@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { Loader2, Send, Sparkles, UserRound, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
+import { getProductUrl } from "@/lib/product-url";
 
 type Props = {
   userId: string;
@@ -479,7 +480,7 @@ export function AmysaAssistantWidget({ userId, userName }: Props) {
                       {msg.recommendations.map((item) => (
                         <Link
                           key={item.id}
-                          href={`/producto/${item.id}`}
+                          href={getProductUrl(item)}
                           className="flex items-center gap-2 rounded-xl border border-primary/20 bg-white p-2 transition hover:border-primary/40 hover:bg-primary/5"
                         >
                           <Image

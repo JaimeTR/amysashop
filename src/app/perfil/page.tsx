@@ -1,8 +1,19 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
 import { ProfileSettingsForm } from "@/components/profile/profile-settings-form";
 import { ProfileMobileView } from "@/components/profile/profile-mobile-view";
+
+export const metadata: Metadata = {
+  title: "Mi cuenta",
+  description: "Gestiona tus datos personales, contacto y dirección dentro de tu cuenta AMYSA SHOP.",
+  keywords: ["mi cuenta", "perfil de cliente", "datos personales", "AMYSA SHOP"],
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 function isMissingColumnError(error: { message?: string } | null | undefined, column: string) {
   const message = String(error?.message || "").toLowerCase();

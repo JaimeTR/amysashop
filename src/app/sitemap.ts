@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { getActiveProducts } from "@/lib/catalog";
+import { getProductUrl } from "@/lib/product-url";
 import { getSiteUrl } from "@/lib/site-url";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -10,7 +11,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "",
     "/tienda",
     "/buscar",
-    "/emprende",
     "/ayuda",
     "/ayuda/contacto",
     "/ayuda/faq",
@@ -26,7 +26,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   const productRoutes: MetadataRoute.Sitemap = products.map((product) => ({
-    url: `${siteUrl}/producto/${product.id}`,
+    url: `${siteUrl}${getProductUrl(product)}`,
     lastModified: new Date(),
     changeFrequency: "daily",
     priority: 0.8,

@@ -9,6 +9,7 @@ import { canonicalizeBrandName, getRegisteredBrandNames } from "@/lib/brands";
 import { useBrandNamesFromDB } from "@/lib/use-db-taxonomies";
 import { useRegisteredTaxonomies } from "@/lib/use-registered-taxonomies";
 import { normalizeSearchText, productMatchesSearch } from "@/lib/product-search";
+import { getProductUrl } from "@/lib/product-url";
 import { Product } from "@/lib/types";
 
 type Props = {
@@ -177,7 +178,7 @@ export function BuscarClient({ products }: Props) {
         {filtered.map((product) => (
           <Link
             key={product.id}
-            href={`/producto/${product.id}`}
+            href={getProductUrl(product)}
             className="glass-card rounded-xl p-4"
           >
             <p className="font-semibold">{product.name}</p>

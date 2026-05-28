@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ConfirmDeleteModal } from "@/components/feedback/confirm-delete-modal";
 
 type MessageRow = {
   id: number;
@@ -21,21 +22,21 @@ export function PreheaderMessagesList({ messages, updateMessageAction, deleteMes
   const [editingId, setEditingId] = useState<number | null>(null);
   const [isDeletingId, setIsDeletingId] = useState<number | null>(null);
   const [isSavingId, setIsSavingId] = useState<number | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<MessageRow | null>(null);
+  const deleteFormRef = useRef<HTMLFormElement | null>(null);
 
-  const handleDelete = async (message: MessageRow) => {
-    const confirmed = window.confirm(`¿Eliminar este mensaje? Esta acción no se puede deshacer.`);
-    if (!confirmed) return;
+  const handleDelete = (message: MessageRow) => {
+    setDeleteTarget(message);
+  };
 
-    try {
-      setIsDeletingId(message.id);
-      const formData = new FormData();
-      formData.set("id", String(message.id));
-      await deleteMessageAction(formData);
-    } catch (error) {
-      console.error("Error deleting message:", error);
-    } finally {
-      setIsDeletingId(null);
-    }
+  const confirmDelete = () => {
+    if (!deleteTarget) return;
+    setIsDeletingId(deleteTarget.id);
+    deleteFormRef.current?.requestSubmit();
+  };
+
+  const cancelDelete = () => {
+    setDeleteTarget(null);
   };
 
   const handleSaveMessage = async (e: React.FormEvent<HTMLFormElement>, messageId: number) => {
@@ -100,7 +101,7 @@ export function PreheaderMessagesList({ messages, updateMessageAction, deleteMes
                   type="button"
                   onClick={() => handleDelete(message)}
                   disabled={isDeletingId === message.id}
-                  className="inline-flex h-9 items-center rounded-md border border-destructive/40 bg-destructive/10 px-3 text-sm font-semibold text-destructive-foreground disabled:opacity-50"
+                  className="inline-flex h-9 items-center rounded-md border border-primary/25 bg-primary/10 px-3 text-sm font-semibold text-primary shadow-sm transition hover:bg-primary/20 hover:text-primary disabled:opacity-50"
                   aria-label="Eliminar"
                 >
                   <Trash2 className="mr-2 size-4" /> Eliminar
@@ -154,6 +155,23 @@ export function PreheaderMessagesList({ messages, updateMessageAction, deleteMes
           </form>
         );
       })}
+
+      <form ref={deleteFormRef} action={deleteMessageAction} className="hidden">
+        <input type="hidden" name="id" value={deleteTarget?.id || ""} />
+      </form>
+
+      <ConfirmDeleteModal
+        isOpen={Boolean(deleteTarget)}
+        title="Eliminar mensaje de preencabezado"
+        message="¿Seguro que deseas eliminar este mensaje? Esta acción no se puede deshacer."
+        itemName={deleteTarget?.message}
+        isLoading={isDeletingId === deleteTarget?.id}
+        onConfirm={confirmDelete}
+        onCancel={() => {
+          setIsDeletingId(null);
+          cancelDelete();
+        }}
+      />
     </div>
   );
 }

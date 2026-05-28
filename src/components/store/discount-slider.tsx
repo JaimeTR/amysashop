@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { getSafeProductImageSrc } from "@/lib/product-images";
+import { getProductUrl } from "@/lib/product-url";
 
 type ProductShort = {
   id: string;
@@ -39,12 +40,12 @@ export default function DiscountSlider({ products }: { products: ProductShort[] 
         {products.map((p) => (
           <div key={p.id} className="w-64 flex-shrink-0">
             <div className="rounded-lg border bg-white/5">
-              <Link href={`/producto/${p.id}`} className="block">
+              <Link href={getProductUrl(p)} className="block">
                 <Image src={getSafeProductImageSrc(p.images)} alt={p.name} width={400} height={400} className="aspect-square w-full object-cover rounded-t-lg" unoptimized />
               </Link>
               <div className="p-3">
                 <p className="text-xs text-muted-foreground">{p.category}</p>
-                <Link href={`/producto/${p.id}`} className="block">
+                <Link href={getProductUrl(p)} className="block">
                   <h4 className="line-clamp-1 truncate font-semibold">{p.name}</h4>
                 </Link>
                 <div className="mt-2 flex items-center gap-2">

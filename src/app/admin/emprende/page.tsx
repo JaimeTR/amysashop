@@ -1,316 +1,764 @@
-"use client";
+import type { Metadata } from "next";
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { BadgeDollarSign, CheckCircle2, Package, ReceiptText, TrendingUp, Users2 } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { requireAdminUser } from "@/lib/admin";
+import { createServiceRoleClient } from "@/lib/supabase/service-role";
+import {
+  EmprendeSaleForm,
+  type EmprendeClientOption,
+  type EmprendeProductOption,
+  type EmprendeSalespersonOption,
+} from "@/components/admin/emprende-sale-form";
+import ErrorBoundary from "@/components/error-boundary-client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
-import CommissionsDashboard from "@/components/emprende/commissions-dashboard";
-import SalesForm from "@/components/emprende/sales-form";
-import SalesTable from "@/components/emprende/sales-table";
-import ExternalClientForm from "@/components/emprende/external-client-form";
-import EmpendeAdminDashboard from "@/components/emprende/admin-dashboard";
-import { getSalesperson } from "@/lib/actions/emprende-actions";
-import { Product, Salesperson } from "@/lib/types";
+export const metadata: Metadata = {
+  title: "Emprende",
+  description: "Registra ventas por vendedora, descuenta stock y calcula automáticamente la comisión ganada por cada producto.",
+  keywords: ["emprende", "ventas", "comisiones", "vendedoras", "stock", "AMYSA SHOP"],
+};
 
-export default function EmprenderPage() {
-  const router = useRouter();
-  const [user, setUser] = useState<any>(null);
-  const [profile, setProfile] = useState<any>(null);
-  const [salesperson, setSalesperson] = useState<Salesperson | null>(null);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"dashboard" | "sales" | "clients">(
-    "dashboard"
-  );
-  const [refreshSales, setRefreshSales] = useState(false);
-  const [adminModalOpen, setAdminModalOpen] = useState(false);
-  const [adminSalespeople, setAdminSalespeople] = useState<Salesperson[]>([]);
-  const [adminSelectedSalespersonId, setAdminSelectedSalespersonId] = useState<string>("");
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const supabase = createClient();
-        
-        // Get current user
-        const {
-          data: { user: currentUser },
-        } = await supabase.auth.getUser();
-        if (!currentUser) {
-          router.push("/login");
-          return;
-        }
-        setUser(currentUser);
-
-        // Get user profile
-        const { data: profileData } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", currentUser.id)
-          .single();
-        setProfile(profileData);
-
-        // Check if user is salesperson or admin
-        if (
-          profileData?.role === "admin" ||
-          profileData?.role === "superadmin" ||
-          profileData?.role === "owner"
-        ) {
-          // Admin/Owner - no need to fetch salesperson data
-          setSalesperson(null);
-          // Fetch salespeople list for admin actions
-          const { data: salespeopleData } = await supabase
-            .from("salespeople")
-            .select("*")
-            .order("created_at", { ascending: false });
-          setAdminSalespeople(salespeopleData || []);
-        } else {
-          // Check if user is a registered salesperson
-          const sp = await getSalesperson(currentUser.id);
-          if (!sp) {
-            // User is not a salesperson
-            router.push("/acceso-restringido");
-            return;
-          }
-          setSalesperson(sp);
-        }
-
-        // Fetch products
-        const { data: productsData } = await supabase
-          .from("products")
-          .select("*")
-          .eq("active", true);
-        setProducts(productsData || []);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        router.push("/login");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [router]);
-
-  const handleSaleCreated = () => {
-    setRefreshSales((prev) => !prev);
+type PageProps = {
+  searchParams?: {
+    salespersonId?: string;
+    ok?: string;
+    error?: string;
   };
+};
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full size-12 border-b-2 border-info/70 mx-auto mb-4"></div>
-          <p>Cargando...</p>
-        </div>
-      </div>
-    );
+type SalespersonRow = {
+  id: string;
+  user_id: string;
+  name: string;
+  email?: string | null;
+  commission_percentage?: number | null;
+  status?: string | null;
+};
+
+type ProfileRow = {
+  id: string;
+  nombre: string;
+  email?: string | null;
+  telefono?: string | null;
+  direccion?: string | null;
+  img_avatar?: string | null;
+  avatar_url?: string | null;
+  role?: string | null;
+};
+
+type ProductRow = {
+  id: string;
+  name: string;
+  brand?: string | null;
+  category?: string | null;
+  stock?: number | null;
+  price?: number | null;
+  price_before?: number | null;
+  images?: string[] | null;
+};
+
+type SaleCommissionRow = {
+  commission_percentage?: number | null;
+  commission_amount?: number | null;
+  status?: string | null;
+};
+
+type SaleRow = {
+  id: string;
+  created_at: string;
+  quantity?: number | null;
+  unit_price?: number | null;
+  total_amount?: number | null;
+  payment_status?: string | null;
+  payment_received?: number | null;
+  commission_status?: string | null;
+  commission_amount?: number | null;
+  notes?: string | null;
+  salesperson_id?: string | null;
+  product_id?: string | null;
+  client_id?: string | null;
+  external_client_id?: string | null;
+  salespeople?: SalespersonRow | SalespersonRow[] | null;
+  products?: ProductRow | ProductRow[] | null;
+  client_profiles?: ProfileRow | ProfileRow[] | null;
+  external_clients?: { name?: string | null; email?: string | null } | { name?: string | null; email?: string | null }[] | null;
+  sales_commissions?: SaleCommissionRow | SaleCommissionRow[] | null;
+};
+
+function formatMoney(value: number | null | undefined) {
+  return new Intl.NumberFormat("es-PE", {
+    style: "currency",
+    currency: "PEN",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(Number(value || 0));
+}
+
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("es-CO", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(value));
+}
+
+function paymentLabel(value: string | null | undefined) {
+  const normalized = String(value || "").toLowerCase();
+  if (normalized === "completed") return "Completado";
+  if (normalized === "partial") return "Parcial";
+  return "Pendiente";
+}
+
+function paymentBadgeClass(value: string | null | undefined) {
+  const normalized = String(value || "").toLowerCase();
+  if (normalized === "completed") return "border-transparent bg-emerald-500/15 text-emerald-700";
+  if (normalized === "partial") return "border-transparent bg-amber-500/15 text-amber-700";
+  return "border-transparent bg-slate-500/10 text-slate-700";
+}
+
+function commissionBadgeClass(value: string | null | undefined) {
+  const normalized = String(value || "").toLowerCase();
+  if (normalized === "approved" || normalized === "paid") return "border-transparent bg-primary/15 text-primary";
+  return "border-transparent bg-slate-500/10 text-slate-700";
+}
+
+function commissionPercentageFromSale(sale: SaleRow) {
+  const commissionRecord = Array.isArray(sale.sales_commissions) ? sale.sales_commissions[0] : sale.sales_commissions;
+
+  if (commissionRecord?.commission_percentage != null) {
+    return Number(commissionRecord.commission_percentage) || 0;
   }
 
-  const isAdmin = profile?.role === "admin" || profile?.role === "superadmin";
-  const isOwner = profile?.role === "owner";
-  const isAdminOrOwner = isAdmin || isOwner;
+  const salesperson = Array.isArray(sale.salespeople) ? sale.salespeople[0] : sale.salespeople;
+  return Number(salesperson?.commission_percentage || 0) || 0;
+}
+
+async function ensureSalespeopleFromProfiles(serviceClient: ReturnType<typeof createServiceRoleClient>) {
+  if (!serviceClient) {
+    return;
+  }
+
+  const profilesResult = await serviceClient
+    .from("profiles")
+    .select("id,nombre,telefono,role")
+    .eq("role", "vendedora")
+    .order("nombre", { ascending: true });
+
+  if (profilesResult.error || !profilesResult.data?.length) {
+    return;
+  }
+
+  const salespeopleResult = await serviceClient.from("salespeople").select("user_id");
+  if (salespeopleResult.error) {
+    return;
+  }
+
+  const existingUserIds = new Set((salespeopleResult.data || []).map((item) => item.user_id));
+  const missingSalespeople = profilesResult.data
+    .filter((profile) => !existingUserIds.has(profile.id))
+    .map((profile) => ({
+      user_id: profile.id,
+      name: profile.nombre || "Vendedora",
+      email: null,
+      phone: profile.telefono || null,
+      commission_percentage: 10,
+      status: "active",
+    }));
+
+  if (missingSalespeople.length > 0) {
+    await serviceClient.from("salespeople").upsert(missingSalespeople, { onConflict: "user_id" });
+  }
+}
+
+function getSaleCustomerLabel(sale: SaleRow) {
+  const clientProfile = Array.isArray(sale.client_profiles) ? sale.client_profiles[0] : sale.client_profiles;
+  const externalClient = Array.isArray(sale.external_clients) ? sale.external_clients[0] : sale.external_clients;
+
+  if (clientProfile?.nombre) {
+    return clientProfile.nombre;
+  }
+
+  if (externalClient?.name) {
+    return externalClient.name;
+  }
+
+  return "Cliente interno";
+}
+
+function getSaleProductLabel(sale: SaleRow) {
+  const product = Array.isArray(sale.products) ? sale.products[0] : sale.products;
+  return product?.name || "Producto";
+}
+
+function getSaleSalespersonLabel(sale: SaleRow) {
+  const salesperson = Array.isArray(sale.salespeople) ? sale.salespeople[0] : sale.salespeople;
+  return salesperson?.name || "Vendedora";
+}
+
+function getPercentageEarned(sale: SaleRow) {
+  const totalAmount = Number(sale.total_amount || 0);
+  const commissionAmount = Number(sale.commission_amount || 0);
+
+  if (!totalAmount || commissionAmount <= 0) {
+    return 0;
+  }
+
+  return Math.round((commissionAmount / totalAmount) * 10000) / 100;
+}
+
+function safeText(value: FormDataEntryValue | null) {
+  return String(value || "").trim();
+}
+
+function parseNumber(value: FormDataEntryValue | null) {
+  const parsed = Number(String(value || "").trim());
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+async function getEmprendeData(salespersonFilterId?: string, ownSalespersonId?: string) {
+  const serviceClient = createServiceRoleClient();
+  const supabase = serviceClient ?? createServiceRoleClient();
+
+  if (!supabase) {
+    return { salespeople: [], products: [], sales: [], queryError: "Configura SUPABASE_SECRET_KEY para cargar el módulo Emprende." };
+  }
+
+  await ensureSalespeopleFromProfiles(supabase);
+
+  const salespeopleQuery = supabase
+    .from("salespeople")
+    .select("id,user_id,name,email,commission_percentage,status")
+    .order("name", { ascending: true });
+
+  const clientsQuery = supabase
+    .from("profiles")
+    .select("id,nombre,telefono,direccion,img_avatar,avatar_url,role")
+    .eq("role", "cliente")
+    .order("nombre", { ascending: true });
+
+  const productsQuery = supabase
+    .from("products")
+    .select("id,name,brand,stock,price,price_before,images")
+    .order("name", { ascending: true });
+
+  const salesQuery = supabase
+    .from("sales")
+    .select(
+      "id,created_at,quantity,unit_price,total_amount,payment_status,payment_received,commission_status,commission_amount,notes,salesperson_id,product_id,client_id,external_client_id,salespeople:salespeople(id,name,email,commission_percentage,status),products:products(id,name,brand,stock,price,price_before,images),client_profiles:profiles(id,nombre,telefono),external_clients(id,name,email),sales_commissions(commission_percentage,commission_amount,status)"
+    )
+    .order("created_at", { ascending: false })
+    .limit(100);
+
+  const [salespeopleResult, clientsResult, productsResult, salesResult] = await Promise.all([
+    salespeopleQuery,
+    clientsQuery,
+    productsQuery,
+    salesQuery,
+  ]);
+
+  const queryError =
+    salespeopleResult.error?.message || clientsResult.error?.message || productsResult.error?.message || salesResult.error?.message || null;
+
+  let sales = (salesResult.data || []) as SaleRow[];
+
+  if (ownSalespersonId) {
+    sales = sales.filter((sale) => sale.salesperson_id === ownSalespersonId);
+  } else if (salespersonFilterId) {
+    sales = sales.filter((sale) => sale.salesperson_id === salespersonFilterId);
+  }
+
+  return {
+    salespeople: (salespeopleResult.data || []) as SalespersonRow[],
+    clients: (clientsResult.data || []) as ProfileRow[],
+    products: (productsResult.data || []) as ProductRow[],
+    sales,
+    queryError,
+  };
+}
+
+export async function registerSaleAction(formData: FormData) {
+  "use server";
+
+  const serviceClient = createServiceRoleClient();
+  const { user, role } = await requireAdminUser("sales.manage");
+
+  if (!serviceClient) {
+    redirect("/admin/emprende?error=Falta+configuracion+de+SUPABASE_SECRET_KEY");
+  }
+
+  const salespersonIdFromForm = safeText(formData.get("salespersonId"));
+  const clientProfileId = safeText(formData.get("clientProfileId"));
+  const customerName = safeText(formData.get("customerName"));
+  const customerEmail = safeText(formData.get("customerEmail"));
+  const customerPhone = safeText(formData.get("customerPhone"));
+  const notes = safeText(formData.get("notes"));
+  const paymentStatus = safeText(formData.get("paymentStatus")).toLowerCase();
+  const saleLinesRaw = safeText(formData.get("saleLines"));
+
+  let salespersonId = salespersonIdFromForm;
+
+  if (role === "vendedora") {
+    const ownSalesperson = await serviceClient
+      .from("salespeople")
+      .select("id,name,commission_percentage")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (ownSalesperson.error || !ownSalesperson.data) {
+      redirect("/admin/emprende?error=No+se+encontro+tu+registro+de+vendedora");
+    }
+
+    salespersonId = ownSalesperson.data.id;
+  }
+
+  if (!salespersonId) {
+    redirect("/admin/emprende?error=Completa+la+vendedora+antes+de+registrar+la+venta");
+  }
+
+  const salespersonResult = await serviceClient
+    .from("salespeople")
+    .select("id,name,commission_percentage")
+    .eq("id", salespersonId)
+    .maybeSingle();
+
+  if (salespersonResult.error || !salespersonResult.data) {
+    redirect("/admin/emprende?error=No+se+encontro+la+vendedora+seleccionada");
+  }
+
+  const commissionPercentage = Number(salespersonResult.data.commission_percentage || 0);
+  const normalizedPaymentStatus = paymentStatus === "completed" || paymentStatus === "partial" ? paymentStatus : "pending";
+  const commissionStatus = normalizedPaymentStatus === "completed" ? "approved" : "pending";
+
+  const parsedSaleLines = (() => {
+    if (!saleLinesRaw) {
+      const fallbackProductId = safeText(formData.get("productId"));
+      const fallbackQuantity = Math.max(1, Math.trunc(parseNumber(formData.get("quantity"))));
+
+      return fallbackProductId ? [{ productId: fallbackProductId, quantity: fallbackQuantity }] : [];
+    }
+
+    try {
+      const parsed = JSON.parse(saleLinesRaw) as Array<{ productId?: string; quantity?: number }>;
+      const normalized = parsed.map((item) => ({
+        productId: safeText(item.productId || ""),
+        quantity: Math.max(1, Math.trunc(Number(item.quantity || 0))),
+      }));
+
+      if (normalized.some((item) => !item.productId)) {
+        return [];
+      }
+
+      return normalized;
+    } catch {
+      return [];
+    }
+  })();
+
+  if (!parsedSaleLines.length) {
+    redirect("/admin/emprende?error=Agrega+al+menos+un+producto+para+registrar+la+venta");
+  }
+
+  let externalClientId: string | null = null;
+
+  if (!clientProfileId) {
+    if (!customerName || !customerPhone) {
+      redirect("/admin/emprende?error=Completa+los+datos+del+cliente+o+selecciona+uno+registrado");
+    }
+
+    const externalClientInsert = await serviceClient
+      .from("external_clients")
+      .insert({
+        name: customerName,
+        email: customerEmail || null,
+        phone: customerPhone,
+        salesperson_id: salespersonId,
+      })
+      .select("id")
+      .maybeSingle();
+
+    if (externalClientInsert.error || !externalClientInsert.data) {
+      redirect("/admin/emprende?error=No+se+pudo+crear+el+cliente+externo");
+    }
+
+    externalClientId = externalClientInsert.data.id;
+  }
+
+  const createdSales: Array<{ saleId: string; productId: string; previousStock: number }> = [];
+
+  for (const line of parsedSaleLines) {
+    const productResult = await serviceClient
+      .from("products")
+      .select("id,name,stock,price")
+      .eq("id", line.productId)
+      .maybeSingle();
+
+    if (productResult.error || !productResult.data) {
+      for (const createdSale of createdSales.reverse()) {
+        await serviceClient.from("sales_commissions").delete().eq("sale_id", createdSale.saleId);
+        await serviceClient.from("sales").delete().eq("id", createdSale.saleId);
+        await serviceClient.from("products").update({ stock: createdSale.previousStock }).eq("id", createdSale.productId);
+      }
+
+      if (externalClientId) {
+        await serviceClient.from("external_clients").delete().eq("id", externalClientId);
+      }
+
+      redirect("/admin/emprende?error=No+se+encontro+uno+de+los+productos+seleccionados");
+    }
+
+    const quantity = Math.max(1, Math.trunc(line.quantity || 0));
+    const currentStock = Number(productResult.data.stock || 0);
+
+    if (currentStock < quantity) {
+      for (const createdSale of createdSales.reverse()) {
+        await serviceClient.from("sales_commissions").delete().eq("sale_id", createdSale.saleId);
+        await serviceClient.from("sales").delete().eq("id", createdSale.saleId);
+        await serviceClient.from("products").update({ stock: createdSale.previousStock }).eq("id", createdSale.productId);
+      }
+
+      if (externalClientId) {
+        await serviceClient.from("external_clients").delete().eq("id", externalClientId);
+      }
+
+      redirect("/admin/emprende?error=Stock+insuficiente+para+uno+de+los+productos");
+    }
+
+    const price = Number(productResult.data.price || 0);
+    const totalAmount = Number((price * quantity).toFixed(2));
+    const commissionAmount = normalizedPaymentStatus === "completed" ? Number(((totalAmount * commissionPercentage) / 100).toFixed(2)) : 0;
+
+    const stockUpdate = await serviceClient
+      .from("products")
+      .update({ stock: currentStock - quantity })
+      .eq("id", line.productId);
+
+    if (stockUpdate.error) {
+      for (const createdSale of createdSales.reverse()) {
+        await serviceClient.from("sales_commissions").delete().eq("sale_id", createdSale.saleId);
+        await serviceClient.from("sales").delete().eq("id", createdSale.saleId);
+        await serviceClient.from("products").update({ stock: createdSale.previousStock }).eq("id", createdSale.productId);
+      }
+
+      if (externalClientId) {
+        await serviceClient.from("external_clients").delete().eq("id", externalClientId);
+      }
+
+      redirect("/admin/emprende?error=No+se+pudo+actualizar+el+stock");
+    }
+
+    const saleInsert = await serviceClient
+      .from("sales")
+      .insert({
+        salesperson_id: salespersonId,
+        product_id: line.productId,
+        client_id: clientProfileId || null,
+        external_client_id: externalClientId,
+        quantity,
+        unit_price: price,
+        total_amount: totalAmount,
+        payment_status: normalizedPaymentStatus,
+        payment_received: normalizedPaymentStatus === "completed" ? totalAmount : 0,
+        commission_status: commissionStatus,
+        commission_amount: commissionAmount,
+        notes: notes || null,
+      })
+      .select("id")
+      .maybeSingle();
+
+    if (saleInsert.error || !saleInsert.data) {
+      await serviceClient.from("products").update({ stock: currentStock }).eq("id", line.productId);
+
+      for (const createdSale of createdSales.reverse()) {
+        await serviceClient.from("sales_commissions").delete().eq("sale_id", createdSale.saleId);
+        await serviceClient.from("sales").delete().eq("id", createdSale.saleId);
+        await serviceClient.from("products").update({ stock: createdSale.previousStock }).eq("id", createdSale.productId);
+      }
+
+      if (externalClientId) {
+        await serviceClient.from("external_clients").delete().eq("id", externalClientId);
+      }
+
+      redirect("/admin/emprende?error=No+se+pudo+registrar+una+de+las+ventas");
+    }
+
+    if (normalizedPaymentStatus === "completed" && commissionAmount > 0) {
+      await serviceClient.from("sales_commissions").insert({
+        sale_id: saleInsert.data.id,
+        salesperson_id: salespersonId,
+        commission_percentage: commissionPercentage,
+        commission_amount: commissionAmount,
+        status: "approved",
+      });
+    }
+
+    createdSales.push({ saleId: saleInsert.data.id, productId: line.productId, previousStock: currentStock });
+  }
+
+  revalidatePath("/admin/emprende");
+  revalidatePath("/admin");
+  revalidatePath("/admin/vendedora");
+  redirect("/admin/emprende?ok=Venta+registrada+correctamente");
+}
+
+export default async function EmprendePage({ searchParams }: PageProps) {
+  const { supabase: sessionClient, role, user } = await requireAdminUser("sales.manage");
+  const salespersonFilterId = String(searchParams?.salespersonId || "").trim();
+  const ownSalespersonResult =
+    role === "vendedora"
+      ? await sessionClient.from("salespeople").select("id,user_id,name,commission_percentage").eq("user_id", user.id).maybeSingle()
+      : { data: null, error: null };
+
+  const ownSalespersonId = role === "vendedora" && ownSalespersonResult.data ? ownSalespersonResult.data.id : undefined;
+  const { salespeople, clients, products, sales, queryError } = await getEmprendeData(salespersonFilterId || undefined, ownSalespersonId);
+
+  const selectedSalespersonForForm = role === "vendedora" ? ownSalespersonId || "" : salespersonFilterId || salespeople[0]?.id || "";
+  const visibleSales = role === "vendedora" && ownSalespersonId ? sales.filter((sale) => sale.salesperson_id === ownSalespersonId) : sales;
+
+  const totalSalesAmount = visibleSales.reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
+  const totalCommissionAmount = visibleSales.reduce((sum, sale) => sum + Number(sale.commission_amount || 0), 0);
+  const totalUnits = visibleSales.reduce((sum, sale) => sum + Number(sale.quantity || 0), 0);
+  const completedSales = visibleSales.filter((sale) => String(sale.payment_status || "").toLowerCase() === "completed").length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-background">
-      <main className="space-y-8 pb-8">
-        {/* Header */}
-        <header className="glass-card rounded-3xl p-5 mb-8">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <main className="space-y-5 pb-8">
+      <header className="glass-card rounded-3xl p-5">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Módulo Emprende</p>
+            <h1 className="font-[var(--font-display)] text-3xl">Ventas por vendedora</h1>
+            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+              Registra cada venta, descuenta stock automáticamente y revisa cuánto gana cada vendedora por producto.
+            </p>
+          </div>
+          <Badge className="w-fit bg-primary/15 text-primary" variant="outline">
+            {role === "vendedora" ? "Vista de vendedora" : "Vista administrativa"}
+          </Badge>
+        </div>
+      </header>
+
+      {searchParams?.ok ? (
+        <Card className="border-emerald-200 bg-emerald-50/60">
+          <CardContent className="flex items-center gap-2 py-4 text-sm text-emerald-800">
+            <CheckCircle2 className="size-4" />
+            {searchParams.ok}
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {searchParams?.error ? (
+        <Card className="border-red-200 bg-red-50/70">
+          <CardContent className="py-4 text-sm text-red-800">{searchParams.error}</CardContent>
+        </Card>
+      ) : null}
+
+      {queryError ? (
+        <Card className="border-amber-200 bg-amber-50/70">
+          <CardContent className="py-4 text-sm text-amber-900">{queryError}</CardContent>
+        </Card>
+      ) : null}
+
+      {role !== "vendedora" ? (
+        <Card className="glass-card rounded-3xl">
+          <CardContent className="flex flex-col gap-3 py-4 md:flex-row md:items-end md:justify-between">
             <div>
-              <h1 className="font-[var(--font-display)] text-3xl">Emprende</h1>
-              <p className="mt-2 text-sm text-muted-foreground">
-                {isAdminOrOwner
-                  ? "Gestión de vendedoras y comisiones"
-                  : `Bienvenida ${salesperson?.name}, aquí puedes registrar tus ventas y seguimiento de comisiones`}
-              </p>
+              <p className="text-sm font-semibold text-foreground">Filtro de vendedora</p>
+              <p className="text-xs text-muted-foreground">Úsalo para ver solo las ventas de una vendedora concreta.</p>
+            </div>
+            <form className="flex w-full gap-2 md:max-w-xl" method="get">
+              <select
+                name="salespersonId"
+                defaultValue={salespersonFilterId}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="">Todas las ventas</option>
+                {salespeople.map((salesperson) => (
+                  <option key={salesperson.id} value={salesperson.id}>
+                    {salesperson.name}
+                  </option>
+                ))}
+              </select>
+              <Button type="submit" variant="outline">
+                Filtrar
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <Card className="glass-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <ReceiptText className="size-4 text-primary" />
+              Ventas registradas
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-semibold text-primary">{visibleSales.length}</p>
+          </CardContent>
+        </Card>
+        <Card className="glass-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <TrendingUp className="size-4 text-primary" />
+              Total vendido
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-semibold text-primary">{formatMoney(totalSalesAmount)}</p>
+          </CardContent>
+        </Card>
+        <Card className="glass-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <BadgeDollarSign className="size-4 text-primary" />
+              Comisión ganada
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-semibold text-primary">{formatMoney(totalCommissionAmount)}</p>
+          </CardContent>
+        </Card>
+        <Card className="glass-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <Package className="size-4 text-primary" />
+              Unidades vendidas
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-semibold text-primary">{totalUnits}</p>
+          </CardContent>
+        </Card>
+      </section>
+
+      <section className="grid gap-5 xl:grid-cols-[1.05fr_1.25fr]">
+        <ErrorBoundary>
+          <EmprendeSaleForm
+            role={role}
+            salespeople={(salespeople as EmprendeSalespersonOption[]).map((salesperson) => ({
+              id: salesperson.id,
+              name: salesperson.name,
+              email: salesperson.email,
+              commission_percentage: salesperson.commission_percentage,
+              status: salesperson.status,
+            }))}
+            clients={(clients as EmprendeClientOption[]).map((client) => ({
+              id: client.id,
+              nombre: client.nombre,
+              email: client.email,
+              telefono: client.telefono,
+              direccion: client.direccion,
+              img_avatar: client.img_avatar,
+              avatar_url: client.avatar_url,
+            }))}
+            products={(products as EmprendeProductOption[]).map((product) => ({
+              id: product.id,
+              name: product.name,
+              brand: product.brand,
+              category: product.category,
+              stock: product.stock,
+              price: product.price,
+              price_before: product.price_before,
+              images: product.images,
+            }))}
+            initialSalespersonId={selectedSalespersonForForm}
+            action={registerSaleAction}
+          />
+        </ErrorBoundary>
+
+        <Card className="glass-card rounded-3xl">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Users2 className="size-4 text-primary" />
+              Resumen por venta
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="rounded-2xl border border-primary/15 bg-primary/5 p-4 text-sm text-foreground">
+              La tabla muestra la vendedora, el producto, la comisión ganada y el porcentaje que corresponde a cada venta.
             </div>
 
-            <button
-              type="button"
-              onClick={() => (isAdminOrOwner ? setAdminModalOpen(true) : setActiveTab("sales"))}
-              className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
-            >
-              Registrar venta
-            </button>
-          </div>
-        </header>
+            <div className="overflow-x-auto rounded-2xl border border-border/60 bg-white/60">
+              <table className="min-w-full text-left text-sm">
+                <thead className="bg-primary/5 text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                  <tr>
+                    <th className="px-4 py-3">Fecha</th>
+                    <th className="px-4 py-3">Vendedora</th>
+                    <th className="px-4 py-3">Producto</th>
+                    <th className="px-4 py-3">Cantidad</th>
+                    <th className="px-4 py-3">Total</th>
+                    <th className="px-4 py-3">% ganado</th>
+                    <th className="px-4 py-3">Comisión</th>
+                    <th className="px-4 py-3">Pago</th>
+                    <th className="px-4 py-3">Cliente</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visibleSales.length === 0 ? (
+                    <tr>
+                      <td className="px-4 py-10 text-center text-muted-foreground" colSpan={9}>
+                        Todavía no hay ventas registradas con este filtro.
+                      </td>
+                    </tr>
+                  ) : (
+                    visibleSales.map((sale) => (
+                      <tr key={sale.id} className="border-t border-border/50 align-top">
+                        <td className="px-4 py-3 whitespace-nowrap">{formatDate(sale.created_at)}</td>
+                        <td className="px-4 py-3">{getSaleSalespersonLabel(sale)}</td>
+                        <td className="px-4 py-3">
+                          <div className="font-medium">{getSaleProductLabel(sale)}</div>
+                          {sale.notes ? <div className="mt-1 max-w-[16rem] text-xs text-muted-foreground">{sale.notes}</div> : null}
+                        </td>
+                        <td className="px-4 py-3">{Number(sale.quantity || 0)}</td>
+                        <td className="px-4 py-3 font-medium text-primary">{formatMoney(sale.total_amount)}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex flex-col gap-1">
+                            <span className="font-semibold text-foreground">{commissionPercentageFromSale(sale)}%</span>
+                            <span className="text-xs text-muted-foreground">{Number(sale.commission_amount || 0) > 0 ? formatMoney(sale.commission_amount) : "Sin comisión"}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge className={commissionBadgeClass(sale.commission_status)} variant="outline">
+                            {sale.commission_status ? sale.commission_status : "pendiente"}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge className={paymentBadgeClass(sale.payment_status)} variant="outline">
+                            {paymentLabel(sale.payment_status)}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3">{getSaleCustomerLabel(sale)}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
 
-        {isAdminOrOwner ? (
-          <div className="space-y-8">
-              {/* Admin Navigation */}
-              <div className="glass-card rounded-xl">
-                <div className="flex gap-4 p-6 border-b border-white/20">
-                  <button
-                    onClick={() => setActiveTab("dashboard")}
-                    className={`px-4 py-2 rounded font-medium transition-colors ${
-                      activeTab === "dashboard"
-                        ? "bg-primary text-white"
-                        : "text-foreground/70 hover:bg-white/10"
-                    }`}
-                  >
-                    Dashboard
-                  </button>
-                  <button
-                    onClick={() => setActiveTab("sales")}
-                    className={`px-4 py-2 rounded font-medium transition-colors ${
-                      activeTab === "sales"
-                        ? "bg-primary text-white"
-                        : "text-foreground/70 hover:bg-white/10"
-                    }`}
-                  >
-                    Todas las Ventas
-                  </button>
-                  <button
-                    onClick={() => setAdminModalOpen(true)}
-                    className="px-4 py-2 rounded font-medium bg-primary text-white hover:bg-primary/90"
-                  >
-                    Registrar Venta
-                  </button>
-                </div>
-              </div>
-
-              {/* Admin Content */}
-              {activeTab === "dashboard" && <EmpendeAdminDashboard />}
-
-              {activeTab === "sales" && (
-                <div>
-                  <SalesTable month={new Date().getMonth() + 1} />
-                </div>
-              )}
-
-              {adminModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-                  <div className="glass-card rounded-2xl w-full max-w-2xl p-8 max-h-[90vh] overflow-y-auto">
-                    <div className="flex justify-between items-center mb-6">
-                      <h3 className="text-2xl font-semibold">Registrar Venta</h3>
-                      <button
-                        onClick={() => setAdminModalOpen(false)}
-                        className="text-foreground/60 hover:text-foreground transition-colors text-2xl leading-none"
-                      >
-                        ✕
-                      </button>
+            {visibleSales.length > 0 ? (
+              <div className="grid gap-3 md:grid-cols-2">
+                {visibleSales.slice(0, 3).map((sale) => (
+                  <div key={sale.id} className="rounded-2xl border border-border/60 bg-background/80 p-4 text-sm">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-semibold text-foreground">{getSaleProductLabel(sale)}</span>
+                      <span className="text-xs text-muted-foreground">{formatDate(sale.created_at)}</span>
                     </div>
-
-                    <div className="space-y-6">
-                      {/* Paso 1: Seleccionar Vendedora */}
-                      <div className="space-y-2">
-                        <label htmlFor="admin-select-salesperson" className="block text-sm font-semibold text-foreground">Paso 1: Selecciona Vendedora *</label>
-                        <select
-                          id="admin-select-salesperson"
-                          value={adminSelectedSalespersonId}
-                          onChange={(e) => setAdminSelectedSalespersonId(e.target.value)}
-                          className="w-full rounded-lg border border-white/20 bg-white/10 px-4 py-2 backdrop-blur-md transition-colors hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-primary"
-                        >
-                          <option value="">Selecciona una vendedora</option>
-                          {adminSalespeople.map((sp) => (
-                            <option key={sp.id} value={sp.id}>
-                              {sp.name} ({sp.email || sp.phone})
-                            </option>
-                          ))}
-                        </select>
-                        {!adminSelectedSalespersonId && (
-                          <p className="text-xs text-muted-foreground">Debes seleccionar una vendedora para continuar.</p>
-                        )}
-                      </div>
-
-                      {/* Formulario de venta - se muestra cuando se selecciona vendedora */}
-                      {adminSelectedSalespersonId && (
-                        <div className="border-t border-white/20 pt-6">
-                          <SalesForm
-                            salespersonId={adminSelectedSalespersonId}
-                            products={products}
-                            onSaleCreated={() => {
-                              setAdminModalOpen(false);
-                              setAdminSelectedSalespersonId("");
-                              handleSaleCreated();
-                            }}
-                          />
-                        </div>
-                      )}
+                    <div className="mt-2 text-muted-foreground">{getSaleSalespersonLabel(sale)} · {getSaleCustomerLabel(sale)}</div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Badge variant="outline">{paymentLabel(sale.payment_status)}</Badge>
+                      <Badge variant="outline">{commissionPercentageFromSale(sale)}%</Badge>
                     </div>
                   </div>
-                </div>
-              )}
-            </div>
-        ) : (
-          // Salesperson View
-          <div className="space-y-8">
-            {/* Salesperson Navigation */}
-            <div className="glass-card rounded-xl">
-              <div className="flex gap-4 p-6 border-b border-white/20 overflow-x-auto">
-                <button
-                  onClick={() => setActiveTab("dashboard")}
-                  className={`px-4 py-2 rounded font-medium whitespace-nowrap transition-colors ${
-                    activeTab === "dashboard"
-                      ? "bg-primary text-white"
-                      : "text-foreground/70 hover:bg-white/10"
-                  }`}
-                >
-                  Mi Dashboard
-                </button>
-                <button
-                  onClick={() => setActiveTab("sales")}
-                  className={`px-4 py-2 rounded font-medium whitespace-nowrap transition-colors ${
-                    activeTab === "sales"
-                      ? "bg-primary text-white"
-                      : "text-foreground/70 hover:bg-white/10"
-                  }`}
-                >
-                  Registrar Venta
-                </button>
-                <button
-                  onClick={() => setActiveTab("clients")}
-                  className={`px-4 py-2 rounded font-medium whitespace-nowrap transition-colors ${
-                    activeTab === "clients"
-                      ? "bg-primary text-white"
-                      : "text-foreground/70 hover:bg-white/10"
-                  }`}
-                >
-                  Clientes
-                </button>
+                ))}
               </div>
-            </div>
-
-            {/* Salesperson Content */}
-            {activeTab === "dashboard" && salesperson && (
-              <div className="space-y-6">
-                <CommissionsDashboard salespersonId={salesperson.id} />
-                <SalesTable
-                  salespersonId={salesperson.id}
-                  onRefresh={refreshSales}
-                />
-              </div>
-            )}
-
-            {activeTab === "sales" && salesperson && (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2">
-                  <SalesForm
-                    salespersonId={salesperson.id}
-                    products={products}
-                    onSaleCreated={handleSaleCreated}
-                  />
-                </div>
-                <div>
-                  <div className="glass-card rounded-xl p-6 border border-white/20">
-                    <h3 className="font-semibold mb-4 text-foreground">Instrucciones</h3>
-                    <ul className="space-y-2 text-sm text-foreground/80">
-                      <li>✓ Selecciona el producto que vendiste</li>
-                      <li>✓ Indica la cantidad vendida</li>
-                      <li>✓ Registra el estado del pago</li>
-                      <li>✓ Tu comisión aparecerá automáticamente</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeTab === "clients" && salesperson && (
-              <ExternalClientForm salespersonId={salesperson.id} />
-            )}
-          </div>
-        )}
-      </main>
-    </div>
+            ) : null}
+          </CardContent>
+        </Card>
+      </section>
+    </main>
   );
 }

@@ -130,12 +130,10 @@ export function ProductCloneModal({
       await cloneProductAction(data);
       notify.success("Producto clonado", "El producto se ha duplicado correctamente");
 
-      setTimeout(() => {
-        setOpen(false);
-        setMainUploadedFiles([]);
-        setGalleryUploadedFiles([]);
-        router.refresh();
-      }, 500);
+      setOpen(false);
+      setMainUploadedFiles([]);
+      setGalleryUploadedFiles([]);
+      router.refresh();
     } catch (error) {
       notify.error(
         "Error al clonar",

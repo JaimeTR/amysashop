@@ -23,8 +23,12 @@ const playfair = Playfair_Display({
 
 export const metadata: Metadata = {
   applicationName: "AMYSA SHOP",
-  title: "AMYSA SHOP",
-  description: "AMYSA SHOP, tu tienda virtual",
+  title: {
+    default: "AMYSA SHOP",
+    template: "%s | AMYSA SHOP",
+  },
+  description: "AMYSA SHOP: tienda online de perfumes, maquillaje, cuidado personal, accesorios y marcas seleccionadas.",
+  keywords: ["AMYSA SHOP", "tienda online", "perfumes", "maquillaje", "cuidado personal", "accesorios", "marcas de belleza", "catálogo"],
   metadataBase: new URL(getSiteUrl()),
   manifest: "/manifest.json",
   icons: {

@@ -1,7 +1,8 @@
 import { revalidatePath } from "next/cache";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil } from "lucide-react";
+import { CouponDeleteButton } from "@/components/admin/coupon-delete-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AdminPageNotifications } from "@/components/feedback/admin-page-notifications";
@@ -404,15 +405,11 @@ export default async function AdminMarketingPage({ searchParams }: PageProps) {
                             <Pencil className="mr-2 size-4" /> Modificar
                           </Link>
                         </Button>
-                        <form action={deleteCouponAction}>
-                          <input type="hidden" name="id" value={coupon.id} />
-                          <button
-                            type="submit"
-                            className="inline-flex h-9 items-center rounded-md border border-destructive/40 bg-destructive/10 px-3 text-sm font-semibold text-destructive-foreground"
-                          >
-                            <Trash2 className="mr-2 size-4" /> Eliminar
-                          </button>
-                        </form>
+                          <CouponDeleteButton
+                            couponId={coupon.id}
+                            couponCode={coupon.code}
+                            deleteCouponAction={deleteCouponAction}
+                          />
                       </div>
                     </article>
                   );

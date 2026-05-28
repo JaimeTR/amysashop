@@ -1,10 +1,11 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { ProductDetailPurchase } from "@/components/product/product-detail-purchase";
 import { ProductGallery } from "@/components/product/product-gallery";
 import { RelatedProductsCarousel } from "@/components/product/related-products-carousel";
-import { getActiveProducts, getProductById } from "@/lib/catalog";
+import { getActiveProducts, getProductById, getProductBySlug } from "@/lib/catalog";
 import { getSafeProductImageSrc } from "@/lib/product-images";
+import { getProductUrl, slugifyProductName } from "@/lib/product-url";
 import { DEFAULT_WHATSAPP_PHONE } from "@/lib/whatsapp";
 import { getSiteUrl } from "@/lib/site-url";
 
@@ -57,11 +58,25 @@ function getPrimaryPhoto(images: string[]) {
 }
 
 export default async function ProductoPage({ params }: Props) {
-  const [product, activeProducts] = await Promise.all([getProductById(params.id), getActiveProducts()]);
+  let product = await getProductById(params.id);
+
+  if (!product) {
+    product = await getProductBySlug(params.id);
+  }
 
   if (!product) {
     notFound();
   }
+
+  const canonicalPath = getProductUrl(product);
+  const receivedSlug = String(params.id || "").trim().toLowerCase();
+  const expectedSlug = slugifyProductName(product.name);
+
+  if (receivedSlug !== expectedSlug) {
+    redirect(canonicalPath);
+  }
+
+  const activeProducts = await getActiveProducts();
 
   const whatsappPhone = process.env.NEXT_PUBLIC_WHATSAPP_PHONE || DEFAULT_WHATSAPP_PHONE;
   const mainImage = getPrimaryPhoto(product.images);
@@ -124,7 +139,7 @@ export default async function ProductoPage({ params }: Props) {
               priceCurrency: "PEN",
               price: product.price?.toFixed(2),
               availability: product.stock && product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
-              url: `${getSiteUrl()}/producto/${product.id}`,
+              url: `${getSiteUrl()}${canonicalPath}`,
             },
           }),
         }}
@@ -179,7 +194,11 @@ export default async function ProductoPage({ params }: Props) {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const product = await getProductById(params.id);
+  let product = await getProductById(params.id);
+
+  if (!product) {
+    product = await getProductBySlug(params.id);
+  }
 
   if (!product) {
     return { title: "Producto no encontrado" };
@@ -187,14 +206,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const mainImage = getPrimaryPhoto(product.images);
   const description = (product.summary && product.summary.trim()) || product.description || "Compra en Amysa Accesorios";
+  const canonicalPath = getProductUrl(product);
+  const canonicalUrl = `${getSiteUrl()}${canonicalPath}`;
 
   const metadata: Metadata = {
     title: product.name,
     description,
+    alternates: {
+      canonical: canonicalUrl,
+    },
     openGraph: {
       title: product.name,
       description,
       type: "website",
+      url: canonicalUrl,
       images: mainImage ? [{ url: mainImage, alt: product.name }] : undefined,
     },
     twitter: {

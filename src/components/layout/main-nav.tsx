@@ -22,6 +22,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { AmysaAssistantWidget } from "@/components/chat/amysa-assistant-widget";
 import { DEFAULT_WHATSAPP_DISPLAY_PHONE, DEFAULT_WHATSAPP_PHONE } from "@/lib/whatsapp";
+import { getProductUrl } from "@/lib/product-url";
 import { useCartStore } from "@/store/cart-store";
 import { useFavoritesStore } from "@/store/favorites-store";
 import {
@@ -1058,7 +1059,7 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
                         {favoriteItems.slice(0, 4).map((item) => (
                           <Link
                             key={item.productId}
-                            href={`/producto/${item.productId}`}
+                            href={getProductUrl(item)}
                             className="flex items-center gap-3 rounded-2xl border border-white/40 bg-white/80 p-2 transition hover:border-primary/30 hover:bg-primary/5"
                             onClick={closeMenus}
                           >
@@ -1137,7 +1138,7 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
                       searchResults.map((product) => (
                         <Link
                           key={product.id}
-                          href={`/producto/${product.id}`}
+                          href={getProductUrl(product)}
                           className="flex items-center gap-3 rounded-2xl border border-white/40 bg-white/85 p-2 transition hover:border-primary/30 hover:bg-primary/5"
                           onClick={() => setSearchQuery("")}
                         >

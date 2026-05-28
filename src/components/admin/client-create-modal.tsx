@@ -35,10 +35,8 @@ export function ClientCreateModal({ createClientAction }: Props) {
       await createClientAction(formData);
 
       notify.success("Cliente creado", "El nuevo cliente se ha registrado correctamente");
-      setTimeout(() => {
-        setOpen(false);
-        router.refresh();
-      }, 500);
+      setOpen(false);
+      router.refresh();
     } catch (error) {
       notify.error(
         "Error al crear cliente",

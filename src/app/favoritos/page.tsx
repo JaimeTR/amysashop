@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useFavoritesStore } from "@/store/favorites-store";
 import { useCartStore } from "@/store/cart-store";
 import { DEFAULT_PRODUCT_IMAGE } from "@/lib/product-images";
+import { getProductUrl } from "@/lib/product-url";
 
 function getSafeImageSrc(image?: string) {
   return image && String(image || "").trim() ? image : DEFAULT_PRODUCT_IMAGE;
@@ -106,7 +107,7 @@ export default function FavoritosPage() {
           {items.map((item) => (
             <article key={item.productId} className="glass-card overflow-hidden rounded-2xl transition-transform hover:scale-105">
               <div className="relative">
-                <Link href={`/producto/${item.productId}`}>
+                <Link href={getProductUrl(item)}>
                   <Image
                     src={getFavoriteCover(item.productId, item.image)}
                     alt={item.name}
@@ -129,14 +130,14 @@ export default function FavoritosPage() {
 
               <div className="space-y-3 p-3">
                 {item.category ? <p className="text-xs uppercase tracking-wide text-muted-foreground">{item.category}</p> : null}
-                <Link href={`/producto/${item.productId}`} className="block">
+                <Link href={getProductUrl(item)} className="block">
                   <h2 className="line-clamp-2 text-sm font-semibold">{item.name}</h2>
                 </Link>
                 <p className="text-base font-bold text-primary">S/ {item.price.toFixed(2)}</p>
 
                 <div className="grid grid-cols-2 gap-2">
                   <Button asChild variant="outline" size="sm" className="gap-1.5">
-                    <Link href={`/producto/${item.productId}`}>
+                    <Link href={getProductUrl(item)}>
                       <Eye className="size-4" />
                       <span>Ver</span>
                     </Link>

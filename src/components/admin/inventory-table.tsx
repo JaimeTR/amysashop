@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { getSafeProductImageSrc } from "@/lib/product-images";
 import { Eye, Pencil, X, Search, Filter } from "lucide-react";
 import { InventoryEditModal, type InventoryEditItem } from "@/components/admin/inventory-edit-modal";
+import { calculateBaseSalePrice, calculateFinalSalePrice } from "@/lib/inventory-pricing";
 
 type InventoryItem = {
   id: string;
@@ -22,26 +23,12 @@ type InventoryItem = {
   cost: number;
   operating_cost: number;
   profit_margin: number;
+  seller_markup_percentage: number;
   price: number;
   priceBefore?: number | null;
   images?: string[];
   active?: boolean;
 };
-
-function calculateSalePrice(item: Pick<InventoryItem, "cost" | "operating_cost" | "profit_margin">) {
-  const totalCost = Math.max(0, Number(item.cost) || 0) + Math.max(0, Number(item.operating_cost) || 0);
-  const margin = Math.max(0, Number(item.profit_margin) || 0);
-  if (margin <= 0) return Number(totalCost.toFixed(2));
-
-  // Regla solicitada: precio venta = (precio costo + costo operativo) / (1 - margen de ganancia)
-  const normalizedMargin = margin >= 1 ? margin / 100 : margin;
-  if (normalizedMargin >= 1) return Number(totalCost.toFixed(2));
-  
-  const divisor = 1 - normalizedMargin;
-  if (divisor <= 0) return Number(totalCost.toFixed(2));
-
-  return Number((totalCost / divisor).toFixed(2));
-}
 
 function normalizeGender(value: string) {
   const normalized = String(value || "").trim().toLowerCase();
@@ -382,7 +369,9 @@ export function InventoryTable({
                       <span className="text-xs text-muted-foreground">-</span>
                     )}
                   </td>
-                  <td className="px-3 py-2 hidden md:table-cell font-semibold text-primary text-xs">S/ {Number(item.price || 0).toFixed(2)}</td>
+                  <td className="px-3 py-2 hidden md:table-cell font-semibold text-primary text-sm">
+                    S/ {Number(item.price || 0).toFixed(2)}
+                  </td>
                   <td className="px-3 py-2">
                     <div className="flex flex-wrap gap-1">
                       <Button
@@ -447,6 +436,7 @@ export function InventoryTable({
           cost: editingItem.cost,
           operating_cost: editingItem.operating_cost,
           profit_margin: editingItem.profit_margin,
+          seller_markup_percentage: editingItem.seller_markup_percentage,
           priceBefore: editingItem.priceBefore,
           active: editingItem.active,
         } : null}
@@ -539,6 +529,16 @@ export function InventoryTable({
                       <p>
                         <span className="font-semibold">Margen:</span> {Number(previewItem.profit_margin || 0).toFixed(2)}%
                       </p>
+                      <p>
+                        <span className="font-semibold">Precio venta calculado:</span> S/ {calculateBaseSalePrice(previewItem).toFixed(2)}
+                      </p>
+                      <p>
+                        <span className="font-semibold">Porcentaje vendedoras:</span> {Number(previewItem.seller_markup_percentage || 0).toFixed(2)}%
+                      </p>
+                      <div className="rounded-xl bg-primary/10 border border-primary/20 px-3 py-2 inline-block">
+                        <p className="text-xs font-semibold text-primary/70">Precio venta final</p>
+                        <p className="mt-1 text-2xl font-bold text-primary">S/ {Number(previewItem.price || 0).toFixed(2)}</p>
+                      </div>
                     </div>
                   </div>
                 </div>

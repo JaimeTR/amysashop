@@ -49,6 +49,18 @@ const nextConfig = {
 			},
 		];
 	},
+	async rewrites() {
+		return [
+			{
+				source: "/catalogo",
+				destination: "/tienda",
+			},
+			{
+				source: "/catalogo/:path*",
+				destination: "/tienda/:path*",
+			},
+		];
+	},
 };
 
 export default withPWA(nextConfig);

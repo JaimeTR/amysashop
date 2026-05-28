@@ -4,6 +4,7 @@ import { AddToCartButton } from "@/components/product/add-to-cart-button";
 import { Button } from "@/components/ui/button";
 import { getActiveLandingBySlug, getProductById } from "@/lib/catalog";
 import { getSafeProductImageSrc } from "@/lib/product-images";
+import { getProductUrl } from "@/lib/product-url";
 
 type Props = {
   params: { slug: string };
@@ -43,7 +44,7 @@ export default async function PromoLandingPage({ params }: Props) {
       />
 
       <Button asChild variant="outline" className="w-full">
-        <Link href={`/producto/${product.id}`}>Ver producto completo</Link>
+        <Link href={getProductUrl(product)}>Ver producto completo</Link>
       </Button>
     </main>
   );

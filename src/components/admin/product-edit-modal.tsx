@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { createPortal } from "react-dom";
 import { useEffect, useRef, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -147,7 +148,7 @@ export function ProductEditModal({
     setGalleryImageUrls(galleryItems.join(", "));
     setMainPreviewUrl(firstImage);
     setGalleryPreviewUrls(galleryItems);
-  }, [open, category, brand, subCategory, subBrand]);
+  }, [open, category, brand, subCategory, subBrand, firstImage, galleryItems]);
 
   useEffect(() => {
     if (mainUploadedFiles.length > 0) {
@@ -225,7 +226,7 @@ export function ProductEditModal({
       >
         <X className="size-3.5" />
       </button>
-      <img src={src} alt={alt} className="size-24 object-cover" />
+      <Image src={src} alt={alt} width={96} height={96} unoptimized className="size-24 object-cover" />
     </div>
   );
 
@@ -254,12 +255,10 @@ export function ProductEditModal({
       await updateProductAction(formData);
 
       notify.success("Producto actualizado", "Los cambios se han guardado correctamente");
-      setTimeout(() => {
-        setOpen(false);
-        setMainUploadedFiles([]);
-        setGalleryUploadedFiles([]);
-        router.refresh();
-      }, 500);
+      setOpen(false);
+      setMainUploadedFiles([]);
+      setGalleryUploadedFiles([]);
+      router.refresh();
     } catch (error) {
       notify.error(
         "Error al actualizar",
@@ -558,7 +557,7 @@ export function ProductEditModal({
                           >
                           <X className="size-3.5" />
                         </button>
-                        <img src={src} alt={alt} className="h-24 w-full object-cover" />
+                        <Image src={src} alt={alt} width={160} height={96} unoptimized className="h-24 w-full object-cover" />
                       </div>
                     );
                   })}
