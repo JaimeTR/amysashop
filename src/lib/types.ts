@@ -62,3 +62,102 @@ export type LandingPage = {
   productId: string;
   active: boolean;
 };
+
+export type SaleWithDetails = {
+  id: string;
+  salesperson_id: string;
+  product_id?: string | null;
+  client_id?: string | null;
+  external_client_id?: string | null;
+  quantity: number;
+  unit_price: number;
+  total_amount: number;
+  commission_amount: number;
+  payment_status: string;
+  payment_received: number;
+  commission_status?: string | null;
+  notes?: string | null;
+  created_at: string;
+  salesperson?: Salesperson | null;
+  product?: Product | null;
+  client?: Profile | null;
+  external_client?: ExternalClient | null;
+};
+
+export type SalespersonWithStats = Salesperson & {
+  month_sales_count?: number;
+  month_total_amount?: number;
+  month_commission_amount?: number;
+};
+
+export type ExternalClient = {
+  id: string;
+  salesperson_id: string;
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  created_at: string;
+};
+
+export type Sale = {
+  id: string;
+  salesperson_id: string;
+  product_id?: string | null;
+  client_id?: string | null;
+  external_client_id?: string | null;
+  quantity: number;
+  unit_price: number;
+  total_amount: number;
+  commission_amount: number;
+  payment_status: string;
+  payment_received: number;
+  commission_status?: string | null;
+  notes?: string | null;
+  created_at: string;
+};
+
+export type SalesCommission = {
+  id: string;
+  salesperson_id: string;
+  sale_id: string;
+  commission_amount: number;
+  status: string;
+  created_at: string;
+};
+
+export type CreateSaleInput = {
+  product_id: string;
+  quantity: number;
+  payment_status: "pending" | "partial" | "completed";
+  payment_received?: number;
+  client_type?: "internal" | "external";
+  client_id?: string;
+  external_client_id?: string;
+  notes?: string;
+};
+
+export type CreateExternalClientInput = {
+  name: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+};
+
+export type UpdateSalespersonInput = {
+  name?: string;
+  email?: string;
+  phone?: string;
+  commission_percentage?: number;
+  status?: "active" | "inactive";
+};
+
+export type SalesFilter = {
+  salesperson_id?: string;
+  payment_status?: string;
+  commission_status?: string;
+  month?: number;
+  year?: number;
+};
+
+export type PaymentStatus = "pending" | "partial" | "completed";
