@@ -1,19 +1,20 @@
 import type { Metadata } from "next";
 import { BadgeDollarSign, CheckCircle2, Package, ReceiptText, TrendingUp, Users2 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireAdminUser } from "@/lib/admin";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
-import { registerSaleAction } from "./actions";
+import { deleteSaleAction, registerSaleAction, updateSaleAction } from "./actions";
 import {
-  EmprendeSaleForm,
   type EmprendeClientOption,
   type EmprendeProductOption,
   type EmprendeSalespersonOption,
 } from "@/components/admin/emprende-sale-form";
-import ErrorBoundary from "@/components/error-boundary-client";
+import { EmprendeSaleModal } from "@/components/admin/emprende-sale-modal";
+import { EmprendeSaleRowActions } from "@/components/admin/emprende-sale-row-actions";
+import { EmprendeSalespersonFilter } from "@/components/admin/emprende-salesperson-filter";
+import { AdminPageNotifications } from "@/components/feedback/admin-page-notifications";
 
 export const metadata: Metadata = {
   title: "Emprende",
@@ -100,7 +101,6 @@ function formatMoney(value: number | null | undefined) {
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("es-CO", {
     dateStyle: "medium",
-    timeStyle: "short",
   }).format(new Date(value));
 }
 
@@ -120,11 +120,25 @@ function paymentBadgeClass(value: string | null | undefined) {
 
 function commissionBadgeClass(value: string | null | undefined) {
   const normalized = String(value || "").toLowerCase();
-  if (normalized === "approved" || normalized === "paid") return "border-transparent bg-primary/15 text-primary";
+  if (normalized === "paid") return "border-transparent bg-emerald-500/15 text-emerald-700";
+  if (normalized === "approved") return "border-transparent bg-primary/15 text-primary";
   return "border-transparent bg-slate-500/10 text-slate-700";
 }
 
+function commissionLabel(value: string | null | undefined) {
+  const normalized = String(value || "").toLowerCase();
+  if (normalized === "paid") return "Pagado";
+  if (normalized === "approved") return "Aprobado";
+  return "Pendiente";
+}
+
 function commissionPercentageFromSale(sale: SaleRow) {
+  const paymentStatus = String(sale.payment_status || "").toLowerCase();
+
+  if (paymentStatus !== "completed") {
+    return 0;
+  }
+
   const commissionRecord = Array.isArray(sale.sales_commissions) ? sale.sales_commissions[0] : sale.sales_commissions;
 
   if (commissionRecord?.commission_percentage != null) {
@@ -133,6 +147,35 @@ function commissionPercentageFromSale(sale: SaleRow) {
 
   const salesperson = Array.isArray(sale.salespeople) ? sale.salespeople[0] : sale.salespeople;
   return Number(salesperson?.commission_percentage || 0) || 0;
+}
+
+function commissionDueFromSale(sale: SaleRow) {
+  const paymentStatus = String(sale.payment_status || "").toLowerCase();
+  const commissionStatus = String(sale.commission_status || "").toLowerCase();
+
+  if (paymentStatus !== "completed" || commissionStatus === "paid") {
+    return 0;
+  }
+
+  return Number(sale.commission_amount || 0) || 0;
+}
+
+function getSaleNotesDisplay(sale: SaleRow) {
+  const notes = String(sale.notes || "").trim();
+  const paymentStatus = String(sale.payment_status || "").toLowerCase();
+  const paymentReceived = Number(sale.payment_received || 0);
+
+  const parts: string[] = [];
+
+  if (paymentStatus === "partial" && paymentReceived > 0) {
+    parts.push(`Monto pagado hasta el momento: ${formatMoney(paymentReceived)}`);
+  }
+
+  if (notes) {
+    parts.push(notes);
+  }
+
+  return parts.join("\n");
 }
 
 async function ensureSalespeopleFromProfiles(serviceClient: ReturnType<typeof createServiceRoleClient>) {
@@ -195,26 +238,6 @@ function getSaleProductLabel(sale: SaleRow) {
 function getSaleSalespersonLabel(sale: SaleRow) {
   const salesperson = Array.isArray(sale.salespeople) ? sale.salespeople[0] : sale.salespeople;
   return salesperson?.name || "Vendedora";
-}
-
-function getPercentageEarned(sale: SaleRow) {
-  const totalAmount = Number(sale.total_amount || 0);
-  const commissionAmount = Number(sale.commission_amount || 0);
-
-  if (!totalAmount || commissionAmount <= 0) {
-    return 0;
-  }
-
-  return Math.round((commissionAmount / totalAmount) * 10000) / 100;
-}
-
-function safeText(value: FormDataEntryValue | null) {
-  return String(value || "").trim();
-}
-
-function parseNumber(value: FormDataEntryValue | null) {
-  const parsed = Number(String(value || "").trim());
-  return Number.isFinite(parsed) ? parsed : 0;
 }
 
 async function getEmprendeData(salespersonFilterId?: string, ownSalespersonId?: string) {
@@ -291,11 +314,41 @@ export default async function EmprendePage({ searchParams }: PageProps) {
 
   const selectedSalespersonForForm = role === "vendedora" ? ownSalespersonId || "" : salespersonFilterId || salespeople[0]?.id || "";
   const visibleSales = role === "vendedora" && ownSalespersonId ? sales.filter((sale) => sale.salesperson_id === ownSalespersonId) : sales;
+  const selectedSalespersonFilter = salespeople.find((salesperson) => salesperson.id === salespersonFilterId) || null;
 
   const totalSalesAmount = visibleSales.reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
   const totalCommissionAmount = visibleSales.reduce((sum, sale) => sum + Number(sale.commission_amount || 0), 0);
+  const totalCommissionDue = visibleSales.reduce((sum, sale) => sum + commissionDueFromSale(sale), 0);
   const totalUnits = visibleSales.reduce((sum, sale) => sum + Number(sale.quantity || 0), 0);
-  const completedSales = visibleSales.filter((sale) => String(sale.payment_status || "").toLowerCase() === "completed").length;
+
+  const salespeopleOptions = (salespeople as EmprendeSalespersonOption[]).map((salesperson) => ({
+    id: salesperson.id,
+    name: salesperson.name,
+    email: salesperson.email,
+    commission_percentage: salesperson.commission_percentage,
+    status: salesperson.status,
+  }));
+
+  const clientOptions = (clients as EmprendeClientOption[]).map((client) => ({
+    id: client.id,
+    nombre: client.nombre,
+    email: client.email,
+    telefono: client.telefono,
+    direccion: client.direccion,
+    img_avatar: client.img_avatar,
+    avatar_url: client.avatar_url,
+  }));
+
+  const productOptions = (products as EmprendeProductOption[]).map((product) => ({
+    id: product.id,
+    name: product.name,
+    brand: product.brand,
+    category: product.category,
+    stock: product.stock,
+    price: product.price,
+    price_before: product.price_before,
+    images: product.images,
+  }));
 
   return (
     <main className="space-y-5 pb-8">
@@ -308,58 +361,30 @@ export default async function EmprendePage({ searchParams }: PageProps) {
               Registra cada venta, descuenta stock automáticamente y revisa cuánto gana cada vendedora por producto.
             </p>
           </div>
-          <Badge className="w-fit bg-primary/15 text-primary" variant="outline">
-            {role === "vendedora" ? "Vista de vendedora" : "Vista administrativa"}
-          </Badge>
+          <div className="flex flex-col items-start gap-2 md:items-end">
+            <Badge className="w-fit bg-primary/15 text-primary" variant="outline">
+              {role === "vendedora" ? "Vista de vendedora" : "Vista administrativa"}
+            </Badge>
+            {role !== "vendedora" ? (
+              <EmprendeSaleModal
+                role={role}
+                salespeople={salespeopleOptions}
+                clients={clientOptions}
+                products={productOptions}
+                initialSalespersonId={selectedSalespersonForForm}
+                initialError={searchParams?.error ? String(searchParams.error) : null}
+                action={registerSaleAction}
+              />
+            ) : null}
+          </div>
         </div>
       </header>
 
-      {searchParams?.ok ? (
-        <Card className="border-emerald-200 bg-emerald-50/60">
-          <CardContent className="flex items-center gap-2 py-4 text-sm text-emerald-800">
-            <CheckCircle2 className="size-4" />
-            {searchParams.ok}
-          </CardContent>
-        </Card>
-      ) : null}
-
-      {searchParams?.error ? (
-        <Card className="border-red-200 bg-red-50/70">
-          <CardContent className="py-4 text-sm text-red-800">{searchParams.error}</CardContent>
-        </Card>
-      ) : null}
+      <AdminPageNotifications ok={searchParams?.ok} error={searchParams?.error} />
 
       {queryError ? (
         <Card className="border-amber-200 bg-amber-50/70">
           <CardContent className="py-4 text-sm text-amber-900">{queryError}</CardContent>
-        </Card>
-      ) : null}
-
-      {role !== "vendedora" ? (
-        <Card className="glass-card rounded-3xl">
-          <CardContent className="flex flex-col gap-3 py-4 md:flex-row md:items-end md:justify-between">
-            <div>
-              <p className="text-sm font-semibold text-foreground">Filtro de vendedora</p>
-              <p className="text-xs text-muted-foreground">Úsalo para ver solo las ventas de una vendedora concreta.</p>
-            </div>
-            <form className="flex w-full gap-2 md:max-w-xl" method="get">
-              <select
-                name="salespersonId"
-                defaultValue={salespersonFilterId}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              >
-                <option value="">Todas las ventas</option>
-                {salespeople.map((salesperson) => (
-                  <option key={salesperson.id} value={salesperson.id}>
-                    {salesperson.name}
-                  </option>
-                ))}
-              </select>
-              <Button type="submit" variant="outline">
-                Filtrar
-              </Button>
-            </form>
-          </CardContent>
         </Card>
       ) : null}
 
@@ -410,53 +435,38 @@ export default async function EmprendePage({ searchParams }: PageProps) {
         </Card>
       </section>
 
-      <section className="grid gap-5 xl:grid-cols-[1.05fr_1.25fr]">
-        <ErrorBoundary>
-          <EmprendeSaleForm
-            role={role}
-            salespeople={(salespeople as EmprendeSalespersonOption[]).map((salesperson) => ({
-              id: salesperson.id,
-              name: salesperson.name,
-              email: salesperson.email,
-              commission_percentage: salesperson.commission_percentage,
-              status: salesperson.status,
-            }))}
-            clients={(clients as EmprendeClientOption[]).map((client) => ({
-              id: client.id,
-              nombre: client.nombre,
-              email: client.email,
-              telefono: client.telefono,
-              direccion: client.direccion,
-              img_avatar: client.img_avatar,
-              avatar_url: client.avatar_url,
-            }))}
-            products={(products as EmprendeProductOption[]).map((product) => ({
-              id: product.id,
-              name: product.name,
-              brand: product.brand,
-              category: product.category,
-              stock: product.stock,
-              price: product.price,
-              price_before: product.price_before,
-              images: product.images,
-            }))}
-            initialSalespersonId={selectedSalespersonForForm}
-            action={registerSaleAction}
-          />
-        </ErrorBoundary>
+      <section className="grid gap-5">
+        <Card className="glass-card rounded-3xl w-full">
+          <CardHeader className="space-y-3">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Users2 className="size-4 text-primary" />
+                Resumen por venta
+              </CardTitle>
 
-        <Card className="glass-card rounded-3xl">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Users2 className="size-4 text-primary" />
-              Resumen por venta
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="rounded-2xl border border-primary/15 bg-primary/5 p-4 text-sm text-foreground">
-              La tabla muestra la vendedora, el producto, la comisión ganada y el porcentaje que corresponde a cada venta.
+              {role !== "vendedora" ? (
+                <EmprendeSalespersonFilter
+                  salespeople={salespeople}
+                  selectedSalespersonId={salespersonFilterId}
+                  selectedSalespersonName={selectedSalespersonFilter?.name || null}
+                  totalCommissionDue={totalCommissionDue}
+                />
+              ) : null}
             </div>
 
+            <div className="text-sm text-muted-foreground">
+              <p>
+                {selectedSalespersonFilter ? (
+                  <>
+                    Mostrando ventas de <span className="font-semibold text-foreground">{selectedSalespersonFilter.name}</span>
+                  </>
+                ) : (
+                  "Mostrando todas las ventas"
+                )}
+              </p>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
             <div className="overflow-x-auto rounded-2xl border border-border/60 bg-white/60">
               <table className="min-w-full text-left text-sm">
                 <thead className="bg-primary/5 text-xs uppercase tracking-[0.18em] text-muted-foreground">
@@ -470,12 +480,14 @@ export default async function EmprendePage({ searchParams }: PageProps) {
                     <th className="px-4 py-3">Comisión</th>
                     <th className="px-4 py-3">Pago</th>
                     <th className="px-4 py-3">Cliente</th>
+                    <th className="px-4 py-3">Notas</th>
+                    <th className="px-4 py-3">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
                   {visibleSales.length === 0 ? (
                     <tr>
-                      <td className="px-4 py-10 text-center text-muted-foreground" colSpan={9}>
+                      <td className="px-4 py-10 text-center text-muted-foreground" colSpan={11}>
                         Todavía no hay ventas registradas con este filtro.
                       </td>
                     </tr>
@@ -486,19 +498,26 @@ export default async function EmprendePage({ searchParams }: PageProps) {
                         <td className="px-4 py-3">{getSaleSalespersonLabel(sale)}</td>
                         <td className="px-4 py-3">
                           <div className="font-medium">{getSaleProductLabel(sale)}</div>
-                          {sale.notes ? <div className="mt-1 max-w-[16rem] text-xs text-muted-foreground">{sale.notes}</div> : null}
                         </td>
                         <td className="px-4 py-3">{Number(sale.quantity || 0)}</td>
                         <td className="px-4 py-3 font-medium text-primary">{formatMoney(sale.total_amount)}</td>
                         <td className="px-4 py-3">
                           <div className="flex flex-col gap-1">
-                            <span className="font-semibold text-foreground">{commissionPercentageFromSale(sale)}%</span>
-                            <span className="text-xs text-muted-foreground">{Number(sale.commission_amount || 0) > 0 ? formatMoney(sale.commission_amount) : "Sin comisión"}</span>
+                            {String(sale.payment_status || "").toLowerCase() === "completed" ? (
+                              <>
+                                <span className="font-semibold text-foreground">{commissionPercentageFromSale(sale)}%</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {Number(sale.commission_amount || 0) > 0 ? formatMoney(sale.commission_amount) : "Sin comisión"}
+                                </span>
+                              </>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">Sin comisión</span>
+                            )}
                           </div>
                         </td>
                         <td className="px-4 py-3">
                           <Badge className={commissionBadgeClass(sale.commission_status)} variant="outline">
-                            {sale.commission_status ? sale.commission_status : "pendiente"}
+                            {commissionLabel(sale.commission_status)}
                           </Badge>
                         </td>
                         <td className="px-4 py-3">
@@ -507,30 +526,35 @@ export default async function EmprendePage({ searchParams }: PageProps) {
                           </Badge>
                         </td>
                         <td className="px-4 py-3">{getSaleCustomerLabel(sale)}</td>
+                        <td className="px-4 py-3">
+                          {getSaleNotesDisplay(sale) ? (
+                            <div className="max-w-[18rem] whitespace-pre-wrap text-xs leading-relaxed text-muted-foreground">
+                              {getSaleNotesDisplay(sale)}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground/70">Sin notas</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <EmprendeSaleRowActions
+                            sale={{
+                              id: sale.id,
+                              payment_status: sale.payment_status,
+                              payment_received: sale.payment_received,
+                              commission_status: sale.commission_status,
+                              commission_amount: sale.commission_amount,
+                              notes: sale.notes,
+                            }}
+                            updateSaleAction={updateSaleAction}
+                            deleteSaleAction={deleteSaleAction}
+                          />
+                        </td>
                       </tr>
                     ))
                   )}
                 </tbody>
               </table>
             </div>
-
-            {visibleSales.length > 0 ? (
-              <div className="grid gap-3 md:grid-cols-2">
-                {visibleSales.slice(0, 3).map((sale) => (
-                  <div key={sale.id} className="rounded-2xl border border-border/60 bg-background/80 p-4 text-sm">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-semibold text-foreground">{getSaleProductLabel(sale)}</span>
-                      <span className="text-xs text-muted-foreground">{formatDate(sale.created_at)}</span>
-                    </div>
-                    <div className="mt-2 text-muted-foreground">{getSaleSalespersonLabel(sale)} · {getSaleCustomerLabel(sale)}</div>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <Badge variant="outline">{paymentLabel(sale.payment_status)}</Badge>
-                      <Badge variant="outline">{commissionPercentageFromSale(sale)}%</Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : null}
           </CardContent>
         </Card>
       </section>

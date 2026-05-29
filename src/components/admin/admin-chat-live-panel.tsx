@@ -15,6 +15,16 @@ type ChatMessage = {
   created_at: string;
 };
 
+type MessageVariant = "admin" | "client" | "bot" | "system" | "other";
+
+type MessageStyle = {
+  bubbleClass: string;
+  badgeClass: string;
+  avatarClass: string;
+  iconClass: string;
+  label: string;
+};
+
 type Props = {
   sessionId: string;
   initialMessages: ChatMessage[];
@@ -27,6 +37,104 @@ function formatDate(value: string) {
     dateStyle: "short",
     timeStyle: "short",
   }).format(date);
+}
+
+function normalizeSender(sender: string): MessageVariant {
+  const normalized = String(sender || "").trim().toLowerCase();
+
+  if (normalized === "client" || normalized === "cliente") return "client";
+  if (normalized === "assistant" || normalized === "bot" || normalized === "ia") return "bot";
+  if (normalized === "admin" || normalized === "employee" || normalized === "empleado" || normalized === "asesor") return "admin";
+  if (normalized === "system" || normalized === "sistema") return "system";
+
+  return "other";
+}
+
+function getMessageStyle(sender: string): MessageStyle {
+  const variant = normalizeSender(sender);
+
+  switch (variant) {
+    case "client":
+      return {
+        bubbleClass: "border-sky-200 bg-gradient-to-br from-sky-50 via-white to-[#f6fbff] text-sky-950 shadow-[0_6px_18px_rgba(125,163,191,0.10)]",
+        badgeClass: "bg-sky-100 text-sky-800 border border-sky-200 shadow-sm",
+        avatarClass: "border-sky-200 bg-sky-100 shadow-sm",
+        iconClass: "text-sky-700",
+        label: "cliente",
+      };
+    case "bot":
+      return {
+        bubbleClass: "border-violet-200 bg-gradient-to-br from-violet-50 via-white to-[#fbf7ff] text-violet-950 shadow-[0_6px_18px_rgba(168,143,197,0.10)]",
+        badgeClass: "bg-violet-100 text-violet-800 border border-violet-200 shadow-sm",
+        avatarClass: "border-violet-200 bg-violet-100 shadow-sm",
+        iconClass: "text-violet-700",
+        label: "bot",
+      };
+    case "admin":
+      return {
+        bubbleClass: "border-primary/20 bg-gradient-to-br from-[#fff7f1] via-white to-[#fff0e7] text-[#4f2f20] shadow-[0_6px_18px_rgba(174,130,109,0.12)]",
+        badgeClass: "bg-primary/10 text-primary border border-primary/20 shadow-sm",
+        avatarClass: "border-primary/20 bg-primary/10 shadow-sm",
+        iconClass: "text-primary",
+        label: "admin",
+      };
+    case "system":
+      return {
+        bubbleClass: "border-amber-200 bg-gradient-to-br from-amber-50 via-white to-[#fff8ed] text-amber-950 shadow-[0_6px_18px_rgba(202,164,98,0.10)]",
+        badgeClass: "bg-amber-100 text-amber-800 border border-amber-200 shadow-sm",
+        avatarClass: "border-amber-200 bg-amber-100 shadow-sm",
+        iconClass: "text-amber-700",
+        label: "sistema",
+      };
+    default:
+      return {
+        bubbleClass: "border-slate-200 bg-gradient-to-br from-slate-50 via-white to-white text-slate-950 shadow-[0_6px_18px_rgba(100,116,139,0.08)]",
+        badgeClass: "bg-slate-100 text-slate-800 border border-slate-200 shadow-sm",
+        avatarClass: "border-slate-200 bg-slate-100 shadow-sm",
+        iconClass: "text-slate-700",
+        label: String(sender || "mensaje").trim() || "mensaje",
+      };
+  }
+}
+
+function getEventTone(content: string) {
+  const normalized = String(content || "").toLowerCase();
+
+  if (normalized.includes("se unio al chat") || normalized.includes("se unió al chat")) {
+    return "join" as const;
+  }
+
+  if (normalized.includes("salio del chat") || normalized.includes("salió del chat")) {
+    return "leave" as const;
+  }
+
+  return "system" as const;
+}
+
+function getSystemToneClass(content: string) {
+  const tone = getEventTone(content);
+
+  if (tone === "join") {
+    return {
+      bubbleClass: "border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-[#f3fcf6] text-emerald-900 shadow-[0_6px_18px_rgba(129,199,132,0.10)]",
+      badgeClass: "bg-emerald-100 text-emerald-800 border border-emerald-200 shadow-sm",
+      label: "ingreso",
+    };
+  }
+
+  if (tone === "leave") {
+    return {
+      bubbleClass: "border-rose-200 bg-gradient-to-br from-rose-50 via-white to-[#fff5f6] text-rose-900 shadow-[0_6px_18px_rgba(244,143,177,0.10)]",
+      badgeClass: "bg-rose-100 text-rose-800 border border-rose-200 shadow-sm",
+      label: "salida",
+    };
+  }
+
+  return {
+    bubbleClass: "border-amber-200 bg-gradient-to-br from-amber-50 via-white to-[#fff8ed] text-amber-900 shadow-[0_6px_18px_rgba(202,164,98,0.10)]",
+    badgeClass: "bg-amber-100 text-amber-800 border border-amber-200 shadow-sm",
+    label: "sistema",
+  };
 }
 
 export function AdminChatLivePanel({ sessionId, initialMessages, initiallyJoined }: Props) {
@@ -552,29 +660,33 @@ export function AdminChatLivePanel({ sessionId, initialMessages, initiallyJoined
         )}
       </div>
 
-      <div ref={containerRef} className="max-h-[58vh] space-y-2 overflow-y-auto rounded-2xl border border-white/30 bg-white/40 p-3">
+      <div ref={containerRef} className="max-h-[58vh] space-y-2 overflow-y-auto rounded-2xl border border-white/30 bg-gradient-to-b from-white/55 via-white/35 to-[#fff4ee]/70 p-3">
         {messages.length === 0 ? (
           <p className="text-sm text-muted-foreground">No hay mensajes en esta conversación.</p>
         ) : null}
 
         {messages.map((message) => {
-          const isClient = message.sender === "client";
-          const isAssistant = message.sender === "assistant";
-          const isAdmin = message.sender === "admin";
-          const isSystem = message.sender === "system";
+          const isSystem = normalizeSender(message.sender) === "system";
+          const style = getMessageStyle(message.sender);
+          const systemStyle = getSystemToneClass(message.content);
 
           return (
             <article key={message.id} className={`flex items-start gap-2 ${isSystem ? "justify-center" : ""}`}>
               {isSystem ? (
-                  <div className="rounded-full border border-border/70 bg-muted/90 px-3 py-1 text-[11px] font-semibold text-muted-foreground">
-                  {message.content}
+                <div className="flex max-w-full flex-col items-center gap-2 text-center">
+                  <div className={`rounded-full border px-3 py-1 text-[11px] font-semibold ${systemStyle.badgeClass}`}>
+                    {systemStyle.label}
+                  </div>
+                  <div className={`rounded-full border px-3 py-1 text-[11px] font-medium ${systemStyle.bubbleClass}`}>
+                    {message.content}
+                  </div>
                 </div>
               ) : null}
 
               {!isSystem ? (
                 <>
                   <div className="mt-1">
-                    {isClient ? (
+                    {normalizeSender(message.sender) === "client" ? (
                       clientAvatarUrl ? (
                         <Image
                           src={clientAvatarUrl}
@@ -582,16 +694,16 @@ export function AdminChatLivePanel({ sessionId, initialMessages, initiallyJoined
                           width={28}
                           height={28}
                           unoptimized
-                          className="size-7 rounded-full border border-primary/20 object-cover"
+                          className={`size-7 rounded-full border object-cover ${style.avatarClass}`}
                         />
                       ) : (
-                        <div className="grid size-7 place-content-center rounded-full border border-primary/20 bg-primary/10">
-                          <UserRound className="size-4 text-primary" />
+                        <div className={`grid size-7 place-content-center rounded-full border ${style.avatarClass}`}>
+                          <UserRound className={`size-4 ${style.iconClass}`} />
                         </div>
                       )
                     ) : null}
 
-                    {isAdmin ? (
+                    {normalizeSender(message.sender) === "admin" ? (
                       adminAvatarUrl ? (
                         <Image
                           src={adminAvatarUrl}
@@ -599,35 +711,29 @@ export function AdminChatLivePanel({ sessionId, initialMessages, initiallyJoined
                           width={28}
                           height={28}
                           unoptimized
-                          className="size-7 rounded-full border border-success/70 object-cover"
+                          className={`size-7 rounded-full border object-cover ${style.avatarClass}`}
                         />
                       ) : (
-                        <div className="grid size-7 place-content-center rounded-full border border-success/70 bg-success/90">
-                          <UserRound className="size-4 text-success-foreground" />
+                        <div className={`grid size-7 place-content-center rounded-full border ${style.avatarClass}`}>
+                          <UserRound className={`size-4 ${style.iconClass}`} />
                         </div>
                       )
                     ) : null}
 
-                    {isAssistant ? (
-                      <div className="grid size-7 place-content-center rounded-full border border-white/40 bg-white/80">
-                        <Bot className="size-4 text-primary" />
+                    {normalizeSender(message.sender) === "bot" ? (
+                      <div className={`grid size-7 place-content-center rounded-full border ${style.avatarClass}`}>
+                        <Bot className={`size-4 ${style.iconClass}`} />
                       </div>
                     ) : null}
                   </div>
 
                   <div
-                    className={`min-w-0 flex-1 rounded-2xl border px-3 py-2 text-sm ${
-                      isClient
-                            ? "border-primary/30 bg-primary/10"
-                        : isAssistant
-                          ? "border-white/40 bg-white/70"
-                          : isAdmin
-                            ? "border-success/70 bg-success/90"
-                            : "border-white/30 bg-white/50"
-                    }`}
+                    className={`min-w-0 flex-1 rounded-2xl border px-3 py-2 text-sm ${style.bubbleClass}`}
                   >
-                    <div className="mb-1 flex items-center justify-between gap-2 text-[11px] uppercase tracking-wide text-muted-foreground">
-                      <span>{message.sender}</span>
+                    <div className="mb-1 flex items-center justify-between gap-2 text-[11px] uppercase tracking-wide text-muted-foreground/90">
+                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 font-semibold ${style.badgeClass}`}>
+                        {style.label}
+                      </span>
                       <span>{formatDate(message.created_at)}</span>
                     </div>
                     <p className="whitespace-pre-wrap text-foreground">{message.content}</p>

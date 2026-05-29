@@ -152,6 +152,14 @@ function buildSessionContextText(session: ChatSessionRow, advisorName: string | 
   return "Cliente espera contacto";
 }
 
+function getSessionCardStyle(isSelected: boolean) {
+  if (isSelected) {
+    return "border-primary/25 bg-gradient-to-br from-[#fff7f1] via-white to-[#fff1e8] shadow-[0_12px_28px_rgba(174,130,109,0.14)] ring-1 ring-primary/15";
+  }
+
+  return "border-white/50 bg-gradient-to-br from-white/85 via-white/65 to-[#fff7f1] hover:border-primary/20 hover:shadow-[0_10px_22px_rgba(174,130,109,0.10)]";
+}
+
 export default async function AdminChatsPage({ searchParams }: PageProps) {
   const { user } = await requireAdminUser("chat.manage");
 
@@ -230,11 +238,16 @@ export default async function AdminChatsPage({ searchParams }: PageProps) {
       </header>
 
       <section className="grid gap-4 xl:grid-cols-[380px_minmax(0,1fr)]">
-        <Card className="glass-card">
-          <CardHeader>
-            <CardTitle className="text-base">Conversaciones registradas</CardTitle>
+        <Card className="glass-card overflow-hidden border border-white/40">
+          <CardHeader className="border-b border-white/50 bg-gradient-to-r from-[#fff7f1] via-white to-[#fffaf6]">
+            <CardTitle className="flex items-center justify-between gap-3 text-base">
+              <span>Conversaciones registradas</span>
+              <span className="rounded-full border border-primary/15 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-primary">
+                {sessions.length}
+              </span>
+            </CardTitle>
           </CardHeader>
-          <CardContent className="grid max-h-[70vh] gap-2 overflow-y-auto">
+          <CardContent className="grid max-h-[70vh] gap-2 overflow-y-auto bg-gradient-to-b from-white/40 via-white/30 to-[#fff6f1]/40 p-3">
             {sessions.length === 0 ? (
               <p className="text-sm text-muted-foreground">Aún no hay chats registrados.</p>
             ) : null}
@@ -249,19 +262,22 @@ export default async function AdminChatsPage({ searchParams }: PageProps) {
               const contactText = buildContactLine(profile);
               const advisorName = session.joined_by_admin_id ? advisorNameById.get(session.joined_by_admin_id) || null : null;
               const contextText = buildSessionContextText(session, advisorName);
+              const cardStyle = getSessionCardStyle(isSelected);
 
               return (
                 <Link
                   key={session.id}
                   href={`/admin/chats?session=${session.id}`}
-                  className={`rounded-2xl border p-3 text-sm transition ${
-                    isSelected
-                      ? "border-primary bg-primary/10 shadow-sm"
-                      : "border-white/40 bg-white/50 hover:border-primary/40 hover:bg-white/70"
-                  }`}
+                  className={`group relative overflow-hidden rounded-3xl border p-3 text-sm transition-all duration-300 ${cardStyle}`}
                 >
+                  <div
+                    className={`pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary/70 via-[#d9a889] to-[#f2d5c3] opacity-80 ${
+                      isSelected ? "block" : "hidden"
+                    }`}
+                  />
+
                   <div className="mb-3 flex items-start gap-3">
-                    <div className="relative flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#e3d7cd] bg-[#f7f1ec] text-[#7d5a44]">
+                    <div className="relative flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-primary/15 bg-gradient-to-br from-[#fff8f3] via-[#f8efe8] to-[#f1dfd4] text-[#7d5a44] shadow-sm ring-1 ring-white/60">
                       {hasAvatar ? (
                         <Image src={avatarUrl} alt={displayName} width={44} height={44} unoptimized className="h-full w-full object-cover" />
                       ) : (
@@ -272,8 +288,8 @@ export default async function AdminChatsPage({ searchParams }: PageProps) {
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-2">
-                        <p className="line-clamp-1 font-semibold text-foreground">{displayName}</p>
-                        <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold ${state.className}`}>
+                        <p className="line-clamp-1 font-semibold text-foreground group-hover:text-primary">{displayName}</p>
+                        <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-sm ${state.className}`}>
                           {state.alert ? <span className="inline-block size-1.5 rounded-full bg-current" /> : null}
                           {state.label}
                         </span>
@@ -283,9 +299,13 @@ export default async function AdminChatsPage({ searchParams }: PageProps) {
                       </p>
                     </div>
                   </div>
-                  <div className="mt-3 flex items-center justify-between gap-2 border-t border-white/60 pt-2 text-[11px] text-muted-foreground">
-                    <span className="line-clamp-1">{contextText}</span>
-                    <span>{formatDate(session.last_message_at)}</span>
+                  <div className="mt-3 flex items-center justify-between gap-2 border-t border-white/70 pt-2 text-[11px] text-muted-foreground">
+                    <span className="line-clamp-1 rounded-full border border-white/70 bg-white/60 px-2 py-1 text-[11px] text-foreground/80">
+                      {contextText}
+                    </span>
+                    <span className="rounded-full bg-white/60 px-2 py-1 text-[11px] font-medium text-foreground/70 shadow-sm">
+                      {formatDate(session.last_message_at)}
+                    </span>
                   </div>
                 </Link>
               );

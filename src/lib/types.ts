@@ -29,6 +29,16 @@ export type Product = {
   month_commission_amount?: number;
 };
 
+export type Salesperson = {
+  id: string;
+  user_id?: string | null;
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+  commission_percentage?: number | null;
+  status?: string | null;
+};
+
 export type NavProduct = Pick<Product, "id" | "name" | "description" | "price" | "images" | "category" | "brand" | "gender">;
 
 export type CartItem = {

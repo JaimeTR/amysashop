@@ -28,6 +28,20 @@ export default function LoginPage() {
     return normalized.includes("email not confirmed") || normalized.includes("email no confirmado");
   }
 
+  function isInvalidCredentialsError(error: { message?: string; code?: string | number | null }) {
+    const message = String(error.message || "").toLowerCase();
+    const code = String(error.code || "").toLowerCase();
+
+    return (
+      code === "invalid_login_credentials" ||
+      code === "invalid_credentials" ||
+      message.includes("invalid login credentials") ||
+      message.includes("invalid credentials") ||
+      message.includes("email or password is incorrect") ||
+      message.includes("correo o contraseña incorrectos")
+    );
+  }
+
   async function handleResendConfirmation() {
     const safeEmail = email.trim().toLowerCase();
 
@@ -77,7 +91,13 @@ export default function LoginPage() {
         setMessage("Email no confirmado. Revisa tu correo y confirma tu cuenta para ingresar.");
         notify.warning("Email no confirmado", "Confirma tu cuenta o solicita un nuevo correo de verificación.");
       } else {
-        setMessage(error.message);
+        const isCredentialsIssue = isInvalidCredentialsError(error) || Number(error.status || 0) === 400;
+        const friendlyMessage = isCredentialsIssue
+          ? "Correo o contraseña incorrectos."
+          : "No se pudo iniciar sesión. Intenta nuevamente.";
+
+        setMessage(friendlyMessage);
+        notify.error(isCredentialsIssue ? "Acceso denegado" : "No se pudo iniciar sesión", friendlyMessage);
       }
       setLoading(false);
       return;
@@ -87,6 +107,7 @@ export default function LoginPage() {
 
     if (!signedUser) {
       setMessage("No se pudo recuperar la sesión. Intenta nuevamente.");
+      notify.error("Sesión no disponible", "No se pudo recuperar la sesión. Intenta nuevamente.");
       setLoading(false);
       return;
     }
@@ -122,10 +143,10 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="relative min-h-[72vh] overflow-hidden pb-8 pt-3">
+    <main className="relative flex min-h-[calc(100vh-12rem)] items-center justify-center overflow-hidden px-4 py-8 sm:px-6">
       <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_rgba(174,130,109,0.25),_transparent_60%),radial-gradient(ellipse_at_bottom,_rgba(145,114,93,0.2),_transparent_55%)]" />
 
-      <div className="mx-auto w-full max-w-md">
+      <div className="relative z-10 mx-auto w-full max-w-md">
         <div className="glass-card rounded-3xl border border-white/40 p-6 shadow-xl sm:p-8">
           <div className="mb-6 text-center">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary/80">AMYSA SHOP</p>
@@ -184,7 +205,11 @@ export default function LoginPage() {
               {loading ? "Ingresando..." : "Ingresar"}
             </Button>
 
-            {message ? <p className="text-sm text-destructive-foreground">{message}</p> : null}
+            {message ? (
+              <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700" role="alert" aria-live="polite">
+                {message}
+              </div>
+            ) : null}
 
             {emailNotConfirmed ? (
               <div className="rounded-xl border border-warning/40 bg-warning/95 p-3">

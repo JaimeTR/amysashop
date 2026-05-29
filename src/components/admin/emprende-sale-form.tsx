@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { BadgeDollarSign, Plus, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -52,7 +53,9 @@ type Props = {
   clients: EmprendeClientOption[];
   products: EmprendeProductOption[];
   initialSalespersonId: string;
-  action: (formData: FormData) => Promise<void>;
+  initialError?: string | null;
+  action?: (formData: FormData) => Promise<void>;
+  onSuccess?: () => void;
 };
 
 function formatMoney(value: number | null | undefined) {
@@ -82,8 +85,19 @@ function createLine(): SaleLineState {
   };
 }
 
-export function EmprendeSaleForm({ role, salespeople, clients, products, initialSalespersonId, action }: Props) {
+function SubmitButton({ disabled, label, submitting }: { disabled: boolean; label: string; submitting: boolean }) {
+  const isDisabled = disabled || submitting;
+
+  return (
+    <Button type="submit" className="w-full" disabled={isDisabled} aria-busy={submitting}>
+      {submitting ? "Registrando..." : label}
+    </Button>
+  );
+}
+
+export function EmprendeSaleForm({ role, salespeople, clients, products, initialSalespersonId, initialError, action, onSuccess }: Props) {
   const [salespersonId, setSalespersonId] = useState(initialSalespersonId);
+  const [errorMessage, setErrorMessage] = useState(initialError || "");
   const [clientQuery, setClientQuery] = useState("");
   const [selectedClientId, setSelectedClientId] = useState("");
   const [clientName, setClientName] = useState("");
@@ -91,6 +105,7 @@ export function EmprendeSaleForm({ role, salespeople, clients, products, initial
   const [clientPhone, setClientPhone] = useState("");
   const [notes, setNotes] = useState("");
   const [paymentStatus, setPaymentStatus] = useState("completed");
+  const [paymentReceived, setPaymentReceived] = useState("");
   const [saleLines, setSaleLines] = useState<SaleLineState[]>([
     {
       id: "sale-line-0",
@@ -122,6 +137,25 @@ export function EmprendeSaleForm({ role, salespeople, clients, products, initial
 
   const selectedClientIsExisting = Boolean(selectedClientId && selectedClientId !== NEW_CLIENT_ID);
   const selectedClientIsNew = selectedClientId === NEW_CLIENT_ID;
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!initialError) {
+      return;
+    }
+
+    const url = new URL(window.location.href);
+    if (url.searchParams.has("error")) {
+      url.searchParams.delete("error");
+      window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+    }
+  }, [initialError]);
+
+  useEffect(() => {
+    if (paymentStatus !== "partial") {
+      setPaymentReceived("");
+    }
+  }, [paymentStatus]);
 
   function updateLine(lineId: string, patch: Partial<SaleLineState>) {
     setSaleLines((current) => current.map((line) => (line.id === lineId ? { ...line, ...patch } : line)));
@@ -174,6 +208,44 @@ export function EmprendeSaleForm({ role, salespeople, clients, products, initial
   }));
   const hasIncompleteLine = saleLines.some((line) => !line.productId || line.quantity < 1);
 
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (submitting) return;
+    setSubmitting(true);
+
+    const form = event.currentTarget;
+    const fd = new FormData(form);
+
+    try {
+      // Prefer a client-side API endpoint to avoid full-page redirects
+      const resp = await fetch("/api/emprende/register", { method: "POST", body: fd });
+
+      if (!resp.ok) {
+        const payload = await resp.json().catch(() => ({}));
+        setErrorMessage(String(payload?.error || "No se pudo registrar la venta"));
+        setSubmitting(false);
+        return;
+      }
+
+      // success
+      setErrorMessage("");
+      setSubmitting(false);
+      if (typeof onSuccess === "function") {
+        onSuccess();
+      }
+      // Optionally, trigger a page refresh to revalidate server components
+      try {
+        // @ts-ignore - next/navigation not available here; rely on window.location.reload as fallback
+        if (typeof window !== "undefined") window.location.reload();
+      } catch {}
+      return;
+    } catch (err) {
+      setErrorMessage(String((err as Error)?.message || "No se pudo registrar la venta"));
+      setSubmitting(false);
+      return;
+    }
+  }
+
   return (
     <Card className="glass-card rounded-3xl">
       <CardHeader>
@@ -183,7 +255,12 @@ export function EmprendeSaleForm({ role, salespeople, clients, products, initial
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-5">
-        <form action={action} className="space-y-5">
+        {errorMessage ? (
+          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+            {errorMessage}
+          </div>
+        ) : null}
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-5">
             {role !== "vendedora" ? (
               <div className="space-y-2">
@@ -356,10 +433,12 @@ export function EmprendeSaleForm({ role, salespeople, clients, products, initial
                                         className="flex w-full items-center justify-between gap-3 border-b border-muted px-3 py-2 text-left text-sm last:border-b-0 hover:bg-primary/5"
                                       >
                                         <div className="flex items-center gap-3 min-w-0">
-                                          <img
+                                          <Image
                                             src={item.images?.[0] || "/logos/amysa-square-primary.png"}
                                             alt={item.name}
-                                            className="w-10 h-10 rounded object-cover flex-shrink-0"
+                                            width={40}
+                                            height={40}
+                                            className="rounded object-cover flex-shrink-0"
                                           />
                                           <div className="min-w-0">
                                             <div className="font-medium truncate">{item.name}</div>
@@ -377,10 +456,12 @@ export function EmprendeSaleForm({ role, salespeople, clients, products, initial
                                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Seleccionado</p>
                                 {selectedProduct ? (
                                   <div className="flex items-center gap-3">
-                                    <img
+                                    <Image
                                       src={selectedProduct.images?.[0] || "/logos/amysa-square-primary.png"}
                                       alt={selectedProduct.name}
-                                      className="h-12 w-12 rounded-lg object-cover"
+                                      width={48}
+                                      height={48}
+                                      className="rounded-lg object-cover"
                                     />
                                     <div className="min-w-0">
                                       <p className="truncate text-sm font-medium text-foreground">{selectedProduct.name}</p>
@@ -430,23 +511,42 @@ export function EmprendeSaleForm({ role, salespeople, clients, products, initial
                   <option value="completed">Completado</option>
                 </select>
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium" htmlFor="notes">Notas</label>
+              {paymentStatus === "partial" ? (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium" htmlFor="paymentReceived">Monto pagado hasta el momento</label>
+                  <Input
+                    id="paymentReceived"
+                    name="paymentReceived"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={paymentReceived}
+                    onChange={(event) => setPaymentReceived(event.target.value)}
+                    placeholder="0.00"
+                    required
+                  />
+                </div>
+              ) : (
+                <input type="hidden" name="paymentReceived" value={paymentStatus === "completed" ? "" : paymentReceived} />
+              )}
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-sm font-medium" htmlFor="notes">Notas / monto pagado</label>
+                <p className="text-xs text-muted-foreground">
+                  Si el pago es parcial, escribe aquí el monto recibido y cualquier comentario adicional. Si ya se pagó completo, puedes dejar observaciones de entrega o seguimiento.
+                </p>
                 <textarea
                   id="notes"
                   name="notes"
                   rows={3}
                   value={notes}
                   onChange={(event) => setNotes(event.target.value)}
-                  placeholder="Observaciones, referencia de entrega o detalles de la venta"
+                  placeholder="Ejemplo: S/ 50 recibidos, saldo pendiente. O agrega cualquier comentario de la venta."
                   className="flex min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 />
               </div>
             </div>
 
-            <Button type="submit" className="w-full" disabled={hasIncompleteLine}>
-              Registrar {saleLines.length > 1 ? "ventas" : "venta"}
-            </Button>
+            <SubmitButton submitting={submitting} disabled={hasIncompleteLine} label={`Registrar ${saleLines.length > 1 ? "ventas" : "venta"}`} />
           </div>
         </form>
       </CardContent>

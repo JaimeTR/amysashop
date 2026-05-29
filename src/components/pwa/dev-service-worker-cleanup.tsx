@@ -12,9 +12,22 @@ export function DevServiceWorkerCleanup() {
       return;
     }
 
-    navigator.serviceWorker
-      .getRegistrations()
-      .then((registrations) => Promise.all(registrations.map((registration) => registration.unregister())))
+    Promise.all([navigator.serviceWorker.getRegistrations(), caches.keys()])
+      .then(([registrations, cacheNames]) => {
+        const hasRegistrations = registrations.length > 0;
+        const hasCaches = cacheNames.length > 0;
+
+        if (!hasRegistrations && !hasCaches) {
+          return;
+        }
+
+        return Promise.all([
+          Promise.all(registrations.map((registration) => registration.unregister())),
+          Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName))),
+        ]).then(() => {
+          window.location.reload();
+        });
+      })
       .catch(() => {
         // No bloquear la app si el navegador no permite el cleanup.
       });
