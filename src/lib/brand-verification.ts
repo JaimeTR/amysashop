@@ -37,6 +37,8 @@ export const HARDCODED_BRANDS = [
 //    DELETE FROM brands; -- Limpia todo
 //    -- Luego registra nuevamente en /admin/tienda
 
-console.log("Marcas hardcodeadas en código:", HARDCODED_BRANDS);
-console.log("Para ver marcas en BD, ve a Supabase Dashboard y ejecuta:");
-console.log("SELECT id, name FROM brands;");
+if (process.env.NODE_ENV === "development") {
+  console.log("Marcas hardcodeadas en código:", HARDCODED_BRANDS);
+  console.log("Para ver marcas en BD, ve a Supabase Dashboard y ejecuta:");
+  console.log("SELECT id, name FROM brands;");
+}

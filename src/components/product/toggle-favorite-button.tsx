@@ -31,9 +31,11 @@ export function ToggleFavoriteButton({
     event.preventDefault();
     event.stopPropagation();
 
+    const wasFavorite = favorite;
+
     toggleFavorite({ productId, name, price, image, category });
 
-    if (favorite) {
+    if (wasFavorite) {
       notify.info("Quitado de favoritos", `${name} ya no aparece en tu lista.`);
       return;
     }

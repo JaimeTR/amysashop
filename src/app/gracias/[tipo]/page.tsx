@@ -1,4 +1,10 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Gracias por tu compra",
+  robots: { index: false },
+};
 
 type ThanksPageProps = {
   params: { tipo: string };

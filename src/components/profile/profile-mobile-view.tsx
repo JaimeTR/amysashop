@@ -15,6 +15,7 @@ type ProfileMobileViewProps = {
   userPhone: string;
   userAddress: string;
   userGender: string;
+  initialEditMode?: boolean;
   initialProfile: {
     nombre: string;
     telefono: string;
@@ -33,9 +34,25 @@ export function ProfileMobileView({
   userPhone,
   userAddress,
   userGender,
+  initialEditMode = false,
   initialProfile,
 }: ProfileMobileViewProps) {
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(initialEditMode);
+  const [displayProfile, setDisplayProfile] = useState({
+    nombre: userName,
+    telefono: userPhone,
+    direccion: userAddress,
+    gender: userGender,
+    avatar: userAvatar,
+  });
+
+  function formatGender(value: string) {
+    const normalized = String(value || "").trim().toLowerCase();
+    if (!normalized) return "Sin género";
+    if (normalized === "masculino" || normalized === "male") return "Masculino";
+    if (normalized === "femenino" || normalized === "female") return "Femenino";
+    return value;
+  }
 
   if (isEditing) {
     return (
@@ -53,7 +70,21 @@ export function ProfileMobileView({
           </Button>
         </CardHeader>
         <CardContent>
-          <ProfileSettingsForm userId={userId} email={email} initialProfile={initialProfile} />
+          <ProfileSettingsForm
+            userId={userId}
+            email={email}
+            initialProfile={initialProfile}
+            onProfileSaved={(updated) => {
+              setDisplayProfile({
+                nombre: updated.nombre || "Mi cuenta",
+                telefono: updated.telefono || "Sin teléfono",
+                direccion: updated.direccion || "Sin dirección registrada",
+                gender: formatGender(updated.gender),
+                avatar: updated.img_avatar || updated.avatar_url || displayProfile.avatar,
+              });
+              setIsEditing(false);
+            }}
+          />
         </CardContent>
       </Card>
     );
@@ -67,7 +98,7 @@ export function ProfileMobileView({
       <CardContent className="space-y-4">
         <div className="flex items-center gap-4 rounded-2xl border border-white/80 bg-white/80 p-3 shadow-sm">
           <Image
-            src={userAvatar}
+            src={displayProfile.avatar}
             alt="Foto de perfil"
             width={64}
             height={64}
@@ -75,7 +106,7 @@ export function ProfileMobileView({
             className="size-16 rounded-full border border-primary/20 object-cover"
           />
           <div className="min-w-0">
-            <p className="truncate text-base font-semibold text-foreground">{userName}</p>
+            <p className="truncate text-base font-semibold text-foreground">{displayProfile.nombre}</p>
             <p className="truncate text-sm text-muted-foreground">{email}</p>
           </div>
         </div>
@@ -83,15 +114,15 @@ export function ProfileMobileView({
         <div className="grid gap-3 text-sm">
           <div className="rounded-2xl border border-white/80 bg-white/70 p-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Teléfono</p>
-            <p className="mt-1 font-medium">{userPhone}</p>
+            <p className="mt-1 font-medium">{displayProfile.telefono}</p>
           </div>
           <div className="rounded-2xl border border-white/80 bg-white/70 p-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Dirección</p>
-            <p className="mt-1 font-medium">{userAddress}</p>
+            <p className="mt-1 font-medium">{displayProfile.direccion}</p>
           </div>
           <div className="rounded-2xl border border-white/80 bg-white/70 p-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Género</p>
-            <p className="mt-1 font-medium">{userGender}</p>
+            <p className="mt-1 font-medium">{displayProfile.gender}</p>
           </div>
         </div>
 

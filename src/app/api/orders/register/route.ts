@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createClient as createServerClient } from "@/lib/supabase/server";
 
 type RegisterOrderBody = {
   userId?: string | null;
@@ -54,12 +55,22 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const authSupabase = createServerClient();
+  const { data: { user } } = await authSupabase.auth.getUser();
+  const sessionUserId = user?.id ?? null;
+
   let body: RegisterOrderBody;
 
   try {
     body = (await request.json()) as RegisterOrderBody;
   } catch {
     return NextResponse.json({ error: "Payload inválido" }, { status: 400 });
+  }
+
+  const providedUserId = body.userId || null;
+
+  if (providedUserId && providedUserId !== sessionUserId) {
+    return NextResponse.json({ error: "No autorizado: el userId no coincide con la sesión" }, { status: 403 });
   }
 
   const items = Array.isArray(body.items) ? body.items : [];
@@ -88,7 +99,7 @@ export async function POST(request: NextRequest) {
   const supabase = createClient(supabaseUrl, serviceRoleKey);
 
   const payloadFull: Record<string, unknown> = {
-    user_id: body.userId || null,
+    user_id: sessionUserId,
     status: "confirmado",
     total: totalWithCharges,
     total_amount: totalWithCharges,

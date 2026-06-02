@@ -5,10 +5,25 @@ function getAllowedAdminEmail() {
   return (process.env.ADMIN_ALLOWED_EMAIL || "").trim().toLowerCase();
 }
 
+function getRouteScope(pathname: string) {
+  if (pathname === "/banner") {
+    return "banner";
+  }
+
+  if (pathname.startsWith("/admin")) {
+    return "admin";
+  }
+
+  return "public";
+}
+
 export async function updateSession(request: NextRequest) {
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-amysa-route-scope", getRouteScope(request.nextUrl.pathname));
+
   let response = NextResponse.next({
     request: {
-      headers: request.headers,
+      headers: requestHeaders,
     },
   });
 
@@ -24,7 +39,7 @@ export async function updateSession(request: NextRequest) {
           request.cookies.set({ name, value, ...options });
           response = NextResponse.next({
             request: {
-              headers: request.headers,
+              headers: requestHeaders,
             },
           });
           response.cookies.set({ name, value, ...options });
@@ -33,7 +48,7 @@ export async function updateSession(request: NextRequest) {
           request.cookies.set({ name, value: "", ...options });
           response = NextResponse.next({
             request: {
-              headers: request.headers,
+              headers: requestHeaders,
             },
           });
           response.cookies.set({ name, value: "", ...options });

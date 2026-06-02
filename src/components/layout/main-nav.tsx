@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { createPortal } from "react-dom";
-import { ChangeEvent, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   ChevronDown,
@@ -181,6 +181,8 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
     img_avatar: "",
     avatar_url: "",
   });
+  const profileDataRef = useRef(profileData);
+  profileDataRef.current = profileData;
   const [profileDraft, setProfileDraft] = useState<ProfileData>({
     nombre: "",
     telefono: "",
@@ -201,6 +203,11 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [preheaderMessageIndex, setPreheaderMessageIndex] = useState(0);
   const [preheaderMessages, setPreheaderMessages] = useState<string[]>(fallbackPreheaderMessages);
+  const [preheaderPaused, setPreheaderPaused] = useState(false);
+  const preheaderPausedRef = useRef(false);
+  preheaderPausedRef.current = preheaderPaused;
+  const preheaderMessagesRef = useRef(preheaderMessages);
+  preheaderMessagesRef.current = preheaderMessages;
   const [liveCoverById, setLiveCoverById] = useState<Record<string, string>>({});
   const cartItems = useCartStore((state) => state.items);
   const favoriteItems = useFavoritesStore((state) => state.items);
@@ -216,6 +223,7 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
     superAdminEmail: allowedAdminEmail,
   });
   const accessLevels = getPermissionsForRole(role).map((permission) => getPermissionLabel(permission));
+  const displayUserName = String(profileData.nombre || user?.user_metadata?.nombre || "Usuario").trim() || "Usuario";
   const profileAvatarUrl = (avatarPreview || profileDraft.img_avatar || profileDraft.avatar_url || profileData.img_avatar || profileData.avatar_url || "").trim();
   const editingAvatarUrl = (avatarPreview || profileDraft.img_avatar || profileDraft.avatar_url || profileData.img_avatar || profileData.avatar_url || "").trim();
 
@@ -389,7 +397,6 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
   useEffect(() => {
     function onAvatarUpdated(e: any) {
       const url = e?.detail?.img_avatar || e?.detail?.avatar_url;
-      console.debug("[MainNav] onAvatarUpdated", url);
       if (url) {
         setProfileData((prev) => ({ ...prev, img_avatar: String(url), avatar_url: String(url) }));
       }
@@ -397,15 +404,15 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
 
     function onProfileUpdated(e: any) {
       const d = e?.detail;
-      console.debug("[MainNav] onProfileUpdated", d);
       if (d) {
+        const currentProfile = profileDataRef.current;
         const updated: ProfileData = {
           nombre: String(d.nombre || ""),
           telefono: String(d.telefono || ""),
           direccion: String(d.direccion || ""),
           gender: String(d.gender || ""),
-          img_avatar: String(d.img_avatar || d.avatar_url || ""),
-          avatar_url: String(d.avatar_url || ""),
+          img_avatar: String(d.img_avatar || d.avatar_url || currentProfile.img_avatar || currentProfile.avatar_url || ""),
+          avatar_url: String(d.avatar_url || d.img_avatar || currentProfile.avatar_url || currentProfile.img_avatar || ""),
         };
         setProfileData(updated);
         setProfileDraft({
@@ -466,7 +473,9 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
     }
 
     const timerId = window.setInterval(() => {
-      setPreheaderMessageIndex((current) => (current + 1) % preheaderMessages.length);
+      if (!preheaderPausedRef.current) {
+        setPreheaderMessageIndex((current) => (current + 1) % preheaderMessagesRef.current.length);
+      }
     }, 4000);
 
     return () => {
@@ -548,20 +557,11 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
       gender: profileDraft.gender.trim() || null,
     };
 
-    console.log("[MainNav] Attempting profile save with payload:", payload);
-
     const upsertResult = await supabase
       .from("profiles")
       .upsert(payload, { onConflict: "id" });
 
-    console.log("[MainNav] Upsert result:", { 
-      error: upsertResult.error, 
-      data: upsertResult.data,
-      status: upsertResult.status 
-    });
-
     if (!upsertResult.error) {
-      console.log("[MainNav] Profile saved successfully");
       const updated: ProfileData = {
         nombre: payload.nombre,
         telefono: payload.telefono,
@@ -636,8 +636,6 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
       const cleanName = selectedAvatarFile.name.replace(/\s+/g, "-").toLowerCase();
       const objectPath = `${user.id}/${Date.now()}-${cleanName || `avatar.${extension}`}`;
 
-      console.log("[MainNav] Uploading avatar to storage:", objectPath);
-      
       const upload = await supabase.storage.from(bucketName).upload(objectPath, selectedAvatarFile, {
         upsert: true,
         cacheControl: "3600",
@@ -649,8 +647,6 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
         throw upload.error;
       }
 
-      console.log("[MainNav] Avatar uploaded to storage successfully");
-
       const { data } = supabase.storage.from(bucketName).getPublicUrl(objectPath);
 
       if (!data?.publicUrl) {
@@ -658,25 +654,16 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
       }
 
       const avatarUrl = data.publicUrl;
-      console.log("[MainNav] Attempting to save avatar URL:", avatarUrl);
-      
       const saveResult = await supabase.from("profiles").upsert(
         { id: user.id, img_avatar: avatarUrl },
         { onConflict: "id" }
       );
-
-      console.log("[MainNav] Upsert result:", { 
-        error: saveResult.error, 
-        data: saveResult.data,
-        status: saveResult.status 
-      });
 
       if (saveResult.error) {
         console.error("[MainNav] Avatar save failed:", saveResult.error);
         throw saveResult.error;
       }
 
-      console.log("[MainNav] Avatar saved successfully to database");
       setProfileData((prev) => ({ ...prev, img_avatar: avatarUrl, avatar_url: avatarUrl }));
       setSelectedAvatarFile(null);
       if (avatarPreview) {
@@ -719,7 +706,7 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
               <div className="flex items-center justify-between gap-3 sm:justify-end">
                 <div className="min-w-0 text-right leading-tight">
                   <p className="truncate text-sm font-semibold text-foreground">
-                    {user.user_metadata?.nombre || "Usuario"}
+                    {displayUserName}
                   </p>
                   <p className="truncate text-xs text-muted-foreground">
                     {getRoleLabel(role)}
@@ -739,7 +726,6 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
                       alt="Perfil"
                       width={28}
                       height={28}
-                      unoptimized
                       className="size-7 rounded-full object-cover"
                     />
                   ) : (
@@ -778,7 +764,6 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
                             alt="Foto de perfil"
                             width={72}
                             height={72}
-                            unoptimized
                             className="size-[72px] rounded-full border border-primary/20 object-cover"
                           />
                         ) : (
@@ -788,65 +773,23 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
                         )}
                       </div>
 
-                      {editingProfile ? (
-                        <div className="grid gap-2">
-                          <input
-                            value={profileDraft.nombre}
-                            onChange={(event) => setProfileDraft((prev) => ({ ...prev, nombre: event.target.value }))}
-                            placeholder="Nombre"
-                            className="h-10 rounded-xl border border-input bg-white px-3 text-sm"
-                          />
-                          <input
-                            value={profileDraft.telefono}
-                            onChange={(event) => setProfileDraft((prev) => ({ ...prev, telefono: event.target.value }))}
-                            placeholder="Teléfono"
-                            className="h-10 rounded-xl border border-input bg-white px-3 text-sm"
-                          />
-                          <input
-                            value={profileDraft.direccion}
-                            onChange={(event) => setProfileDraft((prev) => ({ ...prev, direccion: event.target.value }))}
-                            placeholder="Dirección"
-                            className="h-10 rounded-xl border border-input bg-white px-3 text-sm"
-                          />
-                          <select
-                            value={profileDraft.gender}
-                            onChange={(event) => setProfileDraft((prev) => ({ ...prev, gender: event.target.value }))}
-                            className="h-10 rounded-xl border border-input bg-white px-3 text-sm"
-                          >
-                            <option value="">Selecciona género</option>
-                            <option value="masculino">Masculino</option>
-                            <option value="femenino">Femenino</option>
-                          </select>
-                          <input type="file" accept="image/*" onChange={handleAvatarFileChange} className="block w-full text-xs" />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={handleUploadProfileAvatar}
-                            disabled={!selectedAvatarFile || uploadingAvatar}
-                          >
-                            {uploadingAvatar ? <Loader2 className="mr-2 size-4 animate-spin" /> : <UploadCloud className="mr-2 size-4" />}
-                            Subir imagen
-                          </Button>
-                        </div>
-                      ) : (
-                        <>
-                          <p>
-                            <span className="font-semibold">Nombre:</span> {profileData.nombre || "Sin nombre"}
-                          </p>
-                          <p>
-                            <span className="font-semibold">Correo:</span> {user.email}
-                          </p>
-                          <p>
-                            <span className="font-semibold">Teléfono:</span> {profileData.telefono || "Sin completar"}
-                          </p>
-                          <p>
-                            <span className="font-semibold">Dirección:</span> {profileData.direccion || "Sin completar"}
-                          </p>
-                          <p>
-                            <span className="font-semibold">Género:</span> {profileData.gender || "Sin completar"}
-                          </p>
-                        </>
-                      )}
+                      <>
+                        <p>
+                          <span className="font-semibold">Nombre:</span> {profileData.nombre || user.user_metadata?.nombre || "Sin nombre"}
+                        </p>
+                        <p>
+                          <span className="font-semibold">Correo:</span> {user.email}
+                        </p>
+                        <p>
+                          <span className="font-semibold">Teléfono:</span> {profileData.telefono || "Sin completar"}
+                        </p>
+                        <p>
+                          <span className="font-semibold">Dirección:</span> {profileData.direccion || "Sin completar"}
+                        </p>
+                        <p>
+                          <span className="font-semibold">Género:</span> {profileData.gender || "Sin completar"}
+                        </p>
+                      </>
 
                       <p className="flex items-center gap-2">
                         <ShieldCheck className="size-4 text-primary" />
@@ -872,33 +815,16 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
 
                   <div className="mt-4 flex justify-end gap-2">
                     {user ? (
-                      editingProfile ? (
-                        <>
-                          <Button
-                            variant="outline"
-                            type="button"
-                            onClick={() => {
-                              setProfileDraft(profileData);
-                              setEditingProfile(false);
-                            }}
-                            disabled={savingProfile}
-                          >
-                            Cancelar
-                          </Button>
-                          <Button type="button" onClick={handleSaveProfile} disabled={savingProfile}>
-                            {savingProfile ? "Guardando..." : "Guardar cambios"}
-                          </Button>
-                        </>
-                      ) : (
-                        <>
-                          <Button type="button" variant="outline" onClick={handleSignOut}>
-                            Cerrar sesión
-                          </Button>
-                          <Button type="button" variant="outline" onClick={() => setEditingProfile(true)}>
-                            Modificar perfil
-                          </Button>
-                        </>
-                      )
+                      <>
+                        <Button type="button" variant="outline" onClick={handleSignOut}>
+                          Cerrar sesión
+                        </Button>
+                        <Button asChild type="button" variant="outline">
+                          <Link href="/perfil" onClick={closeMenus}>
+                            Editar perfil
+                          </Link>
+                        </Button>
+                      </>
                     ) : null}
                   </div>
                 </div>
@@ -907,7 +833,6 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
             )
           : null}
 
-        {user && role === "cliente" && !isAdminRoute ? <AmysaAssistantWidget userId={user.id} userName={user.user_metadata?.nombre} /> : null}
       </header>
     );
   }
@@ -928,10 +853,10 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
               <span className="text-sm font-semibold tracking-wide">{whatsappDisplayPhone}</span>
             </a>
           </div>
-          <div className="flex justify-center text-center text-[10px] font-semibold md:text-xs lg:text-sm">
-            <span className="w-full rounded-full bg-white/15 px-2 py-0.5 uppercase tracking-wide transition-all duration-500 md:px-4 md:py-1 md:w-auto animate-slide-in-left">
+          <div className="flex items-center justify-center gap-2 text-center text-[10px] font-semibold md:text-xs lg:text-sm">
+            <div aria-live="polite" aria-atomic="true" className="rounded-full bg-white/15 px-2 py-0.5 uppercase tracking-wide transition-all duration-500 md:px-4 md:py-1 animate-slide-in-left">
               {preheaderMessages[preheaderMessageIndex]}
-            </span>
+            </div>
           </div>
           <div className="hidden justify-start md:flex md:justify-end">
             <div className="flex items-center gap-2 text-white">
@@ -998,13 +923,15 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
                     setCategoriesOpen((open) => !open);
                     setFavoritesOpen(false);
                   }}
+                  aria-expanded={categoriesOpen}
+                  aria-controls="categories-dropdown"
                   className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-white/75 px-4 py-2 text-sm font-semibold text-foreground transition hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
                 >
                   Categorías <ChevronDown className="size-3.5" />
                 </button>
 
                 {categoriesOpen ? (
-                  <div className="absolute left-0 top-full z-[260] mt-2 w-[340px] rounded-3xl border border-white/40 bg-white p-3 shadow-2xl">
+                  <div id="categories-dropdown" className="absolute left-0 top-full z-[260] mt-2 w-[340px] rounded-3xl border border-white/40 bg-white p-3 shadow-2xl">
                     <div className="mb-2 flex items-center justify-between">
                       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Categorías</p>
                       <button type="button" onClick={() => setCategoriesOpen(false)} className="text-xs font-semibold text-primary">
@@ -1040,6 +967,8 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
                     setFavoritesOpen((open) => !open);
                     setCategoriesOpen(false);
                   }}
+                  aria-expanded={favoritesOpen}
+                  aria-controls="favorites-dropdown"
                   className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-white/75 px-4 py-2 text-sm font-semibold text-foreground transition hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
                 >
                   <Heart className="size-3.5 text-destructive-foreground" />
@@ -1047,7 +976,7 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
                 </button>
 
                 {favoritesOpen ? (
-                  <div className="absolute left-0 top-full z-[260] mt-2 w-[340px] rounded-3xl border border-white/40 bg-white p-3 shadow-2xl">
+                  <div id="favorites-dropdown" className="absolute left-0 top-full z-[260] mt-2 w-[340px] rounded-3xl border border-white/40 bg-white p-3 shadow-2xl">
                     <div className="mb-2 flex items-center justify-between">
                       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Favoritos</p>
                       <button type="button" onClick={() => setFavoritesOpen(false)} className="text-xs font-semibold text-primary">
@@ -1188,7 +1117,7 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
               <div className="relative hidden items-center gap-2 sm:flex">
                 <div className="text-right leading-tight">
                   <p className="max-w-[160px] truncate text-xs font-semibold text-foreground">
-                    {user.user_metadata?.nombre || "Usuario"}
+                    {displayUserName}
                   </p>
                   <p className="max-w-[160px] truncate text-[11px] font-semibold text-primary">{getRoleLabel(role)}</p>
                 </div>
@@ -1215,7 +1144,7 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
                 </Button>
                 <div className="invisible absolute right-0 top-full z-30 mt-2 w-64 rounded-2xl border border-white/30 bg-[#f4ede7]/95 p-3 text-left opacity-0 shadow-lg transition-all duration-200 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 group-hover:pointer-events-auto">
                   <p className="text-xs text-muted-foreground">Perfil</p>
-                  <p className="text-sm font-semibold text-foreground">{user.user_metadata?.nombre || "Usuario"}</p>
+                  <p className="text-sm font-semibold text-foreground">{displayUserName}</p>
                   <p className="mt-1 break-all text-xs text-muted-foreground">{user.email || "Sin correo"}</p>
                   <p className="mt-1 text-xs font-semibold text-primary">{getRoleLabel(role)}</p>
                   <div className="mt-3 border-t border-white/20 pt-3">
@@ -1336,65 +1265,23 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
                       )}
                     </div>
 
-                    {editingProfile ? (
-                      <div className="grid gap-2">
-                        <input
-                          value={profileDraft.nombre}
-                          onChange={(event) => setProfileDraft((prev) => ({ ...prev, nombre: event.target.value }))}
-                          placeholder="Nombre"
-                          className="h-10 rounded-xl border border-input bg-white px-3 text-sm"
-                        />
-                        <input
-                          value={profileDraft.telefono}
-                          onChange={(event) => setProfileDraft((prev) => ({ ...prev, telefono: event.target.value }))}
-                          placeholder="Teléfono"
-                          className="h-10 rounded-xl border border-input bg-white px-3 text-sm"
-                        />
-                        <input
-                          value={profileDraft.direccion}
-                          onChange={(event) => setProfileDraft((prev) => ({ ...prev, direccion: event.target.value }))}
-                          placeholder="Dirección"
-                          className="h-10 rounded-xl border border-input bg-white px-3 text-sm"
-                        />
-                        <select
-                          value={profileDraft.gender}
-                          onChange={(event) => setProfileDraft((prev) => ({ ...prev, gender: event.target.value }))}
-                          className="h-10 rounded-xl border border-input bg-white px-3 text-sm"
-                        >
-                          <option value="">Selecciona género</option>
-                          <option value="masculino">Masculino</option>
-                          <option value="femenino">Femenino</option>
-                        </select>
-                        <input type="file" accept="image/*" onChange={handleAvatarFileChange} className="block w-full text-xs" />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={handleUploadProfileAvatar}
-                          disabled={!selectedAvatarFile || uploadingAvatar}
-                        >
-                          {uploadingAvatar ? <Loader2 className="mr-2 size-4 animate-spin" /> : <UploadCloud className="mr-2 size-4" />}
-                          Subir imagen
-                        </Button>
-                      </div>
-                    ) : (
-                      <>
-                        <p>
-                          <span className="font-semibold">Nombre:</span> {profileData.nombre || "Sin nombre"}
-                        </p>
-                        <p>
-                          <span className="font-semibold">Correo:</span> {user.email}
-                        </p>
-                        <p>
-                          <span className="font-semibold">Teléfono:</span> {profileData.telefono || "Sin completar"}
-                        </p>
-                        <p>
-                          <span className="font-semibold">Dirección:</span> {profileData.direccion || "Sin completar"}
-                        </p>
-                        <p>
-                          <span className="font-semibold">Género:</span> {profileData.gender || "Sin completar"}
-                        </p>
-                      </>
-                    )}
+                    <>
+                      <p>
+                        <span className="font-semibold">Nombre:</span> {profileData.nombre || user.user_metadata?.nombre || "Sin nombre"}
+                      </p>
+                      <p>
+                        <span className="font-semibold">Correo:</span> {user.email}
+                      </p>
+                      <p>
+                        <span className="font-semibold">Teléfono:</span> {profileData.telefono || "Sin completar"}
+                      </p>
+                      <p>
+                        <span className="font-semibold">Dirección:</span> {profileData.direccion || "Sin completar"}
+                      </p>
+                      <p>
+                        <span className="font-semibold">Género:</span> {profileData.gender || "Sin completar"}
+                      </p>
+                    </>
 
                     <p className="flex items-center gap-2">
                       <ShieldCheck className="size-4 text-primary" />
@@ -1420,33 +1307,16 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
 
                 <div className="mt-4 flex justify-end gap-2">
                   {user ? (
-                    editingProfile ? (
-                      <>
-                        <Button
-                          variant="outline"
-                          type="button"
-                          onClick={() => {
-                            setProfileDraft(profileData);
-                            setEditingProfile(false);
-                          }}
-                          disabled={savingProfile}
-                        >
-                          Cancelar
-                        </Button>
-                        <Button type="button" onClick={handleSaveProfile} disabled={savingProfile}>
-                          {savingProfile ? "Guardando..." : "Guardar cambios"}
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        <Button type="button" variant="outline" onClick={handleSignOut}>
-                          Cerrar sesión
-                        </Button>
-                        <Button type="button" variant="outline" onClick={() => setEditingProfile(true)}>
-                          Modificar perfil
-                        </Button>
-                      </>
-                    )
+                    <>
+                      <Button type="button" variant="outline" onClick={handleSignOut}>
+                        Cerrar sesión
+                      </Button>
+                      <Button asChild type="button" variant="outline">
+                        <Link href="/perfil" onClick={closeMenus}>
+                          Editar perfil
+                        </Link>
+                      </Button>
+                    </>
                   ) : null}
                 </div>
               </div>
@@ -1455,7 +1325,6 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
           )
         : null}
 
-      {user && role === "cliente" && !isAdminRoute ? <AmysaAssistantWidget userId={user.id} userName={user.user_metadata?.nombre} /> : null}
       </header>
     </>
   );

@@ -3,11 +3,13 @@ import { Manrope, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { DevServiceWorkerCleanup } from "@/components/pwa/dev-service-worker-cleanup";
 import { NotificationProvider } from "@/components/feedback/notification-center";
+import { AmysaAssistantWidget } from "@/components/chat/amysa-assistant-widget";
 import { getActiveProductsForNav, getRegisteredCategories } from "@/lib/catalog";
 import { LayoutWrapper } from "@/components/layout/layout-wrapper";
 import { getSiteUrl } from "@/lib/site-url";
+import { headers } from "next/headers";
 
-const APP_VERSION = "0.1.1";
+const APP_VERSION = "0.1.2";
 const APP_ICON = "/icon.svg";
 const APP_APPLE_ICON = "/icon.svg";
 
@@ -20,6 +22,16 @@ const playfair = Playfair_Display({
   subsets: ["latin"],
   variable: "--font-display",
 });
+
+type RouteScope = "public" | "admin" | "banner";
+
+function normalizeRouteScope(routeScope: string | null): RouteScope {
+  if (routeScope === "admin" || routeScope === "banner" || routeScope === "public") {
+    return routeScope;
+  }
+
+  return "public";
+}
 
 export const metadata: Metadata = {
   applicationName: "AMYSA SHOP",
@@ -58,15 +70,40 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const [products, categories] = await Promise.all([getActiveProductsForNav(), getRegisteredCategories()]);
+  const routeScope = normalizeRouteScope(headers().get("x-amysa-route-scope"));
 
   return (
     <html lang="es">
-      <body className={`${manrope.variable} ${playfair.variable} min-h-screen flex flex-col antialiased`}>
+      <body className={`${manrope.variable} ${playfair.variable} min-h-screen flex flex-col antialiased`} data-app-version={APP_VERSION}>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: "AMYSA SHOP",
+              url: getSiteUrl(),
+              logo: `${getSiteUrl()}/logos/amysa%20shop.png`,
+              description: "Tienda online de perfumes, maquillaje, cuidado personal, accesorios y marcas seleccionadas.",
+              contactPoint: [
+                { "@type": "ContactPoint", telephone: "+51 965 312 386", contactType: "customer service", areaServed: "PE" },
+              ],
+              sameAs: [
+                "https://www.instagram.com/amysa.shop/",
+                "http://tiktok.com/@amysa.shop",
+              ],
+            }),
+          }}
+        />
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-white focus:text-primary focus:outline-none focus:ring-2 focus:ring-primary">
+          Saltar al contenido principal
+        </a>
         <DevServiceWorkerCleanup />
         <NotificationProvider>
-          <LayoutWrapper products={products} categories={categories}>
+          <LayoutWrapper products={products} categories={categories} routeScope={routeScope}>
             {children}
           </LayoutWrapper>
+          <AmysaAssistantWidget />
         </NotificationProvider>
       </body>
     </html>

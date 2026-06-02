@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { createPortal } from "react-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { X, Upload, Plus } from "lucide-react";
@@ -61,6 +62,8 @@ export function ProductCreateModal({ categories, brands, subBrands, subCategorie
   const [galleryImageUrls, setGalleryImageUrls] = useState<string>("");
   const [mainUploadedFiles, setMainUploadedFiles] = useState<File[]>([]);
   const [galleryUploadedFiles, setGalleryUploadedFiles] = useState<File[]>([]);
+  const [mainPreviewUrl, setMainPreviewUrl] = useState<string>("");
+  const [galleryPreviewUrls, setGalleryPreviewUrls] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedBrand, setSelectedBrand] = useState("");
   const [selectedSubCategory, setSelectedSubCategory] = useState("");
@@ -116,6 +119,24 @@ export function ProductCreateModal({ categories, brands, subBrands, subCategorie
     setMounted(true);
     return () => setMounted(false);
   }, []);
+
+  useEffect(() => {
+    if (mainUploadedFiles.length > 0) {
+      const nextUrl = URL.createObjectURL(mainUploadedFiles[0]);
+      setMainPreviewUrl(nextUrl);
+      return () => URL.revokeObjectURL(nextUrl);
+    }
+    setMainPreviewUrl("");
+    return undefined;
+  }, [mainUploadedFiles]);
+
+  useEffect(() => {
+    const fileUrls = galleryUploadedFiles.map((file) => URL.createObjectURL(file));
+    setGalleryPreviewUrls(fileUrls);
+    return () => {
+      fileUrls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [galleryUploadedFiles]);
 
   const handleMainFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -177,6 +198,8 @@ export function ProductCreateModal({ categories, brands, subBrands, subCategorie
         setGalleryImageUrls("");
         setMainUploadedFiles([]);
         setGalleryUploadedFiles([]);
+        setMainPreviewUrl("");
+        setGalleryPreviewUrls([]);
         setSelectedCategory("");
         setSelectedBrand("");
         setSelectedSubCategory("");
@@ -435,16 +458,19 @@ export function ProductCreateModal({ categories, brands, subBrands, subCategorie
                 </div>
               </div>
 
-              {mainUploadedFiles.length > 0 ? (
-                <div className="space-y-1">
-                  {mainUploadedFiles.map((file, index) => (
-                    <div key={`${file.name}-${index}`} className="flex items-center justify-between gap-2 rounded-lg border border-[#e3d7cd] bg-white p-2">
-                      <span className="text-xs text-black">{file.name}</span>
-                      <button type="button" onClick={() => removeMainUploadedFile(index)} className="text-destructive-foreground hover:text-destructive-foreground/90">
-                        <X className="size-4" />
-                      </button>
-                    </div>
-                  ))}
+              {mainPreviewUrl ? (
+                <div className="flex flex-wrap gap-3">
+                  <div className="relative overflow-hidden rounded-xl border border-[#e3d7cd] bg-white shadow-sm">
+                    <button
+                      type="button"
+                      onClick={() => { setMainUploadedFiles([]); setMainPreviewUrl(""); }}
+                      className="absolute right-1 top-1 z-10 inline-flex size-6 items-center justify-center rounded-full bg-black/70 text-white transition hover:bg-destructive/10"
+                      aria-label="Eliminar foto principal"
+                    >
+                      <X className="size-3.5" />
+                    </button>
+                    <Image src={mainPreviewUrl} alt="Foto principal" width={96} height={96} unoptimized className="size-24 object-cover" />
+                  </div>
                 </div>
               ) : null}
             </div>
@@ -479,14 +505,19 @@ export function ProductCreateModal({ categories, brands, subBrands, subCategorie
                 </div>
               </div>
 
-              {galleryUploadedFiles.length > 0 ? (
-                <div className="space-y-1">
-                  {galleryUploadedFiles.map((file, index) => (
-                    <div key={`${file.name}-${index}`} className="flex items-center justify-between gap-2 rounded-lg border border-[#e3d7cd] bg-white p-2">
-                      <span className="text-xs text-black">{file.name}</span>
-                      <button type="button" onClick={() => removeGalleryUploadedFile(index)} className="text-destructive-foreground hover:text-destructive-foreground/90">
-                        <X className="size-4" />
+              {galleryPreviewUrls.length > 0 ? (
+                <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-5">
+                  {galleryPreviewUrls.map((src, index) => (
+                    <div key={`${src}-${index}`} className="relative overflow-hidden rounded-xl border border-[#e3d7cd] bg-white shadow-sm">
+                      <button
+                        type="button"
+                        onClick={() => removeGalleryUploadedFile(index)}
+                        className="absolute right-1 top-1 z-10 inline-flex size-6 items-center justify-center rounded-full bg-black/70 text-white transition hover:bg-destructive/10"
+                        aria-label={`Eliminar galería ${index + 1}`}
+                      >
+                        <X className="size-3.5" />
                       </button>
+                      <Image src={src} alt={`Galería ${index + 1}`} width={160} height={96} unoptimized className="h-24 w-full object-cover" />
                     </div>
                   ))}
                 </div>

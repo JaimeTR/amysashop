@@ -241,7 +241,7 @@ export const getProductById = cache(async (id: string): Promise<Product | null> 
   if (result.error && hasMissingColumns(result.error, ["price_before", "resumen", "contenido", "age_group"])) {
     result = await supabase
       .from("products")
-      .select("id,name,description,price,images,stock,active,brand,gender,sub_brand,sub_category,categories(name)")
+      .select("id,name,description,price,images,stock,active,brand,gender,categories(name)")
       .eq("id", id)
       .eq("active", true)
       .gt("stock", 0)

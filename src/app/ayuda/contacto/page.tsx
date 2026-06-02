@@ -1,6 +1,12 @@
+import type { Metadata } from "next";
 import ContactForm from '../../../components/ayuda/contact-form';
 import { Clock3, Mail, Phone } from 'lucide-react';
 import { DEFAULT_WHATSAPP_DISPLAY_PHONE, DEFAULT_WHATSAPP_PHONE } from '@/lib/whatsapp';
+
+export const metadata: Metadata = {
+  title: "Contacto",
+  description: "Comunícate con AMYSA SHOP por teléfono, correo electrónico o WhatsApp. Estamos aquí para ayudarte.",
+};
 
 export default function ContactoPage() {
   return (

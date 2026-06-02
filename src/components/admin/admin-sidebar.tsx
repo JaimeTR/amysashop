@@ -2,7 +2,7 @@
 
 import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
-import { BadgeDollarSign, Boxes, ClipboardList, HandCoins, LayoutGrid, Menu, MessageCircleMore, Megaphone, Settings2, TrendingUp, UserCog, Users2, X } from "lucide-react";
+import { BadgeDollarSign, Boxes, ClipboardList, HandCoins, LayoutGrid, Menu, MessageCircleMore, Megaphone, Settings2, SlidersHorizontal, TrendingUp, UserCog, Users2, X } from "lucide-react";
 import { AccessRole, AdminPermission, hasPermission } from "@/lib/access-control";
 import { Button } from "@/components/ui/button";
 
@@ -10,14 +10,18 @@ const links = [
   { href: "/admin", label: "Resumen", icon: LayoutGrid, permission: "dashboard.view" as AdminPermission },
   { href: "/admin/productos", label: "Productos", icon: Boxes, permission: "products.manage" as AdminPermission },
   { href: "/admin/inventario", label: "Inventario", icon: TrendingUp, permission: "inventory.manage" as AdminPermission },
-  { href: "/admin/caja-amysa", label: "Caja", icon: HandCoins, permission: "inventory.manage" as AdminPermission },
-  { href: "/admin/clientes", label: "Clientes", icon: Users2, permission: "clients.manage" as AdminPermission },
   { href: "/admin/pedidos", label: "Pedidos", icon: ClipboardList, permission: "orders.manage" as AdminPermission },
   { href: "/admin/chats", label: "Chats", icon: MessageCircleMore, permission: "chat.manage" as AdminPermission },
-  { href: "/admin/tienda", label: "Tienda", icon: Settings2, permission: "store.manage" as AdminPermission },
-  { href: "/admin/marketing", label: "Marketing", icon: Megaphone, permission: "store.manage" as AdminPermission },
-  { href: "/admin/usuarios", label: "Usuarios", icon: UserCog, permission: "users.manage" as AdminPermission },
+  { href: "/admin/clientes", label: "Clientes", icon: Users2, permission: "clients.manage" as AdminPermission },
   { href: "/admin/emprende", label: "Emprende", icon: BadgeDollarSign, permission: "sales.manage" as AdminPermission },
+  { href: "/admin/caja-amysa", label: "Caja", icon: HandCoins, permission: "inventory.manage" as AdminPermission },
+  { href: "/admin/usuarios", label: "Usuarios", icon: UserCog, permission: "users.manage" as AdminPermission },
+  { href: "/admin/marketing", label: "Marketing", icon: Megaphone, permission: "store.manage" as AdminPermission },
+  { href: "/admin/tienda", label: "Tienda", icon: Settings2, permission: "store.manage" as AdminPermission },
+];
+
+const configurationLinks = [
+  { href: "/admin/configuracion", label: "Configuración", icon: SlidersHorizontal, permission: "store.manage" as AdminPermission },
 ];
 
 type Props = {
@@ -33,21 +37,23 @@ export function AdminSidebar({ role, collapsed, mobileOpen, onToggleCollapse, on
   const router = useRouter();
   const pathname = usePathname();
   const visibleLinks = links.filter((link) => hasPermission(role, link.permission));
+  const visibleConfigurationLinks = configurationLinks.filter((link) => hasPermission(role, link.permission));
   const homeHref = role === "vendedora" ? "/admin/vendedora" : "/admin";
 
   // Módulos principales del admin (para evitar que Resumen se active en subrutas)
   const adminModules = [
     "/admin/productos",
     "/admin/inventario",
-    "/admin/caja-amysa",
-    "/admin/clientes",
     "/admin/pedidos",
     "/admin/chats",
-    "/admin/tienda",
-    "/admin/marketing",
-    "/admin/usuarios",
-    "/admin/vendedora",
+    "/admin/clientes",
     "/admin/emprende",
+    "/admin/caja-amysa",
+    "/admin/usuarios",
+    "/admin/marketing",
+    "/admin/tienda",
+    "/admin/vendedora",
+    "/admin/configuracion",
   ];
 
   const isActive = (href: string) => {
@@ -128,6 +134,37 @@ export function AdminSidebar({ role, collapsed, mobileOpen, onToggleCollapse, on
             );
           })}
         </nav>
+
+        {visibleConfigurationLinks.length > 0 ? (
+          <div className="mt-4 space-y-2 border-t border-border/60 pt-4">
+            {!collapsed ? (
+              <p className="px-3 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Configuración</p>
+            ) : null}
+            <div className="grid min-w-0 gap-1.5">
+              {visibleConfigurationLinks.map((link) => {
+                const Icon = link.icon;
+                const href = link.href === "/admin" ? homeHref : link.href;
+                const active = isActive(href);
+
+                return (
+                  <button
+                    key={link.href}
+                    type="button"
+                    onClick={() => handleLinkClick(href)}
+                    className={`flex w-full items-center rounded-xl py-2 text-sm font-medium transition ${
+                      active
+                        ? "bg-primary/20 text-primary"
+                        : "text-foreground/85 hover:bg-primary/10 hover:text-primary"
+                    } ${collapsed ? "justify-center px-2" : "gap-2 whitespace-nowrap px-3"}`}
+                  >
+                    <Icon className="size-4 shrink-0" />
+                    {collapsed ? null : link.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
       </aside>
     </>
   );

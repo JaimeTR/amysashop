@@ -1,15 +1,25 @@
 "use client";
 
-import { ChangeEvent, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { Loader2, UploadCloud } from "lucide-react";
+import { Camera, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { createClient } from "@/lib/supabase/client";
 import { useNotify } from "@/components/feedback/notification-center";
 
 type ProfileSettingsFormProps = {
   userId: string;
   email: string;
+  formId?: string;
+  showSubmitButton?: boolean;
+  onProfileSaved?: (profile: {
+    nombre: string;
+    telefono: string;
+    direccion: string;
+    gender: string;
+    img_avatar: string;
+    avatar_url: string;
+  }) => void;
   initialProfile: {
     nombre: string;
     telefono: string;
@@ -27,15 +37,17 @@ type ProfileDraft = {
   gender: string;
 };
 
-function isMissingColumnError(error: { message?: string } | null | undefined, column: string) {
-  const message = String(error?.message || "").toLowerCase();
-  const needle = column.toLowerCase();
-  return message.includes("column") && message.includes(needle) && message.includes("does not exist");
-}
-
-export function ProfileSettingsForm({ userId, email, initialProfile }: ProfileSettingsFormProps) {
-  const supabase = useMemo(() => createClient(), []);
+export function ProfileSettingsForm({
+  userId,
+  email,
+  formId,
+  showSubmitButton = true,
+  onProfileSaved,
+  initialProfile,
+}: ProfileSettingsFormProps) {
   const notify = useNotify();
+  const router = useRouter();
+  const avatarInputRef = useRef<HTMLInputElement | null>(null);
 
   const [draft, setDraft] = useState<ProfileDraft>({
     nombre: initialProfile.nombre,
@@ -45,8 +57,10 @@ export function ProfileSettingsForm({ userId, email, initialProfile }: ProfileSe
   });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadPreview, setUploadPreview] = useState("");
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [savedAvatarUrl, setSavedAvatarUrl] = useState(
+    initialProfile.img_avatar.trim() || initialProfile.avatar_url.trim() || ""
+  );
 
   useEffect(() => {
     return () => {
@@ -55,6 +69,90 @@ export function ProfileSettingsForm({ userId, email, initialProfile }: ProfileSe
       }
     };
   }, [uploadPreview]);
+
+  function openAvatarPicker() {
+    avatarInputRef.current?.click();
+  }
+
+  async function saveProfile(
+    fileToUpload: File | null = selectedFile,
+    options: { closeAfterSave?: boolean } = {}
+  ) {
+    if (saving) {
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("id", userId);
+      formData.append("nombre", draft.nombre.trim());
+      formData.append("telefono", draft.telefono.trim());
+      formData.append("direccion", draft.direccion.trim());
+      formData.append("gender", draft.gender.trim());
+      formData.append("avatarUrl", savedAvatarUrl.trim());
+
+      if (fileToUpload) {
+        formData.append("avatarFile", fileToUpload);
+      }
+
+      const response = await fetch("/api/perfil", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = (await response.json().catch(() => ({}))) as { success?: boolean; avatarUrl?: string; error?: string };
+
+      if (!response.ok) {
+        throw new Error(result.error || "No se pudo guardar el perfil.");
+      }
+
+      if (result.avatarUrl) {
+        setSavedAvatarUrl(result.avatarUrl);
+        setUploadPreview("");
+        try {
+          window.dispatchEvent(new CustomEvent("amysa:avatar-updated", { detail: { img_avatar: result.avatarUrl, avatar_url: result.avatarUrl } }));
+        } catch (err) {
+          console.debug("[ProfileSettingsForm] failed dispatching avatar event", err);
+        }
+      }
+
+      setSelectedFile(null);
+      if (avatarInputRef.current) {
+        avatarInputRef.current.value = "";
+      }
+
+      notify.success("Perfil actualizado", "Tus cambios se guardaron correctamente.");
+
+      const updated = {
+        nombre: draft.nombre.trim(),
+        telefono: draft.telefono.trim(),
+        direccion: draft.direccion.trim(),
+        gender: draft.gender.trim(),
+        img_avatar: result.avatarUrl || savedAvatarUrl,
+        avatar_url: result.avatarUrl || savedAvatarUrl,
+      };
+
+      try {
+        window.dispatchEvent(new CustomEvent("amysa:profile-updated", { detail: updated }));
+      } catch (err) {
+        console.debug("[ProfileSettingsForm] failed dispatching profile event", err);
+      }
+
+      onProfileSaved?.(updated);
+
+      router.refresh();
+
+      if (options.closeAfterSave) {
+        return;
+      }
+    } catch (error) {
+      notify.error("No se pudo guardar", String((error as { message?: string })?.message || "Intenta nuevamente."));
+    } finally {
+      setSaving(false);
+    }
+  }
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0] || null;
@@ -84,183 +182,69 @@ export function ProfileSettingsForm({ userId, email, initialProfile }: ProfileSe
 
     setSelectedFile(file);
     setUploadPreview(URL.createObjectURL(file));
-  }
-
-  async function handleUploadAvatar() {
-    if (!selectedFile) {
-      notify.info("Imagen de perfil", "Primero selecciona una imagen de tu dispositivo.");
-      return;
-    }
-
-    setUploadingAvatar(true);
-
-    try {
-      const bucketName =
-        process.env.NEXT_PUBLIC_SUPABASE_PROFILE_AVATARS_BUCKET ||
-        process.env.NEXT_PUBLIC_SUPABASE_AVATARS_BUCKET ||
-        "profile-avatars";
-
-      const extension = selectedFile.name.includes(".")
-        ? selectedFile.name.split(".").pop()?.toLowerCase() || "jpg"
-        : "jpg";
-      const cleanName = selectedFile.name.replace(/\s+/g, "-").toLowerCase();
-      const objectPath = `${userId}/${Date.now()}-${cleanName || `avatar.${extension}`}`;
-
-      const upload = await supabase.storage.from(bucketName).upload(objectPath, selectedFile, {
-        upsert: true,
-        cacheControl: "3600",
-        contentType: selectedFile.type || undefined,
-      });
-
-      if (upload.error) {
-        throw new Error(upload.error.message || `No se pudo subir la imagen al bucket ${bucketName}.`);
-      }
-
-      const { data } = supabase.storage.from(bucketName).getPublicUrl(objectPath);
-
-      if (!data?.publicUrl) {
-        throw new Error("No se pudo generar la URL pública del avatar.");
-      }
-
-      const avatarUrl = data.publicUrl;
-      console.log("[ProfileSettingsForm] Attempting to save avatar URL:", avatarUrl);
-
-      let saveResult = await supabase.from("profiles").update({ img_avatar: avatarUrl }).eq("id", userId);
-
-      console.log("[ProfileSettingsForm] Upsert result:", { 
-        error: saveResult.error, 
-        data: saveResult.data,
-        status: saveResult.status 
-      });
-
-      if (saveResult.error) {
-        console.log("[ProfileSettingsForm] Update failed, retrying with upsert");
-        saveResult = await supabase.from("profiles").upsert(
-          { id: userId, img_avatar: avatarUrl },
-          { onConflict: "id" }
-        );
-
-        console.log("[ProfileSettingsForm] Upsert retry result:", {
-          error: saveResult.error,
-          data: saveResult.data,
-          status: saveResult.status,
-        });
-      }
-
-      if (saveResult.error) {
-        console.error("[ProfileSettingsForm] Avatar save failed:", saveResult.error);
-        throw new Error(saveResult.error.message || "No se pudo guardar la foto en tu perfil.");
-      }
-
-      console.log("[ProfileSettingsForm] Avatar saved successfully to database");
-      setSelectedFile(null);
-      try {
-        console.debug("[ProfileSettingsForm] dispatching amysa:avatar-updated", { url: avatarUrl });
-        window.dispatchEvent(new CustomEvent("amysa:avatar-updated", { detail: { img_avatar: avatarUrl } }));
-      } catch (err) {
-        console.debug("[ProfileSettingsForm] failed dispatching avatar event", err);
-      }
-      notify.success("Imagen subida", "Tu foto de perfil se actualizó correctamente.");
-    } catch (error) {
-      notify.error("Error al subir", String((error as { message?: string })?.message || "No se pudo subir la imagen."));
-    } finally {
-      setUploadingAvatar(false);
-    }
+    void saveProfile(file, { closeAfterSave: false });
   }
 
   async function handleSaveProfile() {
-    setSaving(true);
-
-    const payload: Record<string, string | null> = {
-      id: userId,
-      nombre: draft.nombre.trim() || null,
-      telefono: draft.telefono.trim() || null,
-      direccion: draft.direccion.trim() || null,
-      gender: draft.gender.trim() || null,
-    };
-
-    try {
-      console.log("[ProfileSettingsForm] Attempting profile save with payload:", payload);
-      
-      let result = await supabase.from("profiles").upsert(payload, { onConflict: "id" });
-
-      console.log("[ProfileSettingsForm] First upsert result:", { 
-        error: result.error, 
-        data: result.data,
-        status: result.status 
-      });
-
-      if (result.error && isMissingColumnError(result.error, "gender")) {
-        console.log("[ProfileSettingsForm] Missing column detected, retrying without gender");
-        const { gender: _omitGender, ...fallbackPayload } = payload;
-        result = await supabase.from("profiles").upsert(fallbackPayload, { onConflict: "id" });
-        console.log("[ProfileSettingsForm] Fallback upsert result:", { 
-          error: result.error, 
-          data: result.data,
-          status: result.status 
-        });
-      }
-
-      if (result.error) {
-        console.error("[ProfileSettingsForm] Profile save failed:", result.error);
-        throw result.error;
-      }
-
-      console.log("[ProfileSettingsForm] Profile saved successfully");
-      notify.success("Perfil actualizado", "Tus datos se guardaron correctamente.");
-      try {
-        const updated = {
-          nombre: payload.nombre,
-          telefono: payload.telefono,
-          direccion: payload.direccion,
-          gender: String(payload.gender || ""),
-        };
-        console.debug("[ProfileSettingsForm] dispatching amysa:profile-updated", updated);
-        window.dispatchEvent(new CustomEvent("amysa:profile-updated", { detail: updated }));
-      } catch (err) {
-        console.debug("[ProfileSettingsForm] failed dispatching profile event", err);
-      }
-    } catch (error) {
-      console.error("[ProfileSettingsForm] Exception during profile save:", error);
-      notify.error("No se pudo guardar", String((error as { message?: string })?.message || "Intenta nuevamente."));
-    } finally {
-      setSaving(false);
-    }
+    await saveProfile(selectedFile, { closeAfterSave: true });
   }
 
-  const avatarSrc = uploadPreview || initialProfile.img_avatar || initialProfile.avatar_url || "/placeholder-product.svg";
+  const avatarSrc = uploadPreview || savedAvatarUrl || initialProfile.img_avatar || initialProfile.avatar_url || "/placeholder-product.svg";
 
   const isBlobOrDataSrc = (src: string) => src.startsWith("blob:") || src.startsWith("data:");
 
   return (
-    <div className="space-y-4 text-sm">
+    <form id={formId} onSubmit={(event) => {
+      event.preventDefault();
+      void handleSaveProfile();
+    }} className="space-y-4 text-sm">
       <div className="flex flex-col items-center gap-4 rounded-2xl border border-white/70 bg-white/70 p-4 sm:flex-row sm:items-center">
         {isBlobOrDataSrc(avatarSrc) ? (
-          <div
-            role="img"
-            aria-label="Foto de perfil"
-            key={avatarSrc}
-            className="h-[88px] w-[88px] rounded-full border border-primary/20 bg-center bg-cover"
+          <button
+            type="button"
+            onClick={openAvatarPicker}
+            className="relative h-[88px] w-[88px] overflow-hidden rounded-full border border-primary/20 bg-center bg-cover transition hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-primary/40"
             style={{ backgroundImage: `url(${avatarSrc})` }}
-          />
+            aria-label="Cambiar foto de perfil"
+          >
+            <span className="absolute inset-0 grid place-content-center bg-black/25 text-white opacity-0 transition hover:opacity-100">
+              <Camera className="size-5" />
+            </span>
+          </button>
         ) : (
-          <Image
-            src={avatarSrc}
-            alt="Foto de perfil"
-            key={avatarSrc}
-            width={88}
-            height={88}
-            className="rounded-full border border-primary/20 object-cover"
-            sizes="88px"
-          />
+          <button
+            type="button"
+            onClick={openAvatarPicker}
+            className="relative h-[88px] w-[88px] overflow-hidden rounded-full border border-primary/20 transition hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-primary/40"
+            aria-label="Cambiar foto de perfil"
+          >
+            <Image
+              src={avatarSrc}
+              alt="Foto de perfil"
+              key={avatarSrc}
+              width={88}
+              height={88}
+              className="h-full w-full rounded-full object-cover"
+              sizes="88px"
+            />
+            <span className="absolute inset-0 grid place-content-center bg-black/25 text-white opacity-0 transition hover:opacity-100">
+              <Camera className="size-5" />
+            </span>
+          </button>
         )}
         <div className="w-full space-y-3 sm:flex-1">
-          <label htmlFor="profile-avatar-file" className="block text-xs font-semibold text-muted-foreground">Imagen de perfil</label>
-          <input id="profile-avatar-file" type="file" accept="image/*" onChange={handleFileChange} className="block w-full text-xs" />
-          <Button type="button" variant="outline" onClick={handleUploadAvatar} disabled={!selectedFile || uploadingAvatar} className="w-full sm:w-auto">
-            {uploadingAvatar ? <Loader2 className="mr-2 size-4 animate-spin" /> : <UploadCloud className="mr-2 size-4" />}
-            Subir imagen
-          </Button>
+          <label htmlFor="profile-avatar-file" className="block text-xs font-semibold text-muted-foreground">
+            Imagen de perfil
+          </label>
+          <input
+            ref={avatarInputRef}
+            id="profile-avatar-file"
+            type="file"
+            accept="image/*"
+            onChange={handleFileChange}
+            className="sr-only"
+          />
+          <p className="text-xs text-muted-foreground">Haz clic en la foto para cambiarla. Se guarda automáticamente.</p>
         </div>
       </div>
 
@@ -311,11 +295,14 @@ export function ProfileSettingsForm({ userId, email, initialProfile }: ProfileSe
         </div>
       </div>
 
-      <div className="flex justify-end">
-        <Button type="button" onClick={handleSaveProfile} disabled={saving}>
-          {saving ? "Guardando..." : "Guardar cambios"}
-        </Button>
-      </div>
-    </div>
+      {showSubmitButton ? (
+        <div className="flex justify-end">
+          <Button type="submit" disabled={saving}>
+            {saving ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
+            {saving ? "Guardando..." : "Guardar cambios"}
+          </Button>
+        </div>
+      ) : null}
+    </form>
   );
 }

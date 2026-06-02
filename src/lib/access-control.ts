@@ -129,6 +129,9 @@ export function resolveRoleFromContext(input: {
   }
 
   if (input.isAdmin) {
+    if (process.env.NODE_ENV === "development") {
+      console.warn(`access-control: user ${input.email} granted "duena" via isAdmin fallback`);
+    }
     return "duena";
   }
 

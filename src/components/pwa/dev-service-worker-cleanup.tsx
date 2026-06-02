@@ -4,11 +4,19 @@ import { useEffect } from "react";
 
 export function DevServiceWorkerCleanup() {
   useEffect(() => {
-    if (process.env.NODE_ENV !== "development") {
+    if (typeof window === "undefined" || !("serviceWorker" in navigator)) {
       return;
     }
 
-    if (typeof window === "undefined" || !("serviceWorker" in navigator)) {
+    const currentVersion = document.body.dataset.appVersion || "";
+    const storedVersion = window.localStorage.getItem("amysa-app-version") || "";
+    const isDevelopment = process.env.NODE_ENV === "development";
+
+    if (!currentVersion) {
+      return;
+    }
+
+    if (!isDevelopment && currentVersion === storedVersion) {
       return;
     }
 
@@ -25,6 +33,7 @@ export function DevServiceWorkerCleanup() {
           Promise.all(registrations.map((registration) => registration.unregister())),
           Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName))),
         ]).then(() => {
+          window.localStorage.setItem("amysa-app-version", currentVersion);
           window.location.reload();
         });
       })

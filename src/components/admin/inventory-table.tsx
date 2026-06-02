@@ -369,8 +369,11 @@ export function InventoryTable({
                       <span className="text-xs text-muted-foreground">-</span>
                     )}
                   </td>
-                  <td className="px-3 py-2 hidden md:table-cell font-semibold text-primary text-sm">
-                    S/ {Number(item.price || 0).toFixed(2)}
+                  <td className="px-3 py-2 hidden md:table-cell text-xs">
+                    <div className="space-y-0.5">
+                      <p className="text-muted-foreground">Sug: S/ {calculateBaseSalePrice(item).toFixed(2)}</p>
+                      <p className="font-semibold text-primary">Final: S/ {Number(item.price || 0).toFixed(2)}</p>
+                    </div>
                   </td>
                   <td className="px-3 py-2">
                     <div className="flex flex-wrap gap-1">
@@ -535,9 +538,10 @@ export function InventoryTable({
                       <p>
                         <span className="font-semibold">Porcentaje vendedoras:</span> {Number(previewItem.seller_markup_percentage || 0).toFixed(2)}%
                       </p>
-                      <div className="rounded-xl bg-primary/10 border border-primary/20 px-3 py-2 inline-block">
-                        <p className="text-xs font-semibold text-primary/70">Precio venta final</p>
-                        <p className="mt-1 text-2xl font-bold text-primary">S/ {Number(previewItem.price || 0).toFixed(2)}</p>
+                      <div className="space-y-1 rounded-xl bg-primary/10 border border-primary/20 px-3 py-2">
+                        <p className="text-xs text-muted-foreground">Precio sugerido: <span className="font-semibold text-foreground">S/ {calculateBaseSalePrice(previewItem).toFixed(2)}</span></p>
+                        <p className="text-xs font-semibold text-primary/70">Precio venta final (con % vendedora + redondeo)</p>
+                        <p className="text-base font-bold text-primary">S/ {Number(previewItem.price || 0).toFixed(2)}</p>
                       </div>
                     </div>
                   </div>

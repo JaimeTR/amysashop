@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Lock, Mail } from "lucide-react";
@@ -22,6 +22,37 @@ export default function LoginPage() {
   const [resendLoading, setResendLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [emailNotConfirmed, setEmailNotConfirmed] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
+
+  function isValidEmail(value: string) {
+    const normalized = String(value || "").trim();
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized);
+  }
+
+  useEffect(() => {
+    let active = true;
+
+    async function checkSession() {
+      const { data } = await supabase.auth.getSession();
+
+      if (!active) {
+        return;
+      }
+
+      if (data.session?.user) {
+        router.replace("/perfil");
+        return;
+      }
+
+      setCheckingSession(false);
+    }
+
+    checkSession();
+
+    return () => {
+      active = false;
+    };
+  }, [router, supabase]);
 
   function isEmailNotConfirmedError(rawMessage: string) {
     const normalized = String(rawMessage || "").toLowerCase();
@@ -47,6 +78,11 @@ export default function LoginPage() {
 
     if (!safeEmail) {
       notify.warning("Correo requerido", "Ingresa tu correo para reenviar la confirmación.");
+      return;
+    }
+
+    if (!isValidEmail(safeEmail)) {
+      notify.warning("Correo inválido", "Ingresa un correo válido que incluya @.");
       return;
     }
 
@@ -77,13 +113,39 @@ export default function LoginPage() {
     window.open("https://mail.google.com/mail/u/0/#inbox", "_blank", "noopener,noreferrer");
   }
 
+  if (checkingSession) {
+    return (
+      <main className="relative flex min-h-[calc(100vh-12rem)] items-center justify-center overflow-hidden px-4 py-8 sm:px-6">
+        <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_rgba(174,130,109,0.25),_transparent_60%),radial-gradient(ellipse_at_bottom,_rgba(145,114,93,0.2),_transparent_55%)]" />
+        <div className="glass-card rounded-3xl border border-white/40 px-6 py-5 text-sm text-muted-foreground shadow-xl">
+          Verificando sesión...
+        </div>
+      </main>
+    );
+  }
+
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
     setMessage("");
     setEmailNotConfirmed(false);
 
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const safeEmail = email.trim().toLowerCase();
+    if (!safeEmail) {
+      setMessage("Ingresa tu correo para continuar.");
+      notify.warning("Correo requerido", "Ingresa tu correo para iniciar sesión.");
+      setLoading(false);
+      return;
+    }
+
+    if (!isValidEmail(safeEmail)) {
+      setMessage("Ingresa un correo válido que incluya @.");
+      notify.warning("Correo inválido", "Ingresa un correo válido que incluya @.");
+      setLoading(false);
+      return;
+    }
+
+    const { data, error } = await supabase.auth.signInWithPassword({ email: safeEmail, password });
 
     if (error) {
       if (isEmailNotConfirmedError(error.message)) {
@@ -162,7 +224,12 @@ export default function LoginPage() {
                 <Input
                   id="login-email"
                   placeholder="correo@ejemplo.com"
-                  type="email"
+                  type="text"
+                  inputMode="email"
+                  autoComplete="email"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
                   value={email}
                   onChange={(event) => {
                     setEmail(event.target.value);

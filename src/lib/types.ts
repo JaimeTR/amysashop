@@ -62,3 +62,18 @@ export type LandingPage = {
   productId: string;
   active: boolean;
 };
+
+// Estadísticas agregadas para vistas de administración (vendedoras / emprende)
+export type SalespersonWithStats = {
+  id: string;
+  user_id?: string | null;
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+  commission_percentage?: number | null;
+  status?: string | null;
+  // métricas
+  sales_count?: number; // número de ventas en el periodo
+  revenue?: number; // monto total vendido
+  commission_due?: number; // comisión acumulada pendiente
+};

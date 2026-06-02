@@ -34,6 +34,11 @@ export function DiscountCarouselClient({ products }: { products: Product[] }) {
   const trackRef = useRef<HTMLDivElement | null>(null);
   const [isAutoplay, setIsAutoplay] = useState(true);
   const isAdjustingRef = useRef(false);
+  const [imgErrors, setImgErrors] = useState<Set<string>>(new Set());
+
+  function handleImgError(productId: string) {
+    setImgErrors((prev) => { const next = new Set(prev); next.add(productId); return next; });
+  }
 
   // Duplicar productos para efecto infinito continuo
   const extendedProducts = [...products, ...products];
@@ -136,7 +141,7 @@ export function DiscountCarouselClient({ products }: { products: Product[] }) {
           >
           {extendedProducts.map((product, idx) => {
             const discountPercent = getDiscountPercent(product.priceBefore, product.price);
-            const imageSrc = getSafeImageSrc(product.images);
+            const imageSrc = imgErrors.has(product.id) ? DEFAULT_PRODUCT_IMAGE : getSafeImageSrc(product.images);
 
             return (
               <article
@@ -153,10 +158,7 @@ export function DiscountCarouselClient({ products }: { products: Product[] }) {
                           fill
                           className="object-cover"
                           unoptimized
-                          onError={(e) => {
-                            const img = e.target as HTMLImageElement;
-                              img.src = DEFAULT_PRODUCT_IMAGE;
-                          }}
+                          onError={() => handleImgError(product.id)}
                         />
                       </div>
                     </Link>

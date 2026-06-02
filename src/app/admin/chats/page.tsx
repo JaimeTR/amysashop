@@ -279,7 +279,7 @@ export default async function AdminChatsPage({ searchParams }: PageProps) {
                   <div className="mb-3 flex items-start gap-3">
                     <div className="relative flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-primary/15 bg-gradient-to-br from-[#fff8f3] via-[#f8efe8] to-[#f1dfd4] text-[#7d5a44] shadow-sm ring-1 ring-white/60">
                       {hasAvatar ? (
-                        <Image src={avatarUrl} alt={displayName} width={44} height={44} unoptimized className="h-full w-full object-cover" />
+                        <Image src={avatarUrl} alt={displayName} width={44} height={44} className="h-full w-full object-cover" />
                       ) : (
                         <span className="flex items-center justify-center">
                           {displayName === "Cliente" ? <UserRound className="size-5" /> : <span className="text-xs font-semibold">{getInitials(displayName)}</span>}

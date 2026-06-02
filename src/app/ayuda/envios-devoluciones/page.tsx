@@ -1,3 +1,10 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Envíos y devoluciones",
+  description: "Conoce los tiempos de entrega, cobertura, costos de envío y política de devoluciones de AMYSA SHOP.",
+};
+
 export default function EnviosDevolucionesPage() {
   return (
     <main className="mx-auto max-w-5xl p-6">

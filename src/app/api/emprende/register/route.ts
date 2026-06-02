@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
+import { canAccessAdmin, resolveRoleFromContext } from "@/lib/access-control";
 
 function safeText(value: FormDataEntryValue | null) {
   return String(value || "").trim();
@@ -28,6 +30,25 @@ function getSaleErrorMessage(error: { code?: string | null; message?: string | n
 
 export async function POST(req: Request) {
   try {
+    const authSupabase = createClient();
+    const { data: { user }, error: authError } = await authSupabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: "Debes iniciar sesión" }, { status: 401 });
+    }
+
+    const userEmail = (user.email || "").trim().toLowerCase();
+    const superAdminEmail = (process.env.ADMIN_ALLOWED_EMAIL || "").trim().toLowerCase();
+    const role = resolveRoleFromContext({
+      email: userEmail,
+      metadataRole: (user.user_metadata?.role as string | null | undefined) ?? null,
+      superAdminEmail,
+    });
+
+    if (!canAccessAdmin(role)) {
+      return NextResponse.json({ error: "No tienes permisos para registrar ventas" }, { status: 403 });
+    }
+
     const formData = await req.formData();
     const serviceClient = createServiceRoleClient();
 

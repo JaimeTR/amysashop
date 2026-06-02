@@ -1,3 +1,10 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Centro de ayuda",
+  description: "Resuelve tus dudas sobre compras, envíos, devoluciones y más en el centro de ayuda de AMYSA SHOP.",
+};
+
 export default function AyudaPage() {
   return (
     <main className="mx-auto max-w-4xl space-y-4 p-6">

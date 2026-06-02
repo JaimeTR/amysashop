@@ -1,16 +1,31 @@
 import { createClient } from "@supabase/supabase-js";
+import { createClient as createServerClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   const serviceRoleKey =
     process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const allowedEmail = (process.env.ADMIN_ALLOWED_EMAIL || "").trim().toLowerCase();
 
   if (!serviceRoleKey || !supabaseUrl) {
     return NextResponse.json(
       { error: "Missing environment variables: SUPABASE_SERVICE_ROLE_KEY or SUPABASE_SECRET_KEY" },
       { status: 500 }
     );
+  }
+
+  const authSupabase = createServerClient();
+  const { data: { user } } = await authSupabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "No autorizado: debes iniciar sesión" }, { status: 401 });
+  }
+
+  const userEmail = (user.email || "").trim().toLowerCase();
+
+  if (!allowedEmail || userEmail !== allowedEmail) {
+    return NextResponse.json({ error: "No autorizado: no tienes permisos de administrador" }, { status: 403 });
   }
 
   try {
@@ -24,10 +39,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Usa el service role client (evita RLS policies)
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    // Insert o update con bypass de RLS
     const { data, error } = await supabase
       .from("profiles")
       .upsert({

@@ -81,8 +81,8 @@ export function RelatedProductsCarousel({ products }: Props) {
   return (
     <section className="space-y-3 pb-4">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="font-[var(--font-display)] text-2xl text-foreground">
-          <strong>Productos relacionados y recomendados</strong>
+        <h2 className="font-[var(--font-display)] text-2xl text-foreground font-medium">
+          Productos relacionados y recomendados
         </h2>
         <div className="hidden items-center gap-2 sm:flex">
           <Button type="button" size="icon" variant="outline" onClick={() => scrollByAmount("left")} aria-label="Anterior">

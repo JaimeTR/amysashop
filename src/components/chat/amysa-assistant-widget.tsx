@@ -8,9 +8,11 @@ import { Loader2, Send, Sparkles, UserRound, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { getProductUrl } from "@/lib/product-url";
+import { useCartStore } from "@/store/cart-store";
+import { useNotify } from "@/components/feedback/notification-center";
 
 type Props = {
-  userId: string;
+  userId?: string;
   userName?: string;
 };
 
@@ -36,15 +38,19 @@ function makeId() {
 function localFallback(userMessage: string) {
   const query = userMessage.toLowerCase();
 
-  if (query.includes("hola") || query.includes("buenas")) {
-    return "Hola, soy AMYSA AI. Para ayudarte mejor, dime tu nombre y un número de celular o correo, y luego qué deseas comprar.";
+  if (query.includes("hola") || query.includes("buenas") || query.includes("buen") || query.includes("hey")) {
+    return "¡Hola! Soy AMYSA AI, tu asesora de ventas. ¿En qué puedo ayudarte hoy? Puedo recomendarte productos, mostrarte precios o ayudarte a encontrar lo que buscas.";
   }
 
   if (query.includes("precio") || query.includes("barato") || query.includes("econom")) {
-    return "Puedo ayudarte a buscar opciones por rango de precio. Dime tu presupuesto aproximado en soles y te recomiendo opciones.";
+    return "Claro, con gusto te ayudo. ¿Cuál es tu presupuesto aproximado? Así puedo mostrarte las mejores opciones disponibles.";
   }
 
-  return "En este momento estoy en modo básico. Cuéntame qué tipo de producto quieres y te guío para encontrarlo rápido en la tienda.";
+  if (query.includes("gracias") || query.includes("graci")) {
+    return "¡De nada! Si necesitas algo más, aquí estoy para ayudarte. Que tengas un lindo día 💛";
+  }
+
+  return "¡Hola! Soy AMYSA AI. ¿Qué producto, marca o categoría te gustaría ver? Estoy aquí para ayudarte a encontrar lo que necesitas.";
 }
 
 function TypingText({ text, animate }: { text: string; animate: boolean }) {
@@ -77,6 +83,8 @@ function TypingText({ text, animate }: { text: string; animate: boolean }) {
 export function AmysaAssistantWidget({ userId, userName }: Props) {
   const pathname = usePathname();
   const supabase = useMemo(() => createClient(), []);
+  const addToCartStore = useCartStore((state) => state.addItem);
+  const notify = useNotify();
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showHelpNudge, setShowHelpNudge] = useState(false);
@@ -85,18 +93,47 @@ export function AmysaAssistantWidget({ userId, userName }: Props) {
   const [advisorInControl, setAdvisorInControl] = useState(false);
   const [clientAvatarUrl, setClientAvatarUrl] = useState("");
   const [lastAnimatedMessageId, setLastAnimatedMessageId] = useState("");
+  const [resolvedUserId, setResolvedUserId] = useState(userId || "");
+  const [userDisplayName, setUserDisplayName] = useState(userName || "");
   const [messages, setMessages] = useState<UiMessage[]>([
     {
       id: makeId(),
       sender: "assistant",
-      content: `Hola${userName ? ` ${userName}` : ""}, soy AMYSA AI. Para ayudarte mejor, dime tu nombre y un número de celular o correo, y luego qué deseas comprar.`,
+      content: `¡Hola${userName ? ` ${userName}` : ""}! Soy AMYSA AI, tu asesora de ventas. ¿En qué puedo ayudarte hoy?`,
     },
   ]);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const browserNudgeSentRef = useRef(false);
   const sendLockRef = useRef(false);
-  const storageKey = `amysa-ai-session:${userId}`;
+  const storageKey = `amysa-ai-session:${resolvedUserId || "guest"}`;
+
+  useEffect(() => {
+    if (userId) {
+      setResolvedUserId(userId);
+      return;
+    }
+
+    let active = true;
+
+    async function syncSessionUser() {
+      const { data } = await supabase.auth.getSession();
+      if (!active) return;
+      setResolvedUserId(data.session?.user.id || "");
+    }
+
+    syncSessionUser();
+
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!active) return;
+      setResolvedUserId(session?.user.id || "");
+    });
+
+    return () => {
+      active = false;
+      data.subscription.unsubscribe();
+    };
+  }, [supabase, userId]);
 
   const refreshSessionMessages = useCallback(async (targetSessionId: string) => {
     if (!targetSessionId) return;
@@ -142,15 +179,40 @@ export function AmysaAssistantWidget({ userId, userName }: Props) {
   }, [storageKey, refreshSessionMessages]);
 
   useEffect(() => {
+    if (!resolvedUserId) return;
+
+    let active = true;
+
+    async function loadUserProfile() {
+      const { data } = await supabase.from("profiles").select("nombre").eq("id", resolvedUserId).maybeSingle();
+      if (!active) return;
+      const name = data && typeof data === "object" && "nombre" in data ? String((data as { nombre?: string }).nombre || "").trim() : "";
+      if (name && !userDisplayName) {
+        setUserDisplayName(name);
+        setMessages((prev) => {
+          const updated = [...prev];
+          if (updated[0]?.sender === "assistant") {
+            updated[0] = { ...updated[0], content: `¡Hola ${name}! Soy AMYSA AI, tu asesora de ventas. ¿En qué puedo ayudarte hoy?` };
+          }
+          return updated;
+        });
+      }
+    }
+
+    loadUserProfile();
+    return () => { active = false; };
+  }, [resolvedUserId, supabase, userDisplayName]);
+
+  useEffect(() => {
     let active = true;
 
     async function loadClientAvatar() {
-      if (!userId) {
+      if (!resolvedUserId) {
         if (active) setClientAvatarUrl("");
         return;
       }
 
-      const { data } = await supabase.from("profiles").select("img_avatar,avatar_url").eq("id", userId).maybeSingle();
+      const { data } = await supabase.from("profiles").select("img_avatar,avatar_url").eq("id", resolvedUserId).maybeSingle();
       if (!active) return;
 
       setClientAvatarUrl(String((data as { img_avatar?: string | null; avatar_url?: string | null } | null)?.img_avatar || (data as { avatar_url?: string | null } | null)?.avatar_url || "").trim());
@@ -161,7 +223,7 @@ export function AmysaAssistantWidget({ userId, userName }: Props) {
     return () => {
       active = false;
     };
-  }, [supabase, userId]);
+  }, [supabase, resolvedUserId]);
 
   useEffect(() => {
     const target = scrollRef.current;
@@ -258,12 +320,13 @@ export function AmysaAssistantWidget({ userId, userName }: Props) {
   useEffect(() => {
     setShowHelpNudge(false);
 
-    if (pathname !== "/" || isOpen) {
+    if (isOpen) {
       return;
     }
 
     let stopped = false;
-    let loopTimerId = 0;
+    let timerId = 0;
+    let hideTimerId = 0;
 
     function notifyIfBackground() {
       if (browserNudgeSentRef.current) return;
@@ -274,34 +337,29 @@ export function AmysaAssistantWidget({ userId, userName }: Props) {
 
       browserNudgeSentRef.current = true;
       new Notification("AMYSA AI", {
-        body: "Hola, ¿necesitas ayuda para tu compra?",
+        body: "Hola, ¿necesitas ayuda? Soy AMYSA AI y puedo ayudarte a escoger o buscar el mejor producto.",
       });
     }
 
-    function scheduleNudge(delayMs: number) {
-      loopTimerId = window.setTimeout(() => {
-        if (stopped) return;
+    timerId = window.setTimeout(() => {
+      if (stopped) return;
 
-        setShowHelpNudge(true);
-        notifyIfBackground();
+      setShowHelpNudge(true);
+      notifyIfBackground();
 
-        window.setTimeout(() => {
-          if (!stopped) {
-            setShowHelpNudge(false);
-          }
-        }, 9000);
-
-        scheduleNudge(30000);
-      }, delayMs);
-    }
-
-    scheduleNudge(10000);
+      hideTimerId = window.setTimeout(() => {
+        if (!stopped) {
+          setShowHelpNudge(false);
+        }
+      }, 9000);
+    }, 10000);
 
     return () => {
       stopped = true;
-      window.clearTimeout(loopTimerId);
+      window.clearTimeout(timerId);
+      window.clearTimeout(hideTimerId);
     };
-  }, [pathname, isOpen]);
+  }, [isOpen]);
 
   async function handleSend() {
     const text = input.trim();
@@ -321,7 +379,17 @@ export function AmysaAssistantWidget({ userId, userName }: Props) {
 
       const accessToken = session?.access_token;
       if (!accessToken) {
-        throw new Error("No hay sesión activa");
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: makeId(),
+            sender: "assistant",
+            content: `Para usar el asistente completo, inicia sesión: /login o regístrate gratis: /registro`,
+          },
+        ]);
+        setIsLoading(false);
+        sendLockRef.current = false;
+        return;
       }
 
       const response = await fetch("/api/assistant/chat", {
@@ -365,6 +433,19 @@ export function AmysaAssistantWidget({ userId, userName }: Props) {
 
       setAdvisorInControl(false);
 
+      let replyText = String(data.reply || "").trim() || localFallback(text);
+
+      const addToCartMatch = replyText.match(/\[AGREGAR:([^\]]+)\]/);
+      if (addToCartMatch) {
+        const productId = addToCartMatch[1].trim();
+        replyText = replyText.replace(/\[AGREGAR:[^\]]+\]/, "").trim();
+        const rec = Array.isArray(data.recommendations) ? data.recommendations.find((r) => r.id === productId) : null;
+        if (rec) {
+          addToCartStore({ productId: rec.id, name: rec.name, price: rec.price, image: rec.image });
+          notify.success("Agregado al carrito", `${rec.name} se agregó a tu carrito.`);
+        }
+      }
+
       const messageId = makeId();
       setLastAnimatedMessageId(messageId);
 
@@ -373,7 +454,7 @@ export function AmysaAssistantWidget({ userId, userName }: Props) {
         {
           id: messageId,
           sender: "assistant",
-          content: String(data.reply || "").trim() || localFallback(text),
+          content: replyText || localFallback(text),
           recommendations: Array.isArray(data.recommendations) ? data.recommendations : undefined,
         },
       ]);
@@ -400,7 +481,7 @@ export function AmysaAssistantWidget({ userId, userName }: Props) {
   }
 
   return (
-    <div className="fixed bottom-20 right-4 z-[120] md:bottom-4 md:right-6">
+    <div className="fixed bottom-2 right-2 z-[120] sm:bottom-3 sm:right-3 md:bottom-4 md:right-4">
       {isOpen ? (
         <div className="glass-card w-[min(92vw,360px)] overflow-hidden rounded-3xl border border-primary/20 shadow-2xl">
           <div className="flex items-center justify-between bg-primary/10 px-4 py-3">
@@ -429,13 +510,13 @@ export function AmysaAssistantWidget({ userId, userName }: Props) {
                         <UserRound className="size-4 text-success-foreground" />
                       </div>
                     ) : (
-                      <Image
-                        src="/logos/amysa-square-primary.png"
-                        alt="AMYSA AI"
-                        width={28}
-                        height={28}
-                        className="size-7 rounded-full border border-primary/20 bg-white"
-                      />
+                      <div className="grid size-7 place-content-center rounded-full bg-gradient-to-br from-[#c49a82] to-[#a6785c]">
+                        <svg viewBox="0 0 48 48" className="size-5" xmlns="http://www.w3.org/2000/svg">
+                          <rect x="11" y="15" width="10" height="10" rx="2.5" fill="white" />
+                          <rect x="27" y="15" width="10" height="10" rx="2.5" fill="white" />
+                          <path d="M14 36 Q24 44, 34 36" stroke="white" strokeWidth="3" strokeLinecap="round" fill="none" />
+                        </svg>
+                      </div>
                     )}
                   </div>
                 ) : null}
@@ -469,37 +550,27 @@ export function AmysaAssistantWidget({ userId, userName }: Props) {
                         : "border border-white/40 bg-white/90 text-foreground"
                   }`}
                 >
-                  {msg.sender === "assistant" ? (
+                  {msg.sender === "assistant" && !msg.content.includes("/registro") ? (
                     <TypingText text={msg.content} animate={msg.id === lastAnimatedMessageId} />
                   ) : (
-                    msg.content
+                    <span>{msg.content.split(/(\/registro|\/login)/).map((part, i) => 
+                      part === "/registro" ? <Link key={i} href="/registro" className="font-semibold underline">regístrate gratis</Link> :
+                      part === "/login" ? <Link key={i} href="/login" className="font-semibold underline">inicia sesión</Link> :
+                      part
+                    )}</span>
                   )}
 
                   {msg.sender === "assistant" && msg.recommendations && msg.recommendations.length > 0 ? (
-                    <div className="mt-3 space-y-2">
+                    <div className="mt-2 space-y-1">
                       {msg.recommendations.map((item) => (
-                        <Link
-                          key={item.id}
-                          href={getProductUrl(item)}
-                          className="flex items-center gap-2 rounded-xl border border-primary/20 bg-white p-2 transition hover:border-primary/40 hover:bg-primary/5"
-                        >
-                          <Image
-                            src={item.image}
-                            alt={item.name}
-                            width={64}
-                            height={64}
-                            unoptimized
-                            className="size-14 rounded-lg object-cover"
-                          />
-                          <div className="min-w-0">
-                            <p className="line-clamp-1 text-xs font-semibold text-primary">{item.category}</p>
-                            <p className="line-clamp-2 text-xs font-medium text-foreground">{item.name}</p>
-                            <p className="text-xs font-semibold text-primary">S/ {Number(item.price).toFixed(2)}</p>
-                          </div>
+                        <Link key={item.id} href={getProductUrl(item)} className="block rounded-lg border border-primary/15 bg-white/90 px-3 py-2 text-sm font-semibold text-primary transition hover:bg-primary/10 hover:underline">
+                          {item.name} — <span className="font-bold">S/ {Number(item.price).toFixed(2)}</span>
                         </Link>
                       ))}
                     </div>
                   ) : null}
+
+
                 </div>
                 ) : null}
               </div>
@@ -539,7 +610,7 @@ export function AmysaAssistantWidget({ userId, userName }: Props) {
             <button
               type="button"
               onClick={handleOpenChat}
-              className="absolute -left-[172px] top-1/2 -translate-y-1/2 rounded-full border border-primary/20 bg-white/95 px-3 py-1.5 text-xs font-semibold text-foreground shadow-lg transition hover:bg-white"
+              className="absolute right-full top-1/2 mr-3 w-auto -translate-y-1/2 rounded-full border border-white/40 bg-gradient-to-r from-[#c49a82] to-[#a6785c] px-4 py-2 text-center text-xs font-semibold text-white shadow-lg transition hover:opacity-90 whitespace-nowrap"
               aria-label="Abrir asistencia AMYSA AI"
             >
               ¿Necesitas ayuda?
@@ -549,19 +620,21 @@ export function AmysaAssistantWidget({ userId, userName }: Props) {
           <Button
             type="button"
             onClick={handleOpenChat}
-            className="relative h-12 rounded-full border border-primary/30 bg-primary px-3 text-primary-foreground shadow-xl transition hover:scale-[1.04] hover:bg-primary"
+            className="group relative size-16 rounded-full border border-white/40 bg-gradient-to-br from-[#c49a82] to-[#a6785c] p-0 text-white shadow-[0_18px_40px_rgba(95,58,44,0.28)] transition-all duration-300 hover:-translate-y-1 hover:scale-110 hover:shadow-[0_24px_50px_rgba(95,58,44,0.36)] active:translate-y-0 active:scale-95 md:size-18 motion-safe:hover:animate-[bounce_0.75s_ease-in-out_1]"
             aria-label="Abrir AMYSA AI"
           >
-            <span className="absolute -inset-1 rounded-full border border-primary/30 opacity-60 animate-ping" />
-            <div className="relative z-10 flex items-center gap-2">
-              <Image
-                src="/logos/amysa-square-primary.png"
-                alt="AMYSA AI"
-                width={24}
-                height={24}
-                className="size-6 rounded-full bg-white p-0.5"
-              />
-              <span className="text-xs font-semibold tracking-wide">AMYSA AI</span>
+            <span className="absolute -inset-1 rounded-full bg-[#c49a82]/30 blur-md transition-opacity duration-300 group-hover:opacity-100" />
+            <span className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_30%_28%,rgba(255,255,255,0.25),transparent_28%)]" />
+            <span className="absolute inset-0 rounded-full ring-1 ring-white/20" />
+            <div className="relative z-10 flex h-full w-full items-center justify-center rounded-full">
+              <svg viewBox="0 0 48 48" className="size-11 md:size-12" xmlns="http://www.w3.org/2000/svg">
+                <ellipse cx="16" cy="20" rx="5.5" ry="5.5" fill="white" />
+                <ellipse cx="32" cy="20" rx="5.5" ry="5.5" fill="white">
+                  <animate attributeName="ry" values="5.5;5.5;0.5;5.5" keyTimes="0;0.94;0.97;1" dur="4s" repeatCount="indefinite" />
+                </ellipse>
+                <path d="M14 36 Q24 44, 34 36" stroke="white" strokeWidth="3.5" strokeLinecap="round" fill="none" />
+              </svg>
+              <span className="sr-only">AMYSA AI</span>
             </div>
           </Button>
         </div>

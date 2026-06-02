@@ -175,7 +175,11 @@ export function BuscarClient({ products }: Props) {
         ) : null}
       </div>
       <div className="grid gap-2">
-        {filtered.map((product) => (
+        {filtered.length === 0 ? (
+          <p className="py-8 text-center text-sm text-muted-foreground">
+            No se encontraron productos con los criterios seleccionados.
+          </p>
+        ) : filtered.map((product) => (
           <Link
             key={product.id}
             href={getProductUrl(product)}

@@ -29,7 +29,7 @@ type Props = {
   showFeatured?: boolean;
 };
 
-type SortOption = "recent" | "price-asc" | "price-desc" | "name-asc";
+type SortOption = "recomendado" | "recent" | "price-asc" | "price-desc" | "name-asc";
 
 type GenderFilter = string;
 type AgeFilter = string;
@@ -122,7 +122,7 @@ export function TiendaClientGrid({ products, allProducts, categories = [], initi
   const [priceMax, setPriceMax] = useState("");
   const [discountOnly, setDiscountOnly] = useState(false);
   const [packOnly, setPackOnly] = useState(false);
-  const [sortBy, setSortBy] = useState<SortOption>("recent");
+  const [sortBy, setSortBy] = useState<SortOption>("recomendado");
   const { genderOptions, ageGroupOptions } = useRegisteredTaxonomies();
   const { subcategories, subbrands, loadSubcategoriesForCategory, loadSubbrandsForBrand } = useHierarchicalTaxonomies();
   const { brandNames: brandsFromDB } = useBrandNamesFromDB();
@@ -407,7 +407,7 @@ export function TiendaClientGrid({ products, allProducts, categories = [], initi
       return passesStructuredFilters && haystack.includes(normalizedQuery);
     });
 
-    if (sortBy === "price-asc") {
+    if (sortBy === "price-asc" || sortBy === "recomendado") {
       list = [...list].sort((a, b) => a.price - b.price);
     } else if (sortBy === "price-desc") {
       list = [...list].sort((a, b) => b.price - a.price);
@@ -639,77 +639,7 @@ export function TiendaClientGrid({ products, allProducts, categories = [], initi
 
       <div className="mt-5 space-y-3">
         <p className="text-sm font-semibold">Rango de precio</p>
-        <div className="space-y-3 rounded-lg border border-[#e3d7cd] bg-white/50 p-3">
-          {/* Slider dual para rango de precio */}
-          <style>{` 
-            .price-slider-track {
-              position: relative;
-              width: 100%;
-              height: 0.5rem;
-              background: #e3d7cd;
-              border-radius: 0.5rem;
-              outline: none;
-            }
-            .price-slider-track input {
-              position: absolute;
-              width: 100%;
-              height: 0.5rem;
-              top: 0;
-              left: 0;
-              margin: 0;
-              padding: 0;
-              border: none;
-              border-radius: 0.5rem;
-              background: none;
-              pointer-events: none;
-              appearance: none;
-              -webkit-appearance: none;
-            }
-            .price-slider-track input::-webkit-slider-thumb {
-              appearance: none;
-              -webkit-appearance: none;
-              width: 1.1rem;
-              height: 1.1rem;
-              border-radius: 50%;
-              background: linear-gradient(135deg, #6b4a38 0%, #4f3526 50%, #3d281a 100%);
-              cursor: pointer;
-              pointer-events: auto;
-              box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25), 0 0 0 2px rgba(255, 255, 255, 0.8), inset 0 1px 2px rgba(255, 255, 255, 0.4);
-              border: 2px solid rgba(79, 53, 38, 0.5);
-              transition: transform 0.2s, box-shadow 0.2s;
-            }
-            .price-slider-track input::-webkit-slider-thumb:hover {
-              transform: scale(1.15);
-              box-shadow: 0 6px 12px rgba(0, 0, 0, 0.35), 0 0 0 2px rgba(255, 255, 255, 1), inset 0 1px 2px rgba(255, 255, 255, 0.5);
-            }
-            .price-slider-track input::-webkit-slider-thumb:active {
-              transform: scale(1.2);
-            }
-            .price-slider-track input::-moz-range-thumb {
-              width: 1.1rem;
-              height: 1.1rem;
-              border-radius: 50%;
-              background: linear-gradient(135deg, #6b4a38 0%, #4f3526 50%, #3d281a 100%);
-              cursor: pointer;
-              pointer-events: auto;
-              border: 2px solid rgba(79, 53, 38, 0.5);
-              box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25), 0 0 0 2px rgba(255, 255, 255, 0.8), inset 0 1px 2px rgba(255, 255, 255, 0.4);
-              transition: transform 0.2s, box-shadow 0.2s;
-            }
-            .price-slider-track input::-moz-range-thumb:hover {
-              transform: scale(1.15);
-              box-shadow: 0 6px 12px rgba(0, 0, 0, 0.35), 0 0 0 2px rgba(255, 255, 255, 1), inset 0 1px 2px rgba(255, 255, 255, 0.5);
-            }
-            .price-slider-track input::-moz-range-thumb:active {
-              transform: scale(1.2);
-            }
-            .price-slider-min {
-              z-index: 5;
-            }
-            .price-slider-max {
-              z-index: 6;
-            }
-          `}</style>
+              <div className="space-y-3 rounded-lg border border-[#e3d7cd] bg-white/50 p-3">
           <div className="space-y-2">
             <div className="block text-xs font-medium text-muted-foreground">
               Rango: S/ {priceMin || "0"} - S/ {priceMax || maxPrice}
@@ -802,7 +732,8 @@ export function TiendaClientGrid({ products, allProducts, categories = [], initi
                   onChange={(event) => setSortBy(event.target.value as SortOption)}
                   className="h-10 min-w-0 flex-1 rounded-xl border border-input bg-white/80 px-3 text-sm outline-none focus:border-primary/40 md:flex-none"
                 >
-                  <option value="recent">Ordenar: recientes</option>
+                  <option value="recomendado">Recomendado</option>
+                  <option value="recent">Recién agregados</option>
                   <option value="price-asc">Precio: menor a mayor</option>
                   <option value="price-desc">Precio: mayor a menor</option>
                   <option value="name-asc">Nombre: A-Z</option>

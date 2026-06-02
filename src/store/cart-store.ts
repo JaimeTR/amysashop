@@ -40,7 +40,7 @@ export const useCartStore = create<CartState>()(
               ...state.items,
               {
                 ...item,
-                id: crypto.randomUUID(),
+                id: typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : `cart-${Date.now()}-${Math.random().toString(36).slice(2)}`,
                 quantity: 1,
                 optionSignature,
               },

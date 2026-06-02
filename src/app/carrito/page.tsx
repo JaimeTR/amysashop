@@ -127,6 +127,8 @@ export default function CarritoPage() {
 
       setActiveCoupon(data);
       notify.success("Cupón aplicado", data.description || `Código ${data.code} aplicado.`);
+    } catch {
+      notify.error("Error al validar cupón", "Ocurrió un error inesperado. Intenta nuevamente.");
     } finally {
       setValidatingCoupon(false);
     }

@@ -134,7 +134,6 @@ function extractName(message: string) {
       "busco",
       "necesito",
       "categoria",
-      "categoria",
       "marca",
       "pedido",
     ];
@@ -442,11 +441,13 @@ function buildSalesPlan(
   };
 }
 
-async function askGemini(input: {
+async function askGroq(input: {
   apiKey: string;
+  model: string;
   message: string;
   conversation: Array<{ sender: string; content: string }>;
   products: ProductLite[];
+  salesPlan: SalesPlan;
 }) {
   const catalog = input.products.slice(0, 25).map((item) => ({
     id: item.id,
@@ -458,74 +459,123 @@ async function askGemini(input: {
     description: (item.description || "").slice(0, 120),
   }));
 
+  const recommendations = input.salesPlan.recommendations.slice(0, 3).map((item) => ({
+    id: item.id,
+    name: item.name,
+    price: Number(item.price).toFixed(2),
+    category: item.category,
+  }));
+
   const history = input.conversation
     .slice(-8)
     .map((msg) => `${msg.sender === "client" ? "Cliente" : "Asistente"}: ${msg.content}`)
     .join("\n");
 
   const prompt = [
-    "Eres AMYSA AI, asesor de ventas virtual de AMYSA SHOP en español.",
-    "Rol principal: vender, asistir y guiar la compra con foco comercial.",
-    "Rol secundario: resolver consultas de envíos, reclamos y devoluciones sin perder enfoque de venta consultiva.",
+    "Eres AMYSA AI, asesora de ventas de AMYSA SHOP en español. Tu nombre es AMYSA AI.",
+    "RESPONDE SOLO SOBRE PRODUCTOS, PRECIOS Y LA TIENDA.",
+    "Sé amable, respetuosa y cálida como una asesora de ventas. Saluda si te saludan. Da las gracias cuando corresponda.",
+    "Máximo 2 oraciones. Sé breve pero amable.",
     "Reglas:",
-    "- Responde en español, tono amable, profesional y breve.",
-    "- En el primer contacto, pregunta qué busca el cliente (marca, categoría, necesidad o presupuesto).",
-    "- Usa el historial como memoria de la conversación para no repetir preguntas ya respondidas.",
-    "- No inventes productos fuera del catálogo.",
-    "- Cuando recomiendes, incluye nombre y precio en soles.",
-    "- Si falta información, pregunta máximo 1 cosa al final.",
-    "- Si el cliente consulta por envíos/reclamos/devoluciones, solicita datos mínimos (pedido, fecha, detalle) y ofrece seguimiento.",
-    "- Evita respuestas largas; prioriza avanzar la venta con siguiente paso claro.",
-    "Información de tienda:",
-    "- Canal principal de compra: tienda web + confirmación por WhatsApp.",
-    "- Moneda: Soles peruanos (S/).",
-    "- Para soporte (reclamos/devoluciones): pedir número de pedido, fecha y detalle para registrar seguimiento.",
+    "- PRESENTASTE como AMYSA AI cuando sea la primera interacción o te saluden.",
+    "- SOLO puedes hablar de productos, precios, marcas y categorías del catálogo.",
+    "- Si preguntan algo fuera de la tienda, responde con amabilidad: 'Solo puedo ayudarte con productos de AMYSA SHOP, pero con gusto te atiendo en lo que necesites de la tienda.'",
+    "- Si el plan de negocio indica pedir nombre, celular o correo, hazlo con amabilidad.",
+    "- Si el cliente dice que quiere comprar o agregar un producto, responde con el marcador [AGREGAR:id] al final, donde id es el ID del producto. Ejemplo: '¡Claro! Lo agrego a tu carrito [AGREGAR:prod-123]'.",
+    "- Los precios son en soles peruanos (S/). Siempre muestra el precio con S/.",
+    "- No inventes productos, precios ni stock.",
     "Catálogo JSON:",
     JSON.stringify(catalog),
+    "Recomendaciones del flujo:",
+    JSON.stringify(recommendations),
+    "Estado del lead:",
+    JSON.stringify({
+      lead_name: input.salesPlan.leadUpdates.lead_name ?? null,
+      lead_phone: input.salesPlan.leadUpdates.lead_phone ?? null,
+      lead_email: input.salesPlan.leadUpdates.lead_email ?? null,
+      lead_interest: input.salesPlan.leadUpdates.lead_interest ?? null,
+      lead_category: input.salesPlan.leadUpdates.lead_category ?? null,
+      lead_brand: input.salesPlan.leadUpdates.lead_brand ?? null,
+      lead_stage: input.salesPlan.leadStage,
+      status: input.salesPlan.status,
+      lead_score: input.salesPlan.leadScore,
+    }),
     "Historial:",
     history || "(sin historial)",
-    "Mensaje actual del cliente:",
+    "Mensaje del cliente:",
     input.message,
   ].join("\n");
 
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${input.apiKey}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: "user",
-            parts: [{ text: prompt }],
-          },
-        ],
-        generationConfig: {
-          temperature: 0.6,
-          maxOutputTokens: 350,
+  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${input.apiKey}`,
+    },
+    body: JSON.stringify({
+      model: input.model,
+      messages: [
+        {
+          role: "user",
+          content: prompt,
         },
-      }),
-    }
-  );
+      ],
+      temperature: 0.5,
+      max_tokens: 350,
+      top_p: 0.9,
+      stream: false,
+      presence_penalty: 0,
+      frequency_penalty: 0,
+    }),
+  });
 
   if (!response.ok) {
     const raw = await response.text();
-    throw new Error(`Gemini error: ${raw}`);
+    throw new Error(`Groq error: ${raw}`);
   }
 
   const data = (await response.json()) as {
-    candidates?: Array<{
-      content?: { parts?: Array<{ text?: string }> };
+    choices?: Array<{
+      message?: { content?: string | null };
     }>;
   };
 
-  const text = data.candidates?.[0]?.content?.parts?.map((part) => part.text || "").join("\n").trim();
+  const text = data.choices?.[0]?.message?.content?.trim();
 
   if (!text) {
-    throw new Error("Gemini sin contenido");
+    throw new Error("Groq sin contenido");
   }
 
   return text;
+}
+
+async function getAssistantReply(input: {
+  message: string;
+  conversation: Array<{ sender: string; content: string }>;
+  products: ProductLite[];
+  salesPlan: SalesPlan;
+}) {
+  const groqApiKey = process.env.GROQ_API_KEY || "";
+  const groqModel = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
+
+  if (!groqApiKey) {
+    return { reply: input.salesPlan.reply, provider: "business_flow" as const };
+  }
+
+  try {
+    const reply = await askGroq({
+      apiKey: groqApiKey,
+      model: groqModel,
+      message: input.message,
+      conversation: input.conversation,
+      products: input.products,
+      salesPlan: input.salesPlan,
+    });
+
+    return { reply, provider: "groq" as const };
+  } catch {
+    return { reply: input.salesPlan.reply, provider: "business_flow" as const };
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -566,6 +616,8 @@ export async function POST(request: NextRequest) {
     return jsonError("Sesión inválida", 401);
   }
 
+  const userId = user.id;
+
   const service = createClient(supabaseUrl, serviceRoleKey, {
     auth: {
       persistSession: false,
@@ -584,12 +636,16 @@ export async function POST(request: NextRequest) {
       .eq("id", sessionId)
       .maybeSingle();
 
-    if (!existingSession || existingSession.client_id !== user.id) {
+    if (!existingSession) {
+      sessionId = "";
+      advisorJoinedBy = null;
+      currentSession = null;
+    } else if (userId && existingSession.client_id !== userId) {
       sessionId = "";
       advisorJoinedBy = null;
       currentSession = null;
     } else {
-      advisorJoinedBy = existingSession.joined_by_admin_id ?? null;
+      advisorJoinedBy = (existingSession as { joined_by_admin_id?: string | null }).joined_by_admin_id ?? null;
       currentSession = {
         lead_name: (existingSession as { lead_name?: string | null }).lead_name ?? null,
         lead_phone: (existingSession as { lead_phone?: string | null }).lead_phone ?? null,
@@ -607,7 +663,7 @@ export async function POST(request: NextRequest) {
     const { data: createdSession, error: createSessionError } = await service
       .from("chat_sessions")
       .insert({
-        client_id: user.id,
+        client_id: userId,
         status: "active",
         source: "amysa_ai",
         lead_stage: "nuevo",
@@ -656,7 +712,6 @@ export async function POST(request: NextRequest) {
         lead_summary: message.slice(0, 160),
       })
       .eq("id", sessionId)
-      .eq("client_id", user.id);
 
     return NextResponse.json({
       ok: true,
@@ -698,11 +753,18 @@ export async function POST(request: NextRequest) {
     status: "active",
   });
 
+  const assistantReply = await getAssistantReply({
+    message,
+    conversation,
+    products,
+    salesPlan,
+  });
+
   const { error: insertAssistantMessageError } = await service.from("chat_messages").insert({
     session_id: sessionId,
     sender: "assistant",
-    content: salesPlan.reply,
-    metadata: { provider: "business_flow", recommendations: salesPlan.recommendations.slice(0, 3), stage: salesPlan.leadStage },
+    content: assistantReply.reply,
+    metadata: { provider: assistantReply.provider, recommendations: salesPlan.recommendations.slice(0, 3), stage: salesPlan.leadStage },
   });
 
   if (insertAssistantMessageError) {
@@ -729,14 +791,13 @@ export async function POST(request: NextRequest) {
   await service
     .from("chat_sessions")
     .update(sessionUpdates)
-    .eq("id", sessionId)
-    .eq("client_id", user.id);
+    .eq("id", sessionId);
 
   return NextResponse.json({
     ok: true,
     sessionId,
-    reply: salesPlan.reply,
-    provider: "business_flow",
+    reply: assistantReply.reply,
+    provider: assistantReply.provider,
     pausedByAdvisor: false,
     advisorJoined: false,
     recommendations: salesPlan.recommendations.slice(0, 3),

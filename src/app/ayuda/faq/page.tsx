@@ -1,4 +1,10 @@
+import type { Metadata } from "next";
 import FaqItem from '../../../components/ayuda/faq-item';
+
+export const metadata: Metadata = {
+  title: "Preguntas frecuentes",
+  description: "Respuestas a las preguntas más frecuentes sobre métodos de pago, envíos, devoluciones y garantía en AMYSA SHOP.",
+};
 
 const faqs = [
   {
@@ -44,8 +50,25 @@ const faqs = [
 ];
 
 export default function FaqPage() {
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqs.map((faq) => ({
+      "@type": "Question",
+      name: faq.q,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: typeof faq.a === "string" ? faq.a : "Ver en la página",
+      },
+    })),
+  };
+
   return (
     <main className="mx-auto max-w-6xl p-6">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
       <div className="relative overflow-hidden rounded-[1.75rem] border border-white/50 bg-white/45 p-6 shadow-[0_24px_80px_rgba(117,82,63,0.12)] backdrop-blur-xl md:p-8">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(166,118,92,0.2),transparent_35%),radial-gradient(circle_at_top_right,rgba(255,255,255,0.75),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.68),rgba(255,255,255,0.32))]" />
         <div className="relative">

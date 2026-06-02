@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
-import { ProfileSettingsForm } from "@/components/profile/profile-settings-form";
 import { ProfileMobileView } from "@/components/profile/profile-mobile-view";
+import { ProfileDesktopView } from "@/components/profile/profile-desktop-view";
 
 export const metadata: Metadata = {
   title: "Mi cuenta",
@@ -68,7 +67,6 @@ export default async function PerfilPage() {
         ? "Femenino"
         : profile.gender
     : "Sin género";
-
   return (
     <main className="space-y-4 pb-8">
       <h1 className="font-[var(--font-display)] text-center text-3xl md:text-left">Mi cuenta</h1>
@@ -93,25 +91,23 @@ export default async function PerfilPage() {
         />
       </div>
 
-      <Card className="hidden rounded-3xl border-2 border-primary/30 bg-gradient-to-br from-primary/10 via-white to-primary/5 shadow-lg shadow-primary/10 md:block">
-        <CardHeader>
-          <CardTitle className="text-primary">Datos de cuenta</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ProfileSettingsForm
-            userId={user.id}
-            email={user.email ?? "Sin correo"}
-            initialProfile={{
-              nombre: profile?.nombre ?? "",
-              telefono: profile?.telefono ?? "",
-              direccion: profile?.direccion ?? "",
-              gender: profile?.gender ?? "",
-              img_avatar: profile?.img_avatar ?? "",
-              avatar_url: profile?.avatar_url ?? "",
-            }}
-          />
-        </CardContent>
-      </Card>
+      <ProfileDesktopView
+        userId={user.id}
+        email={user.email ?? "Sin correo"}
+        userAvatar={profileAvatar}
+        userName={profileName}
+        userPhone={profilePhone}
+        userAddress={profileAddress}
+        userGender={profileGender}
+        initialProfile={{
+          nombre: profile?.nombre ?? "",
+          telefono: profile?.telefono ?? "",
+          direccion: profile?.direccion ?? "",
+          gender: profile?.gender ?? "",
+          img_avatar: profile?.img_avatar ?? "",
+          avatar_url: profile?.avatar_url ?? "",
+        }}
+      />
     </main>
   );
 }

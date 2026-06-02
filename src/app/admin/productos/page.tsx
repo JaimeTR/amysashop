@@ -318,6 +318,34 @@ async function safeInsertProduct(
   const normalizedPayload = normalizeProductPayload(payload) as Record<string, unknown>;
   let result = await supabase.from("products").insert(normalizedPayload);
 
+  // Manejo de fallo por clave única (ej. code/sku) — reintentar con nuevo código
+  const isDuplicateKeyError = (err: { message?: string } | null | undefined) => {
+    const msg = String(err?.message || "").toLowerCase();
+    return msg.includes("duplicate key") || msg.includes("unique constraint");
+  };
+
+  if (result.error && isDuplicateKeyError(result.error)) {
+    // Intentar reintentar hasta 5 veces generando un nuevo código único
+    const MAX_RETRIES = 5;
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt += 1) {
+      const suffix = String(Math.floor(Math.random() * 900000) + 100000); // 6 dígitos
+      const newCode = `AS${suffix}`;
+      const tryPayload = { ...normalizedPayload, code: newCode, sku: newCode };
+      // eslint-disable-next-line no-await-in-loop
+      const retry = await supabase.from("products").insert(tryPayload);
+      if (!retry.error) {
+        return retry;
+      }
+      if (!isDuplicateKeyError(retry.error)) {
+        // Si falla por otra razón, devolver ese error
+        return retry;
+      }
+      result = retry;
+    }
+    // Si seguimos fallando por duplicado, devolver último error
+    return result;
+  }
+
   if (result.error && isMissingColumnError(result.error, "price_before")) {
     const { price_before: _omit, ...withoutPriceBefore } = normalizedPayload;
     result = await supabase.from("products").insert(withoutPriceBefore);
@@ -829,11 +857,15 @@ async function updateProductAction(formData: FormData) {
       code: autoCode,
       sku: autoCode,
       gender,
+      age_group: ageGroup,
+      brand: canonicalizeBrandName(brand) || brand,
         price,
         price_before: priceBefore,
         stock,
         images: finalImages,
         category_id: categoryId,
+        sub_brand: subBrand,
+        sub_category: subCategory,
         active: visibleInStore && stock > 0,
         description: appendMetaTags(baseDescription, {
           code,

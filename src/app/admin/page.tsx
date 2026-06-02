@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, BadgeDollarSign, Boxes, ClipboardList, HandCoins, Megaphone, MessageCircleMore, Settings2, Users2, TrendingUp, Tag } from "lucide-react";
+import { ArrowRight, BadgeDollarSign, Boxes, ClipboardList, HandCoins, Megaphone, MessageCircleMore, Settings2, SlidersHorizontal, Users2, TrendingUp, Tag } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { requireAdminUser } from "@/lib/admin";
@@ -82,6 +82,13 @@ const quickLinks: QuickLink[] = [
     title: "Gestión de usuarios",
     description: "Administra cuentas de usuarios y permisos de acceso al sistema.",
     icon: Users2,
+    permission: "store.manage",
+  },
+  {
+    href: "/admin/configuracion",
+    title: "Configuración de checkout",
+    description: "Centraliza perfil, pasarela de pago, cuentas y métodos de envío.",
+    icon: SlidersHorizontal,
     permission: "store.manage",
   },
   {

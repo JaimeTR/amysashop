@@ -12,6 +12,7 @@ import { DiscountCarouselClient } from "@/components/store/discount-carousel-cli
 import { HomeHeroTypingSlogan } from "@/components/store/home-hero-typing-slogan";
 import { getSafeProductImageSrc } from "@/lib/product-images";
 import { getProductUrl } from "@/lib/product-url";
+import { getSiteUrl } from "@/lib/site-url";
 
 function extractTagValue(description: string, key: string) {
   const regex = new RegExp(`\\[${key}:\\s*(.*?)\\]`, "i");
@@ -128,8 +129,12 @@ function getDiscountPercent(priceBefore: number | null | undefined, price: numbe
 
 export const metadata: Metadata = {
   title: "Inicio",
-  description: "Descubre novedades, descuentos y marcas destacadas en perfumes, maquillaje y cuidado personal en AMYSA SHOP.",
-  keywords: ["inicio AMYSA SHOP", "descuentos", "novedades", "marcas destacadas", "perfumes", "maquillaje", "cuidado personal"],
+  description: "AMYSA SHOP: Tienda online de perfumes, maquillaje, cuidado personal y accesorios. Descubre nuestras marcas y las mejores ofertas en productos de belleza.",
+  openGraph: {
+    title: "AMYSA SHOP - Perfumes, Maquillaje y Cuidado Personal",
+    description: "Descubre nuestra colección de perfumes, maquillaje y cuidado personal. Las mejores marcas en un solo lugar.",
+    type: "website",
+  },
 };
 
 export default async function Home() {
@@ -140,8 +145,27 @@ export default async function Home() {
     .filter((product) => Number(product.priceBefore || 0) > Number(product.price || 0))
     .sort((a, b) => getDiscountPercent(b.priceBefore, b.price) - getDiscountPercent(a.priceBefore, a.price));
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "AMYSA SHOP",
+    url: getSiteUrl(),
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: `${getSiteUrl()}/buscar?q={search_term_string}`,
+      },
+      "query-input": "required name=search_term_string",
+    },
+  };
+
   return (
     <main className="space-y-8 pb-10 pt-2">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <section className="glass-card animate-in fade-in duration-700 rounded-3xl p-6 text-center md:text-left">
         <div className="flex flex-col md:flex-row items-center md:items-center justify-between gap-8">
           {/* Contenido de texto */}

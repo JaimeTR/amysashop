@@ -11,15 +11,18 @@ import { useCartStore } from "@/store/cart-store";
 import { useNotify } from "@/components/feedback/notification-center";
 import { DEFAULT_WHATSAPP_PHONE, buildWhatsAppUrl } from "@/lib/whatsapp";
 import { createClient } from "@/lib/supabase/client";
-import { deliveryOptions, getDeliveryFee, getDeliveryLabel, type DeliveryMethod } from "@/lib/delivery-options";
+import { type DeliveryMethod } from "@/lib/delivery-options";
 import { getHalomDepartments } from "@/lib/shipping-halom";
 import { SearchableCombobox } from "@/components/ui/searchable-combobox";
-
-const paymentOptions = [
-  { value: "transferencia", label: "Transferencia" },
-  { value: "yape", label: "Yape" },
-  { value: "plin", label: "Plin" },
-];
+import {
+  DEFAULT_CHECKOUT_SETTINGS,
+  getDeliveryFeeFromSettings,
+  getDeliveryOptionsFromSettings,
+  getPaymentOptionsFromSettings,
+  getTransferBanksFromSettings,
+  normalizeCheckoutSettings,
+  type CheckoutSettings,
+} from "@/lib/checkout-settings";
 
 const documentTypeOptions = [
   { value: "dni", label: "DNI" },
@@ -27,27 +30,9 @@ const documentTypeOptions = [
   { value: "pex", label: "PEX" },
 ];
 
-const transferBanks = [
-  {
-    bank: "BCP",
-    account: process.env.NEXT_PUBLIC_BANK_BCP_ACCOUNT || "Configurar NEXT_PUBLIC_BANK_BCP_ACCOUNT",
-    cci: process.env.NEXT_PUBLIC_BANK_BCP_CCI || "Configurar NEXT_PUBLIC_BANK_BCP_CCI",
-  },
-  {
-    bank: "Interbank",
-    account: process.env.NEXT_PUBLIC_BANK_INTERBANK_ACCOUNT || "Configurar NEXT_PUBLIC_BANK_INTERBANK_ACCOUNT",
-    cci: process.env.NEXT_PUBLIC_BANK_INTERBANK_CCI || "Configurar NEXT_PUBLIC_BANK_INTERBANK_CCI",
-  },
-  {
-    bank: "BBVA",
-    account: process.env.NEXT_PUBLIC_BANK_BBVA_ACCOUNT || "Configurar NEXT_PUBLIC_BANK_BBVA_ACCOUNT",
-    cci: process.env.NEXT_PUBLIC_BANK_BBVA_CCI || "Configurar NEXT_PUBLIC_BANK_BBVA_CCI",
-  },
-];
-
-function paymentMethodLabel(value: string) {
+function paymentMethodLabel(value: string, options: Array<{ value: string; label: string }>) {
   if (value === "coordinar_con_amysa") return "A coordinar con AMYSA";
-  const option = paymentOptions.find((item) => item.value === value);
+  const option = options.find((item) => item.value === value);
   return option?.label || value;
 }
 
@@ -126,6 +111,37 @@ export default function CheckoutPage() {
   const [activeCoupon, setActiveCoupon] = useState<CouponRow | null>(null);
   const [validatingCoupon, setValidatingCoupon] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [checkoutSettings, setCheckoutSettings] = useState<CheckoutSettings>(DEFAULT_CHECKOUT_SETTINGS);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadSettings() {
+      try {
+        const response = await fetch("/api/checkout-settings", { cache: "no-store" });
+        if (!response.ok) {
+          return;
+        }
+
+        const payload = (await response.json()) as { settings?: unknown };
+        if (!cancelled && payload.settings) {
+          setCheckoutSettings(normalizeCheckoutSettings(payload.settings));
+        }
+      } catch (error) {
+        console.error("No se pudo cargar la configuracion de checkout", error);
+      }
+    }
+
+    loadSettings();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const paymentOptions = useMemo(() => getPaymentOptionsFromSettings(checkoutSettings), [checkoutSettings]);
+  const transferBanks = useMemo(() => getTransferBanksFromSettings(checkoutSettings), [checkoutSettings]);
+  const deliveryOptionsList = useMemo(() => getDeliveryOptionsFromSettings(checkoutSettings), [checkoutSettings]);
 
   const subtotal = useMemo(() => items.reduce((acc, item) => acc + item.price * item.quantity, 0), [items]);
   const subtotalBase = useMemo(
@@ -139,12 +155,12 @@ export default function CheckoutPage() {
   const productDiscountAmount = Math.max(0, subtotalBase - subtotal);
   const discountAmount = resolveCouponDiscount(subtotal, activeCoupon);
   const totalSavings = productDiscountAmount + discountAmount;
-  const shippingCost = getDeliveryFee(deliveryMethod);
+  const shippingCost = getDeliveryFeeFromSettings(deliveryMethod, checkoutSettings);
   const total = Math.max(0, subtotal - discountAmount + shippingCost);
   const isShippingDelivery = deliveryMethod !== "pickup_lima_points";
   const selectedPaymentMethod = isShippingDelivery ? paymentMethod : "coordinar_con_amysa";
-  const yapeQrUrl = process.env.NEXT_PUBLIC_YAPE_QR_URL || "";
-  const plinQrUrl = process.env.NEXT_PUBLIC_PLIN_QR_URL || "";
+  const yapeQrUrl = checkoutSettings.gateways.yapeQrUrl;
+  const plinQrUrl = checkoutSettings.gateways.plinQrUrl;
 
   const departmentOptions = useMemo(
     () => getHalomDepartments().map((item) => ({ value: item.name, label: item.name })),
@@ -188,14 +204,14 @@ export default function CheckoutPage() {
     const deliveryFromQuery = searchParams.get("delivery");
     const couponFromQuery = searchParams.get("coupon");
 
-    if (deliveryFromQuery && deliveryOptions.some((option) => option.value === deliveryFromQuery)) {
+    if (deliveryFromQuery && deliveryOptionsList.some((option) => option.value === deliveryFromQuery)) {
       setDeliveryMethod(deliveryFromQuery as DeliveryMethod);
     }
 
     if (couponFromQuery) {
       setCouponInput(couponFromQuery.toUpperCase());
     }
-  }, [searchParams]);
+  }, [deliveryOptionsList, searchParams]);
 
   useEffect(() => {
     if (!isShippingDelivery) {
@@ -304,18 +320,23 @@ export default function CheckoutPage() {
 
       setActiveCoupon(data);
       notify.success("Cupón aplicado", data.description || `Código ${data.code} aplicado.`);
+    } catch {
+      notify.error("Error al validar cupón", "Ocurrió un error inesperado.");
     } finally {
       setValidatingCoupon(false);
     }
   }
 
   useEffect(() => {
+    let cancelled = false;
     const couponFromQuery = searchParams.get("coupon");
     if (!couponFromQuery) return;
 
-    void validateCoupon(couponFromQuery);
+    validateCoupon(couponFromQuery);
+    // validateCoupon se omite de deps porque es una función local que se recrea en cada render
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, subtotal]);
+    return () => { cancelled = true; };
+  }, [searchParams]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -410,8 +431,8 @@ export default function CheckoutPage() {
         `Telefono: ${phone}`,
         `Correo: ${email}`,
         fullAddress || `Direccion: ${deliveryMethod === "pickup_lima_points" ? "Entrega en punto coordinado" : address}`,
-        `Metodo de entrega: ${getDeliveryLabel(deliveryMethod)}`,
-        `Metodo de pago elegido: ${paymentMethodLabel(selectedPaymentMethod)}`,
+        `Metodo de entrega: ${deliveryOptionsList.find((option) => option.value === deliveryMethod)?.label || deliveryMethod}`,
+        `Metodo de pago elegido: ${paymentMethodLabel(selectedPaymentMethod, paymentOptions)}`,
         isShippingDelivery
           ? paymentConfirmed
             ? "Estado de pago: CONFIRMADO por cliente"
@@ -470,90 +491,118 @@ export default function CheckoutPage() {
           <h2 className="mb-3 text-center font-semibold lg:text-left">Datos del cliente</h2>
           <form id="checkout-form" className="space-y-3" onSubmit={handleSubmit}>
             <div className="grid gap-3 md:grid-cols-2">
-              <input
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                placeholder="Nombre completo"
-                className="h-11 rounded-xl border border-input bg-background px-3 text-sm"
-                required
-              />
-              <div className="grid gap-2 sm:grid-cols-[112px_1fr]">
-                <select
-                  value={documentType}
-                  onChange={(event) => setDocumentType(event.target.value)}
-                  className="h-11 rounded-xl border border-input bg-background px-3 text-sm"
-                  required
-                >
-                  {documentTypeOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+              <label className="block space-y-1.5">
+                <span className="text-xs font-semibold uppercase tracking-wide text-foreground/80">Nombre completo</span>
                 <input
-                  value={documentNumber}
-                  onChange={(event) => setDocumentNumber(event.target.value)}
-                  placeholder="Número de documento"
+                  id="checkout-name"
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  placeholder="Nombre completo"
                   className="h-11 rounded-xl border border-input bg-background px-3 text-sm"
                   required
                 />
+              </label>
+              <div className="grid gap-2 sm:grid-cols-[112px_1fr]">
+                <label className="block space-y-1.5">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-foreground/80">Tipo de documento</span>
+                  <select
+                    id="checkout-document-type"
+                    value={documentType}
+                    onChange={(event) => setDocumentType(event.target.value)}
+                    className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm"
+                    required
+                  >
+                    {documentTypeOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block space-y-1.5">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-foreground/80">Número de documento</span>
+                  <input
+                    id="checkout-document-number"
+                    value={documentNumber}
+                    onChange={(event) => setDocumentNumber(event.target.value)}
+                    placeholder="Número de documento"
+                    className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm"
+                    required
+                  />
+                </label>
               </div>
             </div>
 
             <div className="grid gap-3 md:grid-cols-2">
-              <input
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                placeholder="Correo"
-                className="h-11 rounded-xl border border-input bg-background px-3 text-sm"
-                required
-              />
-              <input
-                value={phone}
-                onChange={(event) => setPhone(event.target.value)}
-                placeholder="Teléfono"
-                className="h-11 rounded-xl border border-input bg-background px-3 text-sm"
-                required
-              />
+              <label className="block space-y-1.5">
+                <span className="text-xs font-semibold uppercase tracking-wide text-foreground/80">Correo electrónico</span>
+                <input
+                  id="checkout-email"
+                  type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder="Correo"
+                  className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm"
+                  required
+                />
+              </label>
+              <label className="block space-y-1.5">
+                <span className="text-xs font-semibold uppercase tracking-wide text-foreground/80">Teléfono</span>
+                <input
+                  id="checkout-phone"
+                  value={phone}
+                  onChange={(event) => setPhone(event.target.value)}
+                  placeholder="Teléfono"
+                  className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm"
+                  required
+                />
+              </label>
             </div>
 
             <div className="grid gap-3 md:grid-cols-2">
-              <select
-                value={deliveryMethod}
-                onChange={(event) => {
-                  const nextMethod = event.target.value as DeliveryMethod;
-                  setDeliveryMethod(nextMethod);
-                  if (nextMethod === "pickup_lima_points") {
-                    setPaymentConfirmed(false);
-                    setPaymentReference("");
-                  }
-                }}
-                className="h-11 rounded-xl border border-input bg-background px-3 text-sm"
-              >
-                {deliveryOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label} - S/ {option.fee.toFixed(2)}
-                  </option>
-                ))}
-              </select>
-
-              {isShippingDelivery ? (
+              <label className="block space-y-1.5">
+                <span className="text-xs font-semibold uppercase tracking-wide text-foreground/80">Método de entrega</span>
                 <select
-                  value={paymentMethod}
+                  id="checkout-delivery-method"
+                  value={deliveryMethod}
                   onChange={(event) => {
-                    setPaymentMethod(event.target.value);
-                    setPaymentConfirmed(false);
-                    setPaymentReference("");
+                    const nextMethod = event.target.value as DeliveryMethod;
+                    setDeliveryMethod(nextMethod);
+                    if (nextMethod === "pickup_lima_points") {
+                      setPaymentConfirmed(false);
+                      setPaymentReference("");
+                    }
                   }}
-                  className="h-11 rounded-xl border border-input bg-background px-3 text-sm"
+                  className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm"
                 >
-                  {paymentOptions.map((option) => (
+                  {deliveryOptionsList.map((option) => (
                     <option key={option.value} value={option.value}>
-                      {option.label}
+                      {option.label} - S/ {option.fee.toFixed(2)}
                     </option>
                   ))}
                 </select>
+              </label>
+
+              {isShippingDelivery ? (
+                <label className="block space-y-1.5">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-foreground/80">Método de pago</span>
+                  <select
+                    id="checkout-payment-method"
+                    value={paymentMethod}
+                    onChange={(event) => {
+                      setPaymentMethod(event.target.value);
+                      setPaymentConfirmed(false);
+                      setPaymentReference("");
+                    }}
+                    className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm"
+                  >
+                    {paymentOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
               ) : (
                 <div className="flex h-11 items-center rounded-xl border border-input bg-muted/30 px-3 text-sm text-muted-foreground">
                   Metodo de pago: A coordinar con AMYSA
@@ -568,12 +617,12 @@ export default function CheckoutPage() {
                 {(paymentMethod === "yape" || paymentMethod === "plin") && (
                   <div className="space-y-2 text-center lg:text-left">
                     <p className="text-xs text-muted-foreground">
-                      Escanea el QR de {paymentMethodLabel(paymentMethod)} para pagar. Luego marca &quot;Confirmar pago&quot;.
+                      Escanea el QR de {paymentMethodLabel(paymentMethod, paymentOptions)} para pagar. Luego marca &quot;Confirmar pago&quot;.
                     </p>
                     {(paymentMethod === "yape" && yapeQrUrl) || (paymentMethod === "plin" && plinQrUrl) ? (
                       <Image
                         src={paymentMethod === "yape" ? yapeQrUrl : plinQrUrl}
-                        alt={`QR ${paymentMethodLabel(paymentMethod)}`}
+                        alt={`QR ${paymentMethodLabel(paymentMethod, paymentOptions)}`}
                         width={192}
                         height={192}
                         unoptimized
@@ -581,7 +630,7 @@ export default function CheckoutPage() {
                       />
                     ) : (
                       <div className="rounded-xl border border-dashed border-input p-3 text-xs text-muted-foreground">
-                        QR no configurado. Define {paymentMethod === "yape" ? "NEXT_PUBLIC_YAPE_QR_URL" : "NEXT_PUBLIC_PLIN_QR_URL"}.
+                        QR no configurado. Define el QR en Configuracion.
                       </div>
                     )}
                   </div>
@@ -612,12 +661,16 @@ export default function CheckoutPage() {
                 </label>
 
                 {paymentConfirmed && (
-                  <input
-                    value={paymentReference}
-                    onChange={(event) => setPaymentReference(event.target.value)}
-                    placeholder="Nro. de operación o referencia"
-                    className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm"
-                  />
+                  <label className="block space-y-1.5">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-foreground/80">Nro. de operación o referencia</span>
+                    <input
+                      id="checkout-payment-reference"
+                      value={paymentReference}
+                      onChange={(event) => setPaymentReference(event.target.value)}
+                      placeholder="Nro. de operación o referencia"
+                      className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm"
+                    />
+                  </label>
                 )}
               </div>
             )}
@@ -649,25 +702,33 @@ export default function CheckoutPage() {
               />
             </div>
 
-            <input
-              value={address}
-              onChange={(event) => setAddress(event.target.value)}
-              placeholder={deliveryMethod === "pickup_lima_points" ? "Referencia para coordinar (opcional)" : "Dirección de entrega"}
-              className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm"
-              required={deliveryMethod !== "pickup_lima_points"}
-            />
+            <label className="block space-y-1.5">
+              <span className="text-xs font-semibold uppercase tracking-wide text-foreground/80">Dirección de entrega</span>
+              <input
+                id="checkout-address"
+                value={address}
+                onChange={(event) => setAddress(event.target.value)}
+                placeholder={deliveryMethod === "pickup_lima_points" ? "Referencia para coordinar (opcional)" : "Dirección de entrega"}
+                className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm"
+                required={deliveryMethod !== "pickup_lima_points"}
+              />
+            </label>
 
             <p className="text-xs text-muted-foreground">
-              {deliveryOptions.find((option) => option.value === deliveryMethod)?.description}
+              {deliveryOptionsList.find((option) => option.value === deliveryMethod)?.description}
             </p>
 
-            <textarea
-              value={note}
-              onChange={(event) => setNote(event.target.value)}
-              rows={3}
-              placeholder="Nota del pedido (opcional)"
-              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm"
-            />
+            <label className="block space-y-1.5">
+              <span className="text-xs font-semibold uppercase tracking-wide text-foreground/80">Nota del pedido</span>
+              <textarea
+                id="checkout-note"
+                value={note}
+                onChange={(event) => setNote(event.target.value)}
+                rows={3}
+                placeholder="Nota del pedido (opcional)"
+                className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm"
+              />
+            </label>
 
             <div className="flex flex-col gap-2 sm:flex-row">
               <Button type="button" variant="outline" asChild className="w-full sm:w-auto">
@@ -737,12 +798,16 @@ export default function CheckoutPage() {
 
           <div className="mt-4">
             <div className="flex gap-2">
-              <input
-                value={couponInput}
-                onChange={(event) => setCouponInput(event.target.value.toUpperCase())}
-                placeholder="Código de cupón"
-                className="h-11 flex-1 rounded-xl border border-input bg-background px-3 text-sm"
-              />
+              <label className="flex-1 space-y-1.5">
+                <span className="text-xs font-semibold uppercase tracking-wide text-foreground/80">Código de cupón</span>
+                <input
+                  id="checkout-coupon"
+                  value={couponInput}
+                  onChange={(event) => setCouponInput(event.target.value.toUpperCase())}
+                  placeholder="Código de cupón"
+                  className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm"
+                />
+              </label>
               <Button type="button" variant="outline" onClick={() => validateCoupon(couponInput)} disabled={validatingCoupon}>
                 {validatingCoupon ? <Loader2 className="mr-2 size-4 animate-spin" /> : <TicketPercent className="mr-2 size-4" />}
                 Aplicar cupón
