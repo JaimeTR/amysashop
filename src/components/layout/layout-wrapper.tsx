@@ -2,8 +2,6 @@
 
 import { MainNav } from "@/components/layout/main-nav";
 import Footer from "@/components/layout/footer";
-import IosInstallHint from "@/components/pwa/ios-install-hint";
-
 interface LayoutWrapperProps {
   products: any[];
   categories: any[];
@@ -26,7 +24,6 @@ export function LayoutWrapper({ products, categories, children, routeScope = "pu
         {children}
       </div>
       {!isAdminRoute ? <Footer /> : null}
-      {!isAdminRoute ? <IosInstallHint /> : null}
     </>
   );
 }

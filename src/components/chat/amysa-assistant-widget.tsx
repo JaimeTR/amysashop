@@ -481,7 +481,7 @@ export function AmysaAssistantWidget({ userId, userName }: Props) {
   }
 
   return (
-    <div className="fixed bottom-2 right-2 z-[120] sm:bottom-3 sm:right-3 md:bottom-4 md:right-4">
+    <div className="fixed bottom-20 right-2 z-[9999] sm:bottom-20 sm:right-3 md:bottom-4 md:right-4">
       {isOpen ? (
         <div className="glass-card w-[min(92vw,360px)] overflow-hidden rounded-3xl border border-primary/20 shadow-2xl">
           <div className="flex items-center justify-between bg-primary/10 px-4 py-3">
