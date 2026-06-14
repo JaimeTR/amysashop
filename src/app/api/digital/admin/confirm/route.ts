@@ -2,10 +2,7 @@ import { NextResponse } from "next/server";
 import { checkDigitalAdmin } from "@/lib/digital-admin";
 import { confirmPurchase } from "@/lib/digital-actions";
 import { sendPurchaseConfirmationEmail } from "@/lib/email";
-import { createClient } from "@supabase/supabase-js";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_DIGITAL_SUPABASE_URL || "";
-const serviceRoleKey = process.env.DIGITAL_SUPABASE_SECRET_KEY || "";
+import { createDigitalServiceRoleClient } from "@/lib/supabase/digital-service-role";
 
 export async function POST(req: Request) {
   try {
@@ -29,8 +26,11 @@ export async function POST(req: Request) {
 
     const purchase = result.purchase;
 
+    let emailSent = false;
+
     if (purchase.download_token) {
-      const supabase = createClient(supabaseUrl, serviceRoleKey);
+      const supabase = createDigitalServiceRoleClient();
+      if (!supabase) { console.error("Service role client not available"); return NextResponse.json({ ok: true, purchase, email_sent: false }); }
       const { data: product } = await supabase
         .from("digital_products")
         .select("file_urls")
@@ -42,7 +42,7 @@ export async function POST(req: Request) {
         description: f.description,
       })) || [];
 
-      await sendPurchaseConfirmationEmail({
+      const emailResult = await sendPurchaseConfirmationEmail({
         to: purchase.email,
         customerName: purchase.customer_name,
         productName: purchase.product_name || "Producto Digital",
@@ -50,9 +50,12 @@ export async function POST(req: Request) {
         downloadToken: purchase.download_token,
         files,
       });
+
+      emailSent = emailResult.ok;
+      console.log("Email result:", emailResult);
     }
 
-    return NextResponse.json({ ok: true, purchase });
+    return NextResponse.json({ ok: true, purchase, email_sent: emailSent });
   } catch (err) {
     console.error("/api/digital/admin/confirm error:", err);
     return NextResponse.json({ ok: false, error: "internal_error" }, { status: 500 });

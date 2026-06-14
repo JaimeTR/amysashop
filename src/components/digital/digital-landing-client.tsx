@@ -135,12 +135,7 @@ export function DigitalLandingClient({ initialProducts }: Props) {
       <section className="relative overflow-hidden px-4 pb-16 pt-20 text-center">
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
         <div className="relative mx-auto max-w-4xl">
-          <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5">
-            <span className="font-['Segoe_UI_Emoji'] text-sm font-bold text-primary">AMBAR CASTRO</span>
-            <span className="h-3 w-px bg-primary/20" />
-            <span className="text-xs text-primary/70">Economista</span>
-          </div>
-          <h2 className="mt-8 font-[var(--font-display)] text-4xl leading-tight md:text-5xl">
+          <h2 className="font-[var(--font-display)] text-4xl leading-tight md:text-5xl">
             Plantillas de <span className="text-primary">Excel</span> para tu negocio
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">

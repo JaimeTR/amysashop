@@ -26,6 +26,7 @@ export default function DigitalAdminPage() {
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [loading, setLoading] = useState(true);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [statusMsg, setStatusMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -83,11 +84,19 @@ export default function DigitalAdminPage() {
               : p
           )
         );
+        if (data.email_sent) {
+          setStatusMsg({ type: "success", text: "Compra confirmada y email enviado" });
+        } else {
+          setStatusMsg({ type: "error", text: "Compra confirmada pero el email NO se envió (verificar Resend)" });
+        }
+      } else {
+        setStatusMsg({ type: "error", text: "Error al confirmar" });
       }
     } catch {
-      console.error("Failed to confirm purchase");
+      setStatusMsg({ type: "error", text: "Error de conexión" });
     } finally {
       setConfirmingId(null);
+      setTimeout(() => setStatusMsg(null), 5000);
     }
   };
 
@@ -110,6 +119,14 @@ export default function DigitalAdminPage() {
 
   return (
     <main className="mx-auto max-w-5xl space-y-5 p-4 pb-8">
+      {statusMsg && (
+        <div className={`rounded-xl px-4 py-2 text-sm font-semibold ${
+          statusMsg.type === "success" ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
+        }`}>
+          {statusMsg.text}
+        </div>
+      )}
+
       <header className="glass-card flex items-center justify-between rounded-3xl p-5">
         <div>
           <h1 className="font-[var(--font-display)] text-3xl">Descargas digitales</h1>
