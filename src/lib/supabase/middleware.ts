@@ -20,6 +20,7 @@ function getRouteScope(pathname: string) {
 export async function updateSession(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-amysa-route-scope", getRouteScope(request.nextUrl.pathname));
+  requestHeaders.set("x-amysa-digital", request.nextUrl.pathname.startsWith("/digital") ? "1" : "0");
 
   let response = NextResponse.next({
     request: {

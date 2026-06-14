@@ -70,15 +70,18 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const supabaseOk = await checkSupabase();
+  const headersList = headers();
+  const isDigitalRoute = headersList.get("x-amysa-digital") === "1" || process.env.NODE_ENV === "development";
+
+  const supabaseOk = isDigitalRoute ? true : await checkSupabase();
 
   let products: Awaited<ReturnType<typeof getActiveProductsForNav>> = [];
   let categories: Awaited<ReturnType<typeof getRegisteredCategories>> = [];
   let routeScope: RouteScope = "public";
 
-  if (supabaseOk) {
+  if (supabaseOk && !isDigitalRoute) {
     [products, categories] = await Promise.all([getActiveProductsForNav(), getRegisteredCategories()]);
-    routeScope = normalizeRouteScope(headers().get("x-amysa-route-scope"));
+    routeScope = normalizeRouteScope(headersList.get("x-amysa-route-scope"));
   }
 
   return (
@@ -113,9 +116,13 @@ export default async function RootLayout({
             </a>
             <DevServiceWorkerCleanup />
             <NotificationProvider>
-              <LayoutWrapper products={products} categories={categories} routeScope={routeScope}>
-                {children}
-              </LayoutWrapper>
+              {isDigitalRoute ? (
+                children
+              ) : (
+                <LayoutWrapper products={products} categories={categories} routeScope={routeScope}>
+                  {children}
+                </LayoutWrapper>
+              )}
               <AmysaAssistantWidget />
             </NotificationProvider>
           </>

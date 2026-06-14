@@ -8,10 +8,10 @@ export const metadata: Metadata = {
 
 type ThanksPageProps = {
   params: { tipo: string };
-  searchParams?: { nombre?: string };
+  searchParams?: { nombre?: string; producto?: string };
 };
 
-function getConfig(tipo: string, nombre?: string) {
+function getConfig(tipo: string, nombre?: string, producto?: string) {
   const safeName = nombre?.trim();
 
   if (tipo === "contacto") {
@@ -34,6 +34,16 @@ function getConfig(tipo: string, nombre?: string) {
     };
   }
 
+  if (tipo === "digital") {
+    const productName = producto || "tu producto digital";
+    return {
+      title: safeName ? `Gracias, ${safeName}` : "Gracias por tu compra",
+      description: `Hemos recibido tu solicitud de compra de ${productName}. En las próximas horas verificaremos el pago y te enviaremos un correo con las instrucciones de descarga.`,
+      cta: "Volver al inicio",
+      href: "/",
+    };
+  }
+
   return {
     title: "Gracias",
     description: "Tu solicitud fue recibida correctamente.",
@@ -43,7 +53,7 @@ function getConfig(tipo: string, nombre?: string) {
 }
 
 export default function ThanksPage({ params, searchParams }: ThanksPageProps) {
-  const config = getConfig(params.tipo, searchParams?.nombre);
+  const config = getConfig(params.tipo, searchParams?.nombre, searchParams?.producto);
 
   return (
     <main className="flex min-h-[70vh] items-center justify-center px-4 py-12">
