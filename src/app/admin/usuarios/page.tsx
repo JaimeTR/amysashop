@@ -7,6 +7,7 @@ import { UserCreateModal } from "@/components/admin/user-create-modal";
 import { UsersInventoryTable } from "@/components/admin/users-inventory-table";
 import { type AccessRole } from "@/lib/access-control";
 import { requireAdminUser } from "@/lib/admin";
+import { compressFileToBuffer } from "@/lib/image-compression-server";
 
 type PageProps = {
   searchParams?: {
@@ -75,14 +76,13 @@ async function uploadAvatarFromFile(service: NonNullable<ReturnType<typeof getSe
     return "";
   }
 
-  const extension = file.name.includes(".") ? file.name.split(".").pop()?.toLowerCase() || "jpg" : "jpg";
-  const cleanName = file.name.replace(/\s+/g, "-").toLowerCase();
-  const objectPath = `${userId}/${Date.now()}-${cleanName || `avatar.${extension}`}`;
+  const { buffer, contentType, fileName } = await compressFileToBuffer(file);
+  const objectPath = `${userId}/${Date.now()}-${fileName}`;
 
-  const upload = await service.storage.from(bucketName).upload(objectPath, file, {
+  const upload = await service.storage.from(bucketName).upload(objectPath, buffer, {
     upsert: true,
-    cacheControl: "3600",
-    contentType: file.type || undefined,
+    cacheControl: "31536000",
+    contentType,
   });
 
   if (upload.error) {

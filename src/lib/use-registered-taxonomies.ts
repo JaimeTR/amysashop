@@ -21,7 +21,7 @@ export function useRegisteredTaxonomies() {
 
     async function loadTaxonomies() {
       try {
-        const response = await fetch("/api/taxonomies", { cache: "no-store" });
+        const response = await fetch("/api/taxonomies");
         if (!response.ok) return;
 
         const payload = (await response.json()) as TaxonomyResponse;

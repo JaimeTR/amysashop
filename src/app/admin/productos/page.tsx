@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { compressFileToBuffer } from "@/lib/image-compression-server";
 import { AdminPageNotifications } from "@/components/feedback/admin-page-notifications";
 import { ProductCreateModal } from "@/components/admin/product-create-modal";
 import { ProductImportModal } from "@/components/admin/product-import-modal";
@@ -409,13 +410,13 @@ async function uploadProductImagesFromFormData(
   const uploadedUrls: string[] = [];
 
   for (const file of files) {
-    const extension = file.name.includes(".") ? file.name.split(".").pop()?.toLowerCase() || "jpg" : "jpg";
-    const path = `products/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${extension}`;
+    const { buffer, contentType, fileName } = await compressFileToBuffer(file);
+    const path = `products/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.webp`;
 
-    const uploadResult = await supabase.storage.from(bucketName).upload(path, file, {
+    const uploadResult = await supabase.storage.from(bucketName).upload(path, buffer, {
       upsert: false,
-      contentType: file.type || undefined,
-      cacheControl: "3600",
+      contentType,
+      cacheControl: "31536000",
     });
 
     if (uploadResult.error) {

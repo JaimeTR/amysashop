@@ -118,7 +118,7 @@ export default function CheckoutPage() {
 
     async function loadSettings() {
       try {
-        const response = await fetch("/api/checkout-settings", { cache: "no-store" });
+        const response = await fetch("/api/checkout-settings");
         if (!response.ok) {
           return;
         }

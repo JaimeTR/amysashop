@@ -20,18 +20,9 @@ type ProductRow = {
   gender?: string | null;
   age_group?: string | null;
   sub_brand?: string | null;
-  
+
   categories: { name: string }[] | { name: string } | null;
 };
-
-function isMissingColumnError(error: { message?: string } | null | undefined, column: string) {
-  const message = String(error?.message || "").toLowerCase();
-  const col = column.toLowerCase();
-  return (
-    (message.includes("column") && message.includes(col) && message.includes("does not exist")) ||
-    (message.includes("could not find") && message.includes(col) && message.includes("schema cache"))
-  );
-}
 
 function resolveCategoryName(value: ProductRow["categories"]) {
   if (Array.isArray(value)) {
@@ -52,10 +43,6 @@ function normalizeImages(value: unknown): string[] {
   return [];
 }
 
-function hasMissingColumns(error: { message?: string } | null | undefined, columns: string[]) {
-  return columns.some((column) => isMissingColumnError(error, column));
-}
-
 function mapProductRow(row: ProductRow): Product {
   const brand = canonicalizeBrandName(row.brand ?? "");
 
@@ -72,7 +59,7 @@ function mapProductRow(row: ProductRow): Product {
     brand: brand || (row.brand ?? undefined),
     gender: row.gender ?? undefined,
     ageGroup: row.age_group ?? undefined,
-    
+
     stock: row.stock,
     active: row.active,
   };
@@ -88,7 +75,7 @@ function mapNavProduct(product: Product): NavProduct {
     category: product.category,
     brand: product.brand,
     gender: product.gender,
-    
+
   };
 }
 
@@ -116,53 +103,44 @@ function uniqueLabels(values: string[]) {
   return Array.from(seen.values()).sort((a, b) => a.localeCompare(b, "es"));
 }
 
-export async function getActiveProducts(): Promise<Product[]> {
+const NAV_PRODUCT_LIMIT = 200;
+const FULL_PRODUCT_LIMIT = 500;
+
+export const getActiveProducts = cache(async (): Promise<Product[]> => {
   const supabase = createClient();
-  let result: {
-    data: Array<Record<string, unknown>> | null;
-    error: { message?: string } | null;
-  } = await supabase
+  const { data, error } = await supabase
     .from("products")
     .select("id,name,description,resumen,contenido,price,price_before,images,stock,active,brand,gender,age_group,categories(name)")
     .eq("active", true)
     .gt("stock", 0)
-    .order("created_at", { ascending: false });
-
-  if (result.error && hasMissingColumns(result.error, ["price_before", "resumen", "contenido", "age_group"])) {
-    result = await supabase
-      .from("products")
-      .select("id,name,description,price,images,stock,active,brand,gender,categories(name)")
-      .eq("active", true)
-      .gt("stock", 0)
-      .order("created_at", { ascending: false });
-  }
-
-  const { data, error } = result;
+    .order("created_at", { ascending: false })
+    .limit(FULL_PRODUCT_LIMIT);
 
   if (error || !data || data.length === 0) {
     return productSamples;
   }
 
   return (data as ProductRow[]).map(mapProductRow);
-}
+});
 
-export async function getActiveProductsForNav(): Promise<NavProduct[]> {
+export const getActiveProductsForNav = cache(async (): Promise<NavProduct[]> => {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("products")
     .select("id,name,description,price,images,brand,gender,categories(name)")
     .eq("active", true)
     .gt("stock", 0)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(NAV_PRODUCT_LIMIT);
 
   if (error || !data || data.length === 0) {
     return productSamples.map(mapNavProduct);
   }
 
   return (data as ProductRow[]).map(mapProductRow).map(mapNavProduct);
-}
+});
 
-export async function getRegisteredCategories(): Promise<string[]> {
+export const getRegisteredCategories = cache(async (): Promise<string[]> => {
   const supabase = createClient();
   const { data, error } = await supabase.from("categories").select("id,name").order("name", { ascending: true });
 
@@ -180,21 +158,17 @@ export async function getRegisteredCategories(): Promise<string[]> {
   }
 
   return uniqueLabels(productSamples.flatMap((item) => item.category ? [item.category] : []));
-}
+});
 
-export async function getProductsPage(
+export const getProductsPage = cache(async (
   page = 1,
   pageSize = 20
-): Promise<{ products: Product[]; total: number }> {
+): Promise<{ products: Product[]; total: number }> => {
   const supabase = createClient();
   const start = Math.max(0, (page - 1) * pageSize);
   const end = start + pageSize - 1;
 
-  let result: {
-    data: Array<Record<string, unknown>> | null;
-    error: { message?: string } | null;
-    count?: number | null;
-  } = await supabase
+  const { data, error, count } = await supabase
     .from("products")
     .select("id,name,description,resumen,contenido,price,price_before,images,stock,active,brand,gender,age_group,categories(name)", { count: "exact" })
     .eq("active", true)
@@ -202,20 +176,7 @@ export async function getProductsPage(
     .order("created_at", { ascending: false })
     .range(start, end);
 
-  if (result.error && hasMissingColumns(result.error, ["price_before", "resumen", "contenido", "age_group"])) {
-    result = await supabase
-      .from("products")
-      .select("id,name,description,price,images,stock,active,brand,gender,categories(name)", { count: "exact" })
-      .eq("active", true)
-      .gt("stock", 0)
-      .order("created_at", { ascending: false })
-      .range(start, end);
-  }
-
-  const { data, error, count } = result;
-
   if (error || !data) {
-    // fallback to sample data (slice according to page)
     const startSample = start;
     const sliced = productSamples.slice(startSample, startSample + pageSize);
     return { products: sliced, total: productSamples.length };
@@ -223,14 +184,11 @@ export async function getProductsPage(
 
   const products = (data as ProductRow[]).map(mapProductRow);
   return { products, total: typeof count === "number" ? count : products.length };
-}
+});
 
 export const getProductById = cache(async (id: string): Promise<Product | null> => {
   const supabase = createClient();
-  let result: {
-    data: Record<string, unknown> | null;
-    error: { message?: string } | null;
-  } = await supabase
+  const { data, error } = await supabase
     .from("products")
     .select("id,name,description,resumen,contenido,price,price_before,images,stock,active,brand,gender,age_group,categories(name)")
     .eq("id", id)
@@ -238,25 +196,10 @@ export const getProductById = cache(async (id: string): Promise<Product | null> 
     .gt("stock", 0)
     .maybeSingle();
 
-  if (result.error && hasMissingColumns(result.error, ["price_before", "resumen", "contenido", "age_group"])) {
-    result = await supabase
-      .from("products")
-      .select("id,name,description,price,images,stock,active,brand,gender,categories(name)")
-      .eq("id", id)
-      .eq("active", true)
-      .gt("stock", 0)
-      .maybeSingle();
-  }
-
-  const { data, error } = result;
-
   if (!error && data) {
     try {
       return mapProductRow(data as ProductRow);
     } catch (err) {
-      // Registro temporal para depuración: captura filas problemáticas y evita romper el render
-      // Esto ayuda a reproducir el error en `next dev` y luego se puede revertir.
-      // eslint-disable-next-line no-console
       console.error("Error mapeando producto", { id, error: err, row: data });
       return null;
     }
@@ -267,26 +210,13 @@ export const getProductById = cache(async (id: string): Promise<Product | null> 
 
 export const getProductBySlug = cache(async (slug: string): Promise<Product | null> => {
   const supabase = createClient();
-  let result: {
-    data: Array<Record<string, unknown>> | null;
-    error: { message?: string } | null;
-  } = await supabase
+  const { data, error } = await supabase
     .from("products")
     .select("id,name,description,resumen,contenido,price,price_before,images,stock,active,brand,gender,age_group,categories(name)")
     .eq("active", true)
     .gt("stock", 0)
-    .order("created_at", { ascending: false });
-
-  if (result.error && hasMissingColumns(result.error, ["price_before", "resumen", "contenido", "age_group"])) {
-    result = await supabase
-      .from("products")
-      .select("id,name,description,price,images,stock,active,brand,gender,categories(name)")
-      .eq("active", true)
-      .gt("stock", 0)
-      .order("created_at", { ascending: false });
-  }
-
-  const { data, error } = result;
+    .order("created_at", { ascending: false })
+    .limit(FULL_PRODUCT_LIMIT);
 
   if (!error && data) {
     const products = (data as ProductRow[]).map(mapProductRow);
@@ -299,8 +229,7 @@ export const getProductBySlug = cache(async (slug: string): Promise<Product | nu
   return productSamples.find((item) => slugifyProductName(item.name) === normalizedSlug) ?? null;
 });
 
-
-export async function getActiveLandingBySlug(slug: string): Promise<LandingPage | null> {
+export const getActiveLandingBySlug = cache(async (slug: string): Promise<LandingPage | null> => {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("landing_pages")
@@ -321,4 +250,20 @@ export async function getActiveLandingBySlug(slug: string): Promise<LandingPage 
   }
 
   return landingSamples.find((item) => item.slug === slug && item.active) ?? null;
+});
+
+export async function checkSupabase(): Promise<boolean> {
+  try {
+    const supabase = createClient();
+    const { error } = await supabase.from("categories").select("id", { count: "exact", head: true });
+    if (error) {
+      const msg = String(error.message || "").toLowerCase();
+      if (msg.includes("restricted") || msg.includes("quota") || msg.includes("402")) {
+        return false;
+      }
+    }
+    return !error;
+  } catch {
+    return false;
+  }
 }

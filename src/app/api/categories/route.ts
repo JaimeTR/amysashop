@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 300;
 
 export async function GET() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -25,5 +24,12 @@ export async function GET() {
 
   const categories = (data || []).map((row) => String(row.name || "").trim()).filter(Boolean);
 
-  return NextResponse.json({ categories });
+  return NextResponse.json(
+    { categories },
+    {
+      headers: {
+        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+      },
+    }
+  );
 }

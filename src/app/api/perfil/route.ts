@@ -2,6 +2,7 @@ import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
+import { compressFileToBuffer } from "@/lib/image-compression-server";
 
 function isMissingColumnError(error: { message?: string } | null | undefined, column: string) {
   const message = String(error?.message || "").toLowerCase();
@@ -56,14 +57,13 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "La imagen debe ser menor a 5 MB." }, { status: 400 });
       }
 
-      const extension = avatarFile.name.includes(".") ? avatarFile.name.split(".").pop()?.toLowerCase() || "jpg" : "jpg";
-      const cleanName = avatarFile.name.replace(/\s+/g, "-").toLowerCase();
-      const objectPath = `${user.id}/${Date.now()}-${cleanName || `avatar.${extension}`}`;
+      const { buffer, contentType, fileName } = await compressFileToBuffer(avatarFile);
+      const objectPath = `${user.id}/${Date.now()}-${fileName}`;
 
-      const upload = await service.storage.from(bucketName).upload(objectPath, avatarFile, {
+      const upload = await service.storage.from(bucketName).upload(objectPath, buffer, {
         upsert: true,
-        cacheControl: "3600",
-        contentType: avatarFile.type || undefined,
+        cacheControl: "31536000",
+        contentType,
       });
 
       if (upload.error) {

@@ -46,7 +46,6 @@ export default function FavoritosPage() {
         const params = new URLSearchParams({ ids: ids.join(",") });
         const response = await fetch(`/api/products/covers?${params.toString()}`, {
           signal: controller.signal,
-          cache: "no-store",
         });
 
         if (!response.ok) {

@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 300;
 
 // Logos de marcas hardcodeados (estos se pueden mover a BD si es necesario)
 const BRAND_LOGOS: Record<string, string> = {
@@ -60,5 +59,12 @@ export async function GET() {
     };
   });
 
-  return NextResponse.json({ brands });
+  return NextResponse.json(
+    { brands },
+    {
+      headers: {
+        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+      },
+    }
+  );
 }

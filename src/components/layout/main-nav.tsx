@@ -34,6 +34,7 @@ import {
 } from "@/lib/access-control";
 import { DEFAULT_PRODUCT_IMAGE, getSafeProductImageSrc } from "@/lib/product-images";
 import { getProductSearchText, normalizeSearchText } from "@/lib/product-search";
+import { compressImageFile } from "@/lib/image-compression";
 import type { NavProduct } from "@/lib/types";
 
 function normalizeLabel(value: string) {
@@ -503,7 +504,6 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
         const params = new URLSearchParams({ ids: ids.join(",") });
         const response = await fetch(`/api/products/covers?${params.toString()}`, {
           signal: controller.signal,
-          cache: "no-store",
         });
 
         if (!response.ok) {
@@ -630,16 +630,13 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
         process.env.NEXT_PUBLIC_SUPABASE_AVATARS_BUCKET ||
         "profile-avatars";
 
-      const extension = selectedAvatarFile.name.includes(".")
-        ? selectedAvatarFile.name.split(".").pop()?.toLowerCase() || "jpg"
-        : "jpg";
-      const cleanName = selectedAvatarFile.name.replace(/\s+/g, "-").toLowerCase();
-      const objectPath = `${user.id}/${Date.now()}-${cleanName || `avatar.${extension}`}`;
+      const compressed = await compressImageFile(selectedAvatarFile, 400, 400, 0.8);
+      const objectPath = `${user.id}/${Date.now()}-${compressed.name}`;
 
-      const upload = await supabase.storage.from(bucketName).upload(objectPath, selectedAvatarFile, {
+      const upload = await supabase.storage.from(bucketName).upload(objectPath, compressed, {
         upsert: true,
-        cacheControl: "3600",
-        contentType: selectedAvatarFile.type || undefined,
+        cacheControl: "31536000",
+        contentType: compressed.type || undefined,
       });
 
       if (upload.error) {

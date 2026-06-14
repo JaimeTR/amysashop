@@ -193,6 +193,7 @@ export default async function Home() {
                 alt="Tienda AMYSA"
                 width={200}
                 height={200}
+                unoptimized
                 className="object-contain size-40"
                 priority
               />
@@ -228,6 +229,7 @@ export default async function Home() {
               alt="Tienda AMYSA"
               width={200}
               height={200}
+              unoptimized
               className="object-contain size-80"
               priority
             />

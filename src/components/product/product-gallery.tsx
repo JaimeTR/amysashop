@@ -79,6 +79,7 @@ export function ProductGallery({ images, name }: Props) {
             alt={name}
             width={1200}
             height={1200}
+            sizes="(max-width: 768px) 100vw, 600px"
             className="h-[360px] w-full object-cover md:h-[460px]"
           />
         )}

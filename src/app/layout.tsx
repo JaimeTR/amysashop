@@ -4,8 +4,9 @@ import "./globals.css";
 import { DevServiceWorkerCleanup } from "@/components/pwa/dev-service-worker-cleanup";
 import { NotificationProvider } from "@/components/feedback/notification-center";
 import { AmysaAssistantWidget } from "@/components/chat/amysa-assistant-widget";
-import { getActiveProductsForNav, getRegisteredCategories } from "@/lib/catalog";
+import { getActiveProductsForNav, getRegisteredCategories, checkSupabase } from "@/lib/catalog";
 import { LayoutWrapper } from "@/components/layout/layout-wrapper";
+import { MaintenanceScreen } from "@/components/maintenance/maintenance-screen";
 import { getSiteUrl } from "@/lib/site-url";
 import { headers } from "next/headers";
 
@@ -69,42 +70,56 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [products, categories] = await Promise.all([getActiveProductsForNav(), getRegisteredCategories()]);
-  const routeScope = normalizeRouteScope(headers().get("x-amysa-route-scope"));
+  const supabaseOk = await checkSupabase();
+
+  let products: Awaited<ReturnType<typeof getActiveProductsForNav>> = [];
+  let categories: Awaited<ReturnType<typeof getRegisteredCategories>> = [];
+  let routeScope: RouteScope = "public";
+
+  if (supabaseOk) {
+    [products, categories] = await Promise.all([getActiveProductsForNav(), getRegisteredCategories()]);
+    routeScope = normalizeRouteScope(headers().get("x-amysa-route-scope"));
+  }
 
   return (
     <html lang="es">
       <body className={`${manrope.variable} ${playfair.variable} min-h-screen flex flex-col antialiased`} data-app-version={APP_VERSION}>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "Organization",
-              name: "AMYSA SHOP",
-              url: getSiteUrl(),
-              logo: `${getSiteUrl()}/logos/amysa%20shop.png`,
-              description: "Tienda online de perfumes, maquillaje, cuidado personal, accesorios y marcas seleccionadas.",
-              contactPoint: [
-                { "@type": "ContactPoint", telephone: "+51 965 312 386", contactType: "customer service", areaServed: "PE" },
-              ],
-              sameAs: [
-                "https://www.instagram.com/amysa.shop/",
-                "http://tiktok.com/@amysa.shop",
-              ],
-            }),
-          }}
-        />
-        <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-white focus:text-primary focus:outline-none focus:ring-2 focus:ring-primary">
-          Saltar al contenido principal
-        </a>
-        <DevServiceWorkerCleanup />
-        <NotificationProvider>
-          <LayoutWrapper products={products} categories={categories} routeScope={routeScope}>
-            {children}
-          </LayoutWrapper>
-          <AmysaAssistantWidget />
-        </NotificationProvider>
+        {!supabaseOk ? (
+          <MaintenanceScreen />
+        ) : (
+          <>
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{
+                __html: JSON.stringify({
+                  "@context": "https://schema.org",
+                  "@type": "Organization",
+                  name: "AMYSA SHOP",
+                  url: getSiteUrl(),
+                  logo: `${getSiteUrl()}/logos/amysa%20shop.png`,
+                  description: "Tienda online de perfumes, maquillaje, cuidado personal, accesorios y marcas seleccionadas.",
+                  contactPoint: [
+                    { "@type": "ContactPoint", telephone: "+51 965 312 386", contactType: "customer service", areaServed: "PE" },
+                  ],
+                  sameAs: [
+                    "https://www.instagram.com/amysa.shop/",
+                    "http://tiktok.com/@amysa.shop",
+                  ],
+                }),
+              }}
+            />
+            <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-white focus:text-primary focus:outline-none focus:ring-2 focus:ring-primary">
+              Saltar al contenido principal
+            </a>
+            <DevServiceWorkerCleanup />
+            <NotificationProvider>
+              <LayoutWrapper products={products} categories={categories} routeScope={routeScope}>
+                {children}
+              </LayoutWrapper>
+              <AmysaAssistantWidget />
+            </NotificationProvider>
+          </>
+        )}
       </body>
     </html>
   );

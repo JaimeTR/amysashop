@@ -27,7 +27,7 @@ export function useCategoriesFromDB() {
     async function loadCategories() {
       setLoading(true);
       try {
-        const response = await fetch("/api/categories", { cache: "no-store" });
+        const response = await fetch("/api/categories");
         if (!response.ok) return;
 
         const payload = (await response.json()) as CategoriesResponse;
@@ -61,7 +61,7 @@ export function useBrandsFromDB() {
     async function loadBrands() {
       setLoading(true);
       try {
-        const response = await fetch("/api/brands", { cache: "no-store" });
+        const response = await fetch("/api/brands");
         if (!response.ok) return;
 
         const payload = (await response.json()) as BrandsResponse;

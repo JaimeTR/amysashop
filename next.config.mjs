@@ -6,6 +6,33 @@ const withPWA = nextPwa({
 	disable: process.env.NODE_ENV === "development",
 	register: true,
 	skipWaiting: true,
+	runtimeCaching: [
+		{
+			urlPattern: /^https?:\/\/.*\.supabase\.co\/.*\.(?:png|jpg|jpeg|webp|avif|svg|gif)$/i,
+			handler: "StaleWhileRevalidate",
+			options: {
+				cacheName: "supabase-images",
+				expiration: { maxEntries: 200, maxAgeSeconds: 7 * 24 * 60 * 60 },
+			},
+		},
+		{
+			urlPattern: /\/api\//,
+			handler: "NetworkFirst",
+			options: {
+				cacheName: "api-cache",
+				networkTimeoutSeconds: 5,
+				expiration: { maxEntries: 50, maxAgeSeconds: 5 * 60 },
+			},
+		},
+		{
+			urlPattern: /\/_next\/image\?/,
+			handler: "StaleWhileRevalidate",
+			options: {
+				cacheName: "next-image-cache",
+				expiration: { maxEntries: 100, maxAgeSeconds: 30 * 24 * 60 * 60 },
+			},
+		},
+	],
 });
 
 /** @type {import('next').NextConfig} */
@@ -25,6 +52,9 @@ const nextConfig = {
 			},
 		],
 		formats: ["image/avif", "image/webp"],
+		minimumCacheTTL: 2592000,
+		deviceSizes: [640, 1080, 1920],
+		imageSizes: [32, 128, 384],
 	},
 
 	async headers() {

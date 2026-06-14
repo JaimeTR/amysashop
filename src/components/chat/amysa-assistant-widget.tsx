@@ -310,7 +310,7 @@ export function AmysaAssistantWidget({ userId, userName }: Props) {
 
     const pollId = window.setInterval(() => {
       refreshSessionMessages(sessionId);
-    }, 5000);
+    }, 20000);
 
     return () => {
       window.clearInterval(pollId);

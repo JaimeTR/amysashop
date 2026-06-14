@@ -2,8 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { FALLBACK_AGE_GROUPS, FALLBACK_GENDERS, normalizeTaxonomyOptions } from "@/lib/taxonomies";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 300;
 
 export async function GET() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -29,5 +28,12 @@ export async function GET() {
     FALLBACK_AGE_GROUPS
   );
 
-  return NextResponse.json({ genders, ageGroups });
+  return NextResponse.json(
+    { genders, ageGroups },
+    {
+      headers: {
+        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+      },
+    }
+  );
 }
