@@ -189,12 +189,12 @@ export default function LoginPage() {
       profileRole = (profileData as { role?: string | null } | null)?.role ?? null;
       profileIsAdmin = Boolean((profileData as { is_admin?: boolean } | null)?.is_admin);
     } catch {
-      // Si falla la lectura de profile por RLS, igual resolvemos con metadata/correo.
+      // Si falla la lectura de profile por RLS, igual resolvemos con el correo.
     }
 
+    // Mismo criterio que el servidor: el rol sale de profiles, no de user_metadata.
     const resolvedRole = resolveRoleFromContext({
       email: signedUser.email,
-      metadataRole: (signedUser.user_metadata?.role as string | null | undefined) ?? null,
       profileRole,
       isAdmin: profileIsAdmin,
       superAdminEmail,
@@ -267,6 +267,12 @@ export default function LoginPage() {
                 </button>
               </div>
             </label>
+
+            <div className="text-right">
+              <Link href="/recuperar" className="text-xs font-semibold text-primary hover:underline">
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </div>
 
             <Button type="submit" className="h-11 w-full rounded-xl text-sm font-semibold" disabled={loading}>
               {loading ? "Ingresando..." : "Ingresar"}

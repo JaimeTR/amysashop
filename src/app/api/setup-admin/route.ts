@@ -1,8 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   const serviceRoleKey =
     process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -29,15 +29,8 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = await request.json();
-    const { userId, email } = body;
-
-    if (!userId || !email) {
-      return NextResponse.json(
-        { error: "userId and email required" },
-        { status: 400 }
-      );
-    }
+    // Solo se puede activar la propia cuenta del superadmin (no un userId arbitrario del body).
+    const userId = user.id;
 
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 

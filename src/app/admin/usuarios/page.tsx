@@ -1,3 +1,4 @@
+import { getSiteUrl } from "@/lib/site-url";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient as createSupabaseClient, createClient as createServiceClient } from "@supabase/supabase-js";
@@ -367,7 +368,9 @@ async function sendPasswordResetAction(formData: FormData) {
     redirect("/admin/usuarios?error=Correo+inválido+para+reseteo");
   }
 
-  const result = await publicAuth.auth.resetPasswordForEmail(email);
+  const result = await publicAuth.auth.resetPasswordForEmail(email, {
+    redirectTo: `${getSiteUrl().replace(/\/$/, "")}/restablecer`,
+  });
 
   if (result.error) {
     redirect(`/admin/usuarios?error=${encodeURIComponent(result.error.message)}`);

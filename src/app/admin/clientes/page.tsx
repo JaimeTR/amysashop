@@ -1,3 +1,4 @@
+import { getSiteUrl } from "@/lib/site-url";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
@@ -235,9 +236,7 @@ async function sendPasswordResetAction(formData: FormData) {
     redirect("/admin/clientes?error=Correo+inválido+para+cambio+de+clave");
   }
 
-  const redirectTo = process.env.NEXT_PUBLIC_SITE_URL
-    ? `${process.env.NEXT_PUBLIC_SITE_URL}/login`
-    : undefined;
+  const redirectTo = `${getSiteUrl().replace(/\/$/, "")}/restablecer`;
 
   const result = await service.auth.resetPasswordForEmail(email, {
     redirectTo,
