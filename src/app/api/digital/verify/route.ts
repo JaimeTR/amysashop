@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
-import { getPurchasesByEmail } from "@/lib/digital-actions";
+import { getDeliverableFiles, listOrdersByEmail } from "@/lib/digital-store";
 
+// "Mis descargas": con solo el email se ve el estado de los pedidos; los archivos
+// se desbloquean únicamente con el token del enlace enviado por correo.
 export async function POST(req: Request) {
   try {
     const { email, token } = await req.json();
@@ -9,21 +11,36 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: "invalid_email" }, { status: 400 });
     }
 
-    const purchases = await getPurchasesByEmail(email.trim().toLowerCase());
+    const orders = await listOrdersByEmail(email);
 
-    // Con solo el email se muestra el estado de las compras; el acceso a los archivos
-    // requiere el token del enlace enviado por correo al confirmar el pago.
-    const safePurchases = purchases.map((p) => {
-      const unlocked = typeof token === "string" && token.length > 0 && p.download_token === token;
-      const files = unlocked
-        ? (p.files || []).map(({ name, description, type }) => ({ name, description, type, url: "" }))
-        : undefined;
-      return { ...p, download_token: unlocked ? p.download_token : null, files };
-    });
+    const purchases = await Promise.all(
+      orders.map(async (order) => {
+        const unlocked = typeof token === "string" && token.length > 0 && order.downloadToken === token && order.status === "completed";
+        const files = unlocked ? await getDeliverableFiles(order.productId) : undefined;
+        return {
+          id: order.id,
+          code: order.code,
+          productName: order.productName,
+          productSlug: order.productSlug,
+          status: order.status,
+          createdAt: order.createdAt,
+          confirmedAt: order.confirmedAt,
+          downloadToken: unlocked ? order.downloadToken : null,
+          files: files?.map(({ id, name, description, mimeType, sizeBytes, productName }) => ({
+            id,
+            name,
+            description,
+            mimeType,
+            sizeBytes,
+            productName,
+          })),
+        };
+      })
+    );
 
-    return NextResponse.json({ ok: true, purchases: safePurchases });
-  } catch (err) {
-    console.error("/api/digital/verify error:", err);
+    return NextResponse.json({ ok: true, purchases });
+  } catch (error) {
+    console.error("/api/digital/verify:", error);
     return NextResponse.json({ ok: false, error: "internal_error" }, { status: 500 });
   }
 }

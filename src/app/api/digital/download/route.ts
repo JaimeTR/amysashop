@@ -1,118 +1,67 @@
-import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import fs from "fs";
 import path from "path";
+import { NextResponse } from "next/server";
+import { getFileDelivery, getOrderByToken } from "@/lib/digital-store";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_DIGITAL_SUPABASE_URL || "";
-const serviceRoleKey = process.env.DIGITAL_SUPABASE_SECRET_KEY || "";
+export const dynamic = "force-dynamic";
 
 const MIME_TYPES: Record<string, string> = {
   ".pdf": "application/pdf",
   ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   ".xls": "application/vnd.ms-excel",
+  ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ".doc": "application/msword",
+  ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  ".zip": "application/zip",
   ".mp4": "video/mp4",
   ".png": "image/png",
   ".jpg": "image/jpeg",
   ".jpeg": "image/jpeg",
 };
 
-function getMimeType(fileName: string): string {
-  const ext = path.extname(fileName).toLowerCase();
-  return MIME_TYPES[ext] || "application/octet-stream";
-}
-
-function isPreviewable(fileName: string): boolean {
-  const ext = path.extname(fileName).toLowerCase();
-  return [".pdf", ".png", ".jpg", ".jpeg", ".mp4"].includes(ext);
-}
-
-export const dynamic = "force-dynamic";
-
+// Descarga de un archivo comprado: exige token + email de un pedido confirmado,
+// y que el archivo pertenezca al producto (o pack) de ese pedido.
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
-    const token = searchParams.get("token");
-    const email = searchParams.get("email");
-    const fileName = searchParams.get("file");
+    const token = searchParams.get("token") || "";
+    const email = searchParams.get("email") || "";
+    const fileId = searchParams.get("file") || "";
     const preview = searchParams.get("preview") === "1";
 
-    if (!token || !email) {
+    if (!token || !email || !fileId) {
       return NextResponse.json({ ok: false, error: "missing_params" }, { status: 400 });
     }
 
-    const supabase = createClient(supabaseUrl, serviceRoleKey);
-
-    const { data: purchase } = await supabase
-      .from("digital_purchases")
-      .select("id, status, download_token, product_id")
-      .eq("download_token", token)
-      .eq("email", email.toLowerCase().trim())
-      .eq("status", "completed")
-      .single();
-
-    if (!purchase) {
+    const order = await getOrderByToken(token, email);
+    if (!order || order.status !== "completed") {
       return NextResponse.json({ ok: false, error: "invalid_token" }, { status: 403 });
     }
 
-    const { data: view } = await supabase
-      .from("digital_purchase_view")
-      .select("product_slug, product_name")
-      .eq("download_token", token)
-      .single();
-
-    const productSlug = view?.product_slug || "";
-
-    if (!fileName) {
-      const { data: productData } = await supabase
-        .from("digital_products")
-        .select("file_urls")
-        .eq("slug", productSlug)
-        .single();
-
-      const files = ((productData?.file_urls || []) as { name: string; description: string; type: string }[]).map(
-        ({ name, description, type }) => ({ name, description, type })
-      );
-      return NextResponse.json({ ok: true, files });
-    }
-
-    const { data: productData } = await supabase
-      .from("digital_products")
-      .select("file_urls")
-      .eq("slug", productSlug)
-      .single();
-
-    // Solo se sirven archivos declarados en el producto (evita path traversal con "../").
-    const files = (productData?.file_urls || []) as { name: string; url?: string }[];
-    const matchedFile = files.find((f) => f.name === fileName);
-    if (!matchedFile || !productSlug || fileName !== path.basename(fileName) || productSlug !== path.basename(productSlug)) {
+    const delivery = await getFileDelivery(order, fileId, preview);
+    if (!delivery) {
       return NextResponse.json({ ok: false, error: "file_not_found" }, { status: 404 });
     }
 
-    if (matchedFile.url && matchedFile.url.startsWith("http")) {
-      return NextResponse.redirect(matchedFile.url);
+    if (delivery.kind === "signed") {
+      return NextResponse.redirect(delivery.url);
     }
 
-    const baseDir = path.join(process.cwd(), "private", "digital", "files");
-    const localPath = path.join(baseDir, productSlug, fileName);
-    if (localPath.startsWith(baseDir + path.sep) && fs.existsSync(localPath)) {
-      const buffer = fs.readFileSync(localPath);
-      const contentType = getMimeType(fileName);
-      const disposition = preview && isPreviewable(fileName)
-        ? "inline"
-        : `attachment; filename*=UTF-8''${encodeURIComponent(fileName)}`;
-      return new NextResponse(buffer, {
-        headers: {
-          "Content-Type": contentType,
-          "Content-Disposition": disposition,
-          "Content-Length": String(buffer.length),
-          "Cache-Control": "private, max-age=3600",
-        },
-      });
-    }
+    const buffer = fs.readFileSync(delivery.absolutePath);
+    const ext = path.extname(delivery.name).toLowerCase();
+    const contentType = delivery.mimeType || MIME_TYPES[ext] || "application/octet-stream";
+    const inline = preview && [".pdf", ".png", ".jpg", ".jpeg", ".mp4"].includes(ext);
 
-    return NextResponse.json({ ok: false, error: "file_not_found" }, { status: 404 });
-  } catch (err) {
-    console.error("/api/digital/download error:", err);
+    return new NextResponse(buffer, {
+      headers: {
+        "Content-Type": contentType,
+        "Content-Disposition": inline ? "inline" : `attachment; filename*=UTF-8''${encodeURIComponent(delivery.name)}`,
+        "Content-Length": String(buffer.length),
+        "Cache-Control": "private, no-store",
+      },
+    });
+  } catch (error) {
+    console.error("/api/digital/download:", error);
     return NextResponse.json({ ok: false, error: "internal_error" }, { status: 500 });
   }
 }

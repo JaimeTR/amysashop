@@ -4,11 +4,15 @@ import { getSiteUrl } from "@/lib/site-url";
 const resendApiKey = process.env.RESEND_API_KEY || "";
 const fromEmail = process.env.CONTACT_FROM_EMAIL || "no-reply@amysashop.com";
 
+function escapeHtml(value: string) {
+  return String(value || "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char] || char);
+}
+
 export async function sendPurchaseConfirmationEmail(input: {
   to: string;
   customerName: string;
   productName: string;
-  productSlug?: string;
+  orderCode?: string;
   downloadToken: string;
   files?: { name: string; description: string }[];
 }): Promise<{ ok: boolean; error?: string }> {
@@ -32,11 +36,8 @@ export async function sendPurchaseConfirmationEmail(input: {
                   <span style="display:inline-block;width:36px;height:36px;border-radius:10px;background:#f5f0ec;text-align:center;line-height:36px;font-size:16px;">📄</span>
                 </td>
                 <td style="padding-left:12px;vertical-align:middle;">
-                  <p style="margin:0;font-size:14px;font-weight:600;color:#1a1a1a;">${f.name}</p>
-                  <p style="margin:2px 0 0;font-size:12px;color:#888;">${f.description}</p>
-                </td>
-                <td width="100" style="vertical-align:middle;text-align:right;">
-                  <a href="${downloadUrl}&file=${encodeURIComponent(f.name)}" style="display:inline-block;padding:6px 14px;border-radius:8px;background:#7A5542;color:#fff;font-size:12px;font-weight:600;text-decoration:none;">Descargar</a>
+                  <p style="margin:0;font-size:14px;font-weight:600;color:#1a1a1a;">${escapeHtml(f.name)}</p>
+                  <p style="margin:2px 0 0;font-size:12px;color:#888;">${escapeHtml(f.description)}</p>
                 </td>
               </tr>
             </table>
@@ -63,10 +64,10 @@ export async function sendPurchaseConfirmationEmail(input: {
         <tr>
           <td style="padding:36px 40px;">
             <p style="color:#1a1a1a;font-size:16px;line-height:1.6;margin:0 0 8px;">
-              Hola <strong style="color:#7A5542;">${input.customerName}</strong>,
+              Hola <strong style="color:#7A5542;">${escapeHtml(input.customerName)}</strong>,
             </p>
             <p style="color:#555;font-size:15px;line-height:1.6;margin:0 0 24px;">
-              Hemos verificado tu pago de <strong style="color:#7A5542;">${input.productName}</strong>. ¡Gracias por confiar en nosotras!
+              Hemos verificado tu pago de <strong style="color:#7A5542;">${escapeHtml(input.productName)}</strong>${input.orderCode ? ` (pedido ${escapeHtml(input.orderCode)})` : ""}. ¡Gracias por confiar en nosotras!
             </p>
 
             <table cellpadding="0" cellspacing="0" style="margin:0 0 28px;">

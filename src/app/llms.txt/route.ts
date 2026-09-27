@@ -1,5 +1,7 @@
 import { getActiveProducts } from "@/lib/catalog";
 import { CATEGORY_PAGES, getCategoryPageByName } from "@/lib/category-pages";
+import { getPublicDigitalProducts } from "@/lib/digital-store";
+import { DIGITAL_PRODUCT_TYPES } from "@/lib/digital-types";
 import { getProductUrl } from "@/lib/product-url";
 import { getSiteUrl } from "@/lib/site-url";
 
@@ -10,6 +12,7 @@ export const revalidate = 3600;
 export async function GET() {
   const siteUrl = getSiteUrl();
   const products = (await getActiveProducts()).filter((product) => product.id.includes("-"));
+  const digitalProducts = await getPublicDigitalProducts();
 
   const byCategory = new Map<string, typeof products>();
   for (const product of products) {
@@ -62,7 +65,11 @@ export async function GET() {
     `- [Contacto](${siteUrl}/ayuda/contacto)`,
     "",
     "## Productos digitales",
-    `- [Plantillas de Excel para vendedoras por catálogo](${siteUrl}/digital/ambarcastro): control de ventas, pedidos y ganancias (niveles Básico, Intermedio y PRO).`,
+    `Plantillas, libros, guías y cursos descargables. Pago con Yape, Plin, transferencia o WhatsApp; los archivos se envían por correo al confirmar el pago. Catálogo: ${siteUrl}/digital`,
+    ...digitalProducts.map(
+      (product) =>
+        `- [${product.name}](${siteUrl}/digital/${product.slug}) - ${DIGITAL_PRODUCT_TYPES[product.productType]?.label || "Digital"} - S/ ${product.price.toFixed(2)}${product.subtitle ? ` - ${product.subtitle}` : ""}`
+    ),
     "",
     "## Redes sociales",
     "- [Instagram](https://www.instagram.com/amysa.shop/)",

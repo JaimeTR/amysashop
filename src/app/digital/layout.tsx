@@ -7,7 +7,7 @@ export default function DigitalLayout({ children }: { children: React.ReactNode 
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-50 border-b border-primary/10 bg-white/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-          <Link href="/digital/ambarcastro" className="flex items-center gap-2">
+          <Link href="/digital" className="flex items-center gap-2">
             <Image
               src="/logos/amysa-horizontal-primary.png"
               alt="AMYSA SHOP"
@@ -19,9 +19,9 @@ export default function DigitalLayout({ children }: { children: React.ReactNode 
           </Link>
 
           <div className="flex items-center gap-3">
-            <span className="hidden text-xs font-semibold uppercase tracking-wider text-primary/70 sm:block">
-              By Ambar Castro
-            </span>
+            <Link href="/digital" className="hidden text-xs font-semibold uppercase tracking-wider text-primary/80 hover:text-primary sm:block">
+              Productos digitales
+            </Link>
 
             <Link
               href="/digital/descargas"
@@ -47,7 +47,7 @@ export default function DigitalLayout({ children }: { children: React.ReactNode 
                 className="h-8 w-auto"
               />
               <p className="mt-3 text-sm text-muted-foreground">
-                Plantillas profesionales de Excel para emprendedoras que quieren organizar su negocio.
+                Plantillas, libros, guías y cursos digitales para emprendedoras que quieren organizar y hacer crecer su negocio.
               </p>
             </div>
 
@@ -55,18 +55,13 @@ export default function DigitalLayout({ children }: { children: React.ReactNode 
               <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Productos</h4>
               <ul className="mt-3 space-y-2">
                 <li>
-                  <Link href="/digital/ambarcastro" className="text-sm text-muted-foreground transition hover:text-primary">
-                    Mi Catálogo al Día
+                  <Link href="/digital" className="text-sm text-muted-foreground transition hover:text-primary">
+                    Todos los productos digitales
                   </Link>
                 </li>
                 <li>
                   <Link href="/digital/ambarcastro" className="text-sm text-muted-foreground transition hover:text-primary">
-                    Gestión de Ventas por Catálogo
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/digital/ambarcastro" className="text-sm text-muted-foreground transition hover:text-primary">
-                    Gestión de Ventas PRO
+                    Plantillas de Excel
                   </Link>
                 </li>
               </ul>

@@ -2,7 +2,7 @@
 
 import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
-import { BadgeDollarSign, Boxes, ClipboardList, HandCoins, LayoutGrid, Menu, MessageCircleMore, Megaphone, Settings2, SlidersHorizontal, TrendingUp, UserCog, Users2, X } from "lucide-react";
+import { BadgeDollarSign, Boxes, FileDown, ClipboardList, HandCoins, LayoutGrid, Menu, MessageCircleMore, Megaphone, Settings2, SlidersHorizontal, TrendingUp, UserCog, Users2, X } from "lucide-react";
 import { AccessRole, AdminPermission, hasPermission } from "@/lib/access-control";
 import { Button } from "@/components/ui/button";
 
@@ -13,6 +13,7 @@ const links = [
   { href: "/admin/pedidos", label: "Pedidos", icon: ClipboardList, permission: "orders.manage" as AdminPermission },
   { href: "/admin/chats", label: "Chats", icon: MessageCircleMore, permission: "chat.manage" as AdminPermission },
   { href: "/admin/clientes", label: "Clientes", icon: Users2, permission: "clients.manage" as AdminPermission },
+  { href: "/admin/digitales", label: "Digitales", icon: FileDown, permission: "digital.manage" as AdminPermission },
   { href: "/admin/emprende", label: "Emprende", icon: BadgeDollarSign, permission: "sales.manage" as AdminPermission },
   { href: "/admin/caja-amysa", label: "Caja", icon: HandCoins, permission: "inventory.manage" as AdminPermission },
   { href: "/admin/usuarios", label: "Usuarios", icon: UserCog, permission: "users.manage" as AdminPermission },

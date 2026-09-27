@@ -22,6 +22,7 @@ const PRIVATE_PATHS = [
   "/digital/admin",
   "/digital/descargas",
   "/digital/gracias",
+  "/digital/pedido",
 ];
 
 // Buscadores con IA (GEO): se permiten para que puedan citar el catálogo y la ayuda.

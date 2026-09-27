@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { getActiveProducts } from "@/lib/catalog";
 import { CATEGORY_PAGES } from "@/lib/category-pages";
+import { getPublicDigitalProducts } from "@/lib/digital-store";
 import { getProductUrl } from "@/lib/product-url";
 import { getSiteUrl } from "@/lib/site-url";
 
@@ -8,7 +9,7 @@ export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const siteUrl = getSiteUrl();
-  const products = await getActiveProducts();
+  const [products, digitalProducts] = await Promise.all([getActiveProducts(), getPublicDigitalProducts()]);
   // Solo productos reales de la BD (los de ejemplo no tienen UUID).
   const realProducts = products.filter((product) => product.id.includes("-"));
   const latestUpdate = realProducts
@@ -22,6 +23,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "", priority: 1, changeFrequency: "daily" },
     { path: "/tienda", priority: 0.9, changeFrequency: "daily" },
     ...CATEGORY_PAGES.map((page) => ({ path: `/tienda/${page.slug}`, priority: 0.8, changeFrequency: "daily" as const })),
+    { path: "/digital", priority: 0.7, changeFrequency: "weekly" },
     { path: "/digital/ambarcastro", priority: 0.6, changeFrequency: "monthly" },
     { path: "/ayuda", priority: 0.5, changeFrequency: "monthly" },
     { path: "/ayuda/faq", priority: 0.6, changeFrequency: "monthly" },
@@ -44,5 +46,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     images: product.images.filter((src) => /^https?:\/\//.test(src)).slice(0, 3),
   }));
 
-  return [...staticRoutes, ...productRoutes];
+  const digitalRoutes: MetadataRoute.Sitemap = digitalProducts.map((product) => ({
+    url: `${siteUrl}/digital/${product.slug}`,
+    lastModified: product.updatedAt ? new Date(product.updatedAt) : undefined,
+    changeFrequency: "weekly",
+    priority: 0.7,
+    images: [product.coverUrl, ...product.previewImages].filter((src): src is string => Boolean(src)).slice(0, 3),
+  }));
+
+  return [...staticRoutes, ...productRoutes, ...digitalRoutes];
 }

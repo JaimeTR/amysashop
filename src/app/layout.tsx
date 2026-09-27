@@ -96,7 +96,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const headersList = headers();
-  const isDigitalRoute = headersList.get("x-amysa-digital") === "1" || process.env.NODE_ENV === "development";
+  const isDigitalRoute = headersList.get("x-amysa-digital") === "1";
 
   const supabaseOk = isDigitalRoute ? true : await checkSupabase();
 

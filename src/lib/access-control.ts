@@ -9,7 +9,8 @@ export type AdminPermission =
   | "chat.manage"
   | "users.manage"
   | "inventory.manage"
-  | "sales.manage";
+  | "sales.manage"
+  | "digital.manage";
 
 const roleLabels: Record<AccessRole, string> = {
   superadmin: "Superadmin",
@@ -30,6 +31,7 @@ const permissionLabels: Record<AdminPermission, string> = {
   "users.manage": "Gestión de usuarios y roles",
   "inventory.manage": "Gestión de inventario",
   "sales.manage": "Gestión de ventas y comisiones",
+  "digital.manage": "Gestión de productos digitales",
 };
 
 const rolePermissions: Record<AccessRole, AdminPermission[]> = {
@@ -43,6 +45,7 @@ const rolePermissions: Record<AccessRole, AdminPermission[]> = {
     "users.manage",
     "inventory.manage",
     "sales.manage",
+    "digital.manage",
   ],
   administrador: [
     "dashboard.view",
@@ -53,8 +56,9 @@ const rolePermissions: Record<AccessRole, AdminPermission[]> = {
     "chat.manage",
     "inventory.manage",
     "sales.manage",
+    "digital.manage",
   ],
-  duena: ["dashboard.view", "products.manage", "clients.manage", "orders.manage", "store.manage", "chat.manage", "inventory.manage", "sales.manage"],
+  duena: ["dashboard.view", "products.manage", "clients.manage", "orders.manage", "store.manage", "chat.manage", "inventory.manage", "sales.manage", "digital.manage"],
   socia: ["dashboard.view", "products.manage", "orders.manage", "store.manage", "chat.manage"],
   vendedora: ["dashboard.view", "products.manage", "orders.manage", "chat.manage", "sales.manage"],
   cliente: [],
