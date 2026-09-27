@@ -26,6 +26,8 @@ function isPreviewable(fileName: string): boolean {
   return [".pdf", ".png", ".jpg", ".jpeg", ".mp4"].includes(ext);
 }
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);

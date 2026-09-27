@@ -527,7 +527,7 @@ async function createProductAction(formData: FormData) {
   const stock = Number(formData.get("stock") || 0);
   const visibleInStore = formData.get("active") === "on";
 
-  if (!name || !brand || !categoryName || price <= 0 || stock < 0) {
+  if (!name || !brand || !categoryName || !(price > 0) || !Number.isFinite(stock) || stock < 0) {
     throw new Error("Completa nombre, marca, categoria, precio y stock");
   }
 
@@ -712,7 +712,7 @@ async function importProductsAction(formData: FormData) {
     }
     const visibleInStore = toBoolean(findCell(row, ["activo", "active", "visible"]), true);
 
-    if (!name || !brand || !categoryName || price <= 0 || stock < 0) {
+    if (!name || !brand || !categoryName || !(price > 0) || !Number.isFinite(stock) || stock < 0) {
       errors.push(`Fila ${lineIndex + 1}: faltan campos obligatorios (nombre, marca, categoria, precio, stock).`);
       continue;
     }
@@ -799,6 +799,12 @@ async function updateProductAction(formData: FormData) {
   const priceBefore = String(formData.get("priceBefore") || "").trim() ? Number(formData.get("priceBefore")) : null;
   const stock = Number(formData.get("stock") || 0);
   const visibleInStore = formData.get("active") === "on";
+
+  // Validar antes de subir imágenes para no dejar archivos huérfanos en Storage.
+  if (!productId || !name || !code || !brand || !categoryName || !(price > 0) || !Number.isFinite(stock) || stock < 0) {
+    throw new Error("Completa nombre, codigo, marca, categoria, precio y stock valido");
+  }
+
   const finalImages = await buildProductMediaUrls({
     formData,
     supabase,
@@ -807,10 +813,7 @@ async function updateProductAction(formData: FormData) {
     mainFilesField: "mainFiles",
     galleryFilesField: "galleryFiles",
   });
-
-  if (!productId || !name || !code || !brand || !categoryName || price <= 0 || stock < 0) {
-    throw new Error("Completa nombre, codigo, marca, categoria, precio y stock valido");
-  }
+  const canonicalBrand = canonicalizeBrandName(brand) || brand;
 
   const { data: existingCategory } = await supabase
     .from("categories")
@@ -826,21 +829,13 @@ async function updateProductAction(formData: FormData) {
 
   const autoCode = code || `AS${String((Number(productId.replace(/\D/g, "")) || 0) % 1000000).padStart(6, "0")}`;
 
-  const current = await supabase
-    .from("products")
-    .select("description")
-    .eq("id", productId)
-    .maybeSingle();
-
-  const baseDescription = stripMeta(String((current.data as { description?: string } | null)?.description || ""));
-
   const withColumns = await safeUpdateProduct(supabase, productId, {
       name,
       code: autoCode,
       sku: autoCode,
       gender,
       age_group: ageGroup,
-      brand: canonicalizeBrandName(brand) || brand,
+      brand: canonicalBrand,
       description,
       price,
       price_before: priceBefore,
@@ -859,7 +854,7 @@ async function updateProductAction(formData: FormData) {
       sku: autoCode,
       gender,
       age_group: ageGroup,
-      brand: canonicalizeBrandName(brand) || brand,
+      brand: canonicalBrand,
         price,
         price_before: priceBefore,
         stock,
@@ -868,9 +863,10 @@ async function updateProductAction(formData: FormData) {
         sub_brand: subBrand,
         sub_category: subCategory,
         active: visibleInStore && stock > 0,
-        description: appendMetaTags(baseDescription, {
+        // Mantener la descripción editada (antes se perdía y se usaba la anterior).
+        description: appendMetaTags(stripMeta(description), {
           code,
-          brand,
+          brand: canonicalBrand,
           subBrand,
           subCategory,
         }),
@@ -883,7 +879,7 @@ async function updateProductAction(formData: FormData) {
 
   await syncTaxonomies({
     supabase,
-    brand,
+    brand: canonicalBrand,
     subBrand,
     categoryId: categoryId || "",
     subCategory,
@@ -919,7 +915,7 @@ async function cloneProductAction(formData: FormData) {
   const stock = Number(formData.get("stock") || 0);
   const visibleInStore = formData.get("active") === "on" || formData.get("active") === "true";
 
-  if (!name || !brand || !categoryName || price <= 0 || stock < 0) {
+  if (!name || !brand || !categoryName || !(price > 0) || !Number.isFinite(stock) || stock < 0) {
     throw new Error("Completa nombre, marca, categoria, precio y stock");
   }
 
@@ -951,11 +947,13 @@ async function cloneProductAction(formData: FormData) {
 
   await syncTaxonomies({
     supabase,
-    brand,
+    brand: canonicalizeBrandName(brand) || brand,
     subBrand,
     categoryId,
     subCategory,
   });
+
+  const canonicalBrand = canonicalizeBrandName(brand) || brand;
 
   const productPayload = {
     name,
@@ -963,7 +961,7 @@ async function cloneProductAction(formData: FormData) {
     sku: autoCode,
     gender,
     age_group: ageGroup,
-    brand,
+    brand: canonicalBrand,
     description,
     price,
     price_before: priceBefore,
@@ -994,6 +992,7 @@ async function cloneProductAction(formData: FormData) {
       images: finalImages,
       category_id: categoryId,
       gender,
+      age_group: ageGroup,
       active: visibleInStore && stock > 0,
     });
 
@@ -1014,6 +1013,7 @@ async function cloneProductAction(formData: FormData) {
         code: autoCode,
         sku: autoCode,
         gender,
+        age_group: ageGroup,
         active: visibleInStore && stock > 0,
       });
 
