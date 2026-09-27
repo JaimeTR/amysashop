@@ -11,3 +11,7 @@ export function getSiteUrl() {
 
   return vercelUrl.startsWith("http") ? vercelUrl : `https://${vercelUrl}`;
 }
+
+// Imagen por defecto al compartir en redes/WhatsApp (se repite en cada openGraph de página,
+// porque Next reemplaza el openGraph del layout en vez de combinarlo).
+export const DEFAULT_OG_IMAGE = { url: "/icons/og-image.png", width: 1200, height: 630, alt: "AMYSA SHOP" };

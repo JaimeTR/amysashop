@@ -11,8 +11,6 @@ import { getSiteUrl } from "@/lib/site-url";
 import { headers } from "next/headers";
 
 const APP_VERSION = "0.1.2";
-const APP_ICON = "/icon.svg";
-const APP_APPLE_ICON = "/icon.svg";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -61,7 +59,7 @@ export const metadata: Metadata = {
     siteName: "AMYSA SHOP",
     locale: "es_PE",
     url: "/",
-    images: [{ url: "/logos/amysa-horizontal-primary.png", alt: "AMYSA SHOP" }],
+    images: [{ url: "/icons/og-image.png", width: 1200, height: 630, alt: "AMYSA SHOP" }],
   },
   twitter: {
     card: "summary_large_image",
@@ -72,10 +70,11 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   icons: {
     icon: [
-      { url: APP_ICON, type: "image/svg+xml" },
-      { url: "/icon.svg", sizes: "512x512", type: "image/svg+xml" },
+      { url: "/favicon.ico", sizes: "16x16 32x32 48x48" },
+      { url: "/icons/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
     ],
-    apple: [{ url: APP_APPLE_ICON, sizes: "180x180", type: "image/png" }],
+    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
   appleWebApp: {
     capable: true,
@@ -126,8 +125,8 @@ export default async function RootLayout({
                   "@id": `${getSiteUrl()}/#organization`,
                   name: "AMYSA SHOP",
                   url: getSiteUrl(),
-                  logo: `${getSiteUrl()}/logos/amysa%20shop.png`,
-                  image: `${getSiteUrl()}/logos/amysa-horizontal-primary.png`,
+                  logo: `${getSiteUrl()}/icons/icon-512.png`,
+                  image: `${getSiteUrl()}/icons/og-image.png`,
                   description:
                     "Tienda online peruana de perfumes, maquillaje, cuidado personal y accesorios de marcas de catálogo (Ésika, L'Bel, Cyzone, Yanbal). Envíos a Lima y provincias; pagos con Yape, Plin y transferencia bancaria.",
                   areaServed: { "@type": "Country", name: "Perú" },

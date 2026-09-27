@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { DEFAULT_OG_IMAGE } from "@/lib/site-url";
 import { TiendaClientGrid } from "@/components/store/tienda-client-grid";
 import { getActiveProducts, getRegisteredCategories } from "@/lib/catalog";
 import { canonicalizeBrandName } from "@/lib/brands";
@@ -64,7 +65,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
     description,
     keywords,
     alternates: { canonical },
-    openGraph: { title: `${title} | AMYSA SHOP`, description, url: canonical, type: "website" },
+    openGraph: { title: `${title} | AMYSA SHOP`, description, url: canonical, type: "website", images: [DEFAULT_OG_IMAGE] },
   };
 }
 

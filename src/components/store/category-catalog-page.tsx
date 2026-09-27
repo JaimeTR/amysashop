@@ -4,7 +4,7 @@ import { TiendaClientGrid } from "@/components/store/tienda-client-grid";
 import { getActiveProducts, getRegisteredCategories } from "@/lib/catalog";
 import { getCategoryPage, matchCategoryName } from "@/lib/category-pages";
 import { getProductUrl } from "@/lib/product-url";
-import { getSiteUrl } from "@/lib/site-url";
+import { getSiteUrl, DEFAULT_OG_IMAGE } from "@/lib/site-url";
 
 export function buildCategoryMetadata(slug: string): Metadata {
   const config = getCategoryPage(slug);
@@ -16,7 +16,7 @@ export function buildCategoryMetadata(slug: string): Metadata {
     description: config.description,
     keywords: [...config.keywords, "AMYSA SHOP"],
     alternates: { canonical: path },
-    openGraph: { title: `${config.title} | AMYSA SHOP`, description: config.description, url: path, type: "website" },
+    openGraph: { title: `${config.title} | AMYSA SHOP`, description: config.description, url: path, type: "website", images: [DEFAULT_OG_IMAGE] },
   };
 }
 

@@ -12,7 +12,7 @@ import { DiscountCarouselClient } from "@/components/store/discount-carousel-cli
 import { HomeHeroTypingSlogan } from "@/components/store/home-hero-typing-slogan";
 import { getSafeProductImageSrc, isOptimizableImageSrc } from "@/lib/product-images";
 import { getProductUrl } from "@/lib/product-url";
-import { getSiteUrl } from "@/lib/site-url";
+import { getSiteUrl, DEFAULT_OG_IMAGE } from "@/lib/site-url";
 
 function extractTagValue(description: string, key: string) {
   const regex = new RegExp(`\\[${key}:\\s*(.*?)\\]`, "i");
@@ -137,6 +137,7 @@ export const metadata: Metadata = {
     description: "Perfumes, maquillaje y cuidado personal de las mejores marcas de catálogo. Envío a Lima y provincias.",
     type: "website",
     url: "/",
+    images: [DEFAULT_OG_IMAGE],
   },
 };
 
