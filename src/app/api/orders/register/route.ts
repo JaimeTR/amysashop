@@ -78,11 +78,33 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "No hay productos para registrar" }, { status: 400 });
   }
 
-  const total = items.reduce((acc, item) => acc + Number(item.price || 0) * Number(item.quantity || 0), 0);
-  const subtotal = Number(body.subtotal || total);
+  const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+  // Los precios se toman de la BD: no se confía en el precio/total enviado por el navegador.
+  const productIds = Array.from(new Set(items.map((item) => String(item.productId || ""))));
+  const { data: dbProducts, error: productsError } = await supabase
+    .from("products")
+    .select("id, price")
+    .in("id", productIds);
+
+  if (productsError) {
+    return NextResponse.json({ error: "No se pudieron validar los productos" }, { status: 500 });
+  }
+
+  const priceById = new Map((dbProducts || []).map((p) => [String(p.id), Number(p.price)]));
+  if (productIds.some((id) => !priceById.has(id))) {
+    return NextResponse.json({ error: "Uno de los productos ya no está disponible" }, { status: 400 });
+  }
+
+  for (const item of items) {
+    item.price = priceById.get(String(item.productId)) ?? 0;
+    item.quantity = Math.max(1, Math.floor(Number(item.quantity) || 1));
+  }
+
+  const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const shippingCost = Math.max(0, Number(body.shippingCost || 0));
-  const discountAmount = Math.max(0, Number(body.discountAmount || 0));
-  const totalWithCharges = Number(body.total || Math.max(0, subtotal - discountAmount + shippingCost));
+  const discountAmount = Math.min(subtotal, Math.max(0, Number(body.discountAmount || 0)));
+  const totalWithCharges = Math.max(0, subtotal - discountAmount + shippingCost);
   const channel = sanitizeString(body.channel || "web").toLowerCase();
   const paymentMethod = sanitizeString(body.paymentMethod || "pendiente").toLowerCase();
   const paymentConfirmed = Boolean(body.paymentConfirmed);
@@ -95,8 +117,6 @@ export async function POST(request: NextRequest) {
   const district = sanitizeString(body.customer?.district);
   const address = sanitizeString(body.customer?.address);
   const fullAddress = [department, province, district, address].filter(Boolean).join(" - ");
-
-  const supabase = createClient(supabaseUrl, serviceRoleKey);
 
   const payloadFull: Record<string, unknown> = {
     user_id: sessionUserId,

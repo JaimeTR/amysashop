@@ -97,35 +97,11 @@ export async function requireAdminUser(requiredPermission: AdminPermission = "da
     };
   }
 
-  // Si el rol viene en metadata y ya permite admin, evitamos consultar profiles.
-  // Esto ayuda cuando hay políticas RLS recursivas en la tabla profiles.
-  const metadataOnlyRole = resolveRoleFromContext({
-    email: user.email,
-    metadataRole: (user.user_metadata?.role as string | null | undefined) ?? null,
-    superAdminEmail,
-  });
-
-  if (canAccessAdmin(metadataOnlyRole)) {
-    if (!hasPermission(metadataOnlyRole, requiredPermission)) {
-      redirect(`/acceso-restringido?reason=permission&role=${encodeURIComponent(metadataOnlyRole)}`);
-    }
-
-    const permissions = getPermissionsForRole(metadataOnlyRole);
-
-    return {
-      supabase,
-      user,
-      role: metadataOnlyRole,
-      roleLabel: getRoleLabel(metadataOnlyRole),
-      permissions,
-    };
-  }
-
+  // El rol se toma solo de profiles: user_metadata es editable por el propio usuario.
   const profileData = await getProfileRoleData(supabase, user.id);
 
   const role = resolveRoleFromContext({
     email: user.email,
-    metadataRole: (user.user_metadata?.role as string | null | undefined) ?? null,
     profileRole: profileData.role,
     isAdmin: profileData.isAdmin,
     superAdminEmail,
@@ -148,4 +124,17 @@ export async function requireAdminUser(requiredPermission: AdminPermission = "da
     roleLabel: getRoleLabel(role),
     permissions,
   };
+}
+
+// Para rutas API: resuelve el rol del usuario desde profiles (nunca desde user_metadata).
+export async function resolveUserRole(user: { id: string; email?: string | null }) {
+  const supabase = createClient();
+  const profileData = await getProfileRoleData(supabase, user.id);
+
+  return resolveRoleFromContext({
+    email: user.email,
+    profileRole: profileData.role,
+    isAdmin: profileData.isAdmin,
+    superAdminEmail: getSuperAdminEmail(),
+  });
 }

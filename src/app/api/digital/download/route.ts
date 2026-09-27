@@ -67,7 +67,9 @@ export async function GET(req: Request) {
         .eq("slug", productSlug)
         .single();
 
-      const files = (productData?.file_urls || []) as { name: string; description: string; type: string }[];
+      const files = ((productData?.file_urls || []) as { name: string; description: string; type: string }[]).map(
+        ({ name, description, type }) => ({ name, description, type })
+      );
       return NextResponse.json({ ok: true, files });
     }
 
@@ -77,22 +79,25 @@ export async function GET(req: Request) {
       .eq("slug", productSlug)
       .single();
 
-    if (productData?.file_urls) {
-      const files = productData.file_urls as { name: string; url: string }[];
-      const matchedFile = files.find((f) => f.name === fileName);
-      if (matchedFile?.url && matchedFile.url.startsWith("http")) {
-        if (preview && isPreviewable(fileName)) {
-          return NextResponse.redirect(matchedFile.url);
-        }
-        return NextResponse.redirect(matchedFile.url);
-      }
+    // Solo se sirven archivos declarados en el producto (evita path traversal con "../").
+    const files = (productData?.file_urls || []) as { name: string; url?: string }[];
+    const matchedFile = files.find((f) => f.name === fileName);
+    if (!matchedFile || !productSlug || fileName !== path.basename(fileName) || productSlug !== path.basename(productSlug)) {
+      return NextResponse.json({ ok: false, error: "file_not_found" }, { status: 404 });
     }
 
-    const localPath = path.join(process.cwd(), "public", "digital", "files", productSlug, fileName);
-    if (fs.existsSync(localPath)) {
+    if (matchedFile.url && matchedFile.url.startsWith("http")) {
+      return NextResponse.redirect(matchedFile.url);
+    }
+
+    const baseDir = path.join(process.cwd(), "private", "digital", "files");
+    const localPath = path.join(baseDir, productSlug, fileName);
+    if (localPath.startsWith(baseDir + path.sep) && fs.existsSync(localPath)) {
       const buffer = fs.readFileSync(localPath);
       const contentType = getMimeType(fileName);
-      const disposition = preview && isPreviewable(fileName) ? "inline" : `attachment; filename="${fileName}"`;
+      const disposition = preview && isPreviewable(fileName)
+        ? "inline"
+        : `attachment; filename*=UTF-8''${encodeURIComponent(fileName)}`;
       return new NextResponse(buffer, {
         headers: {
           "Content-Type": contentType,

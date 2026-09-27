@@ -1,10 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
-function getAllowedAdminEmail() {
-  return (process.env.ADMIN_ALLOWED_EMAIL || "").trim().toLowerCase();
-}
-
 function getRouteScope(pathname: string) {
   if (pathname === "/banner") {
     return "banner";
@@ -72,21 +68,8 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (request.nextUrl.pathname.startsWith("/admin") && user) {
-    const allowedAdminEmail = getAllowedAdminEmail();
-    const userEmail = (user.email || "").toLowerCase();
-    const metadataRole = String(user.user_metadata?.role || "").toLowerCase();
-    const roleCanAccessAdmin = ["superadmin", "administrador", "admin", "duena", "dueña", "vendedora", "socia"].includes(metadataRole);
-
-    const isSuperAdmin = Boolean(allowedAdminEmail) && userEmail === allowedAdminEmail;
-    const isAuthorizedAdmin = isSuperAdmin || roleCanAccessAdmin;
-
-    if (!isAuthorizedAdmin) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/";
-      return NextResponse.redirect(url);
-    }
-  }
+  // La autorización por rol de /admin la hace requireAdminUser (src/app/admin/layout.tsx),
+  // que lee el rol desde profiles. No usar user_metadata aquí: el usuario puede editarlo.
 
   return response;
 }

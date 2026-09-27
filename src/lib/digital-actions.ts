@@ -88,6 +88,20 @@ export async function createPurchase(input: {
     return { error: "Database not available" };
   }
 
+  // El monto se toma del producto en la BD, no del cliente.
+  const { data: product } = await client
+    .from("digital_products")
+    .select("price_usd,price_pen")
+    .eq("id", input.product_id)
+    .eq("active", true)
+    .maybeSingle();
+
+  if (!product) {
+    return { error: "Producto no encontrado" };
+  }
+
+  const amount = Number(input.currency === "PEN" ? product.price_pen : product.price_usd);
+
   const { data, error } = await client
     .from("digital_purchases")
     .insert({
@@ -95,7 +109,7 @@ export async function createPurchase(input: {
       customer_name: input.customer_name.trim(),
       product_id: input.product_id,
       payment_method: input.payment_method,
-      amount: input.amount,
+      amount,
       currency: input.currency,
       status: "pending",
     })

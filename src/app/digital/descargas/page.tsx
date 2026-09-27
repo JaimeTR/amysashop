@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Download, FileSpreadsheet, FileText, Video, FileIcon, Loader2, Search, AlertCircle, CheckCircle2, Clock, Eye } from "lucide-react";
 import Link from "next/link";
 
@@ -43,17 +43,17 @@ export default function DigitalDescargasPage() {
   const [loading, setLoading] = useState(false);
   const [purchases, setPurchases] = useState<Purchase[] | null>(null);
   const [searched, setSearched] = useState(false);
+  const [token, setToken] = useState("");
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
+  const searchPurchases = async (searchEmail: string, searchToken: string) => {
+    if (!searchEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(searchEmail)) return;
     setLoading(true);
     setSearched(true);
     try {
       const res = await fetch("/api/digital/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim().toLowerCase() }),
+        body: JSON.stringify({ email: searchEmail.trim().toLowerCase(), token: searchToken || undefined }),
       });
       const data = await res.json();
       setPurchases(data.purchases || []);
@@ -62,6 +62,24 @@ export default function DigitalDescargasPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // El enlace del correo trae ?token=...&email=...; con eso se desbloquean las descargas.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlToken = params.get("token") || "";
+    const urlEmail = params.get("email") || "";
+    if (urlToken && urlEmail) {
+      setToken(urlToken);
+      setEmail(urlEmail);
+      void searchPurchases(urlEmail, urlToken);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    void searchPurchases(email, token);
   };
 
   return (
@@ -198,7 +216,11 @@ export default function DigitalDescargasPage() {
                             </a>
                           </div>
                         </div>
-                      ) : null}
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          Por seguridad, usa el enlace de descarga que te enviamos a tu correo para acceder a los archivos.
+                        </p>
+                      )}
                     </div>
                   )}
 

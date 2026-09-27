@@ -39,6 +39,10 @@ const withPWA = nextPwa({
 const nextConfig = {
 	experimental: {
 		optimizePackageImports: ["lucide-react"],
+		// Archivos de pago fuera de public/: solo se sirven vía /api/digital/download
+		outputFileTracingIncludes: {
+			"/api/digital/download": ["./private/digital/files/**/*"],
+		},
 	},
 	images: {
 		remotePatterns: [
