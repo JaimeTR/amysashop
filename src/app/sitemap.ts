@@ -1,35 +1,47 @@
 import type { MetadataRoute } from "next";
 import { getActiveProducts } from "@/lib/catalog";
+import { CATEGORY_PAGES } from "@/lib/category-pages";
 import { getProductUrl } from "@/lib/product-url";
 import { getSiteUrl } from "@/lib/site-url";
+
+export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const siteUrl = getSiteUrl();
   const products = await getActiveProducts();
+  // Solo productos reales de la BD (los de ejemplo no tienen UUID).
+  const realProducts = products.filter((product) => product.id.includes("-"));
+  const latestUpdate = realProducts
+    .map((product) => product.updatedAt)
+    .filter((value): value is string => Boolean(value))
+    .sort()
+    .at(-1);
+  const catalogLastModified = latestUpdate ? new Date(latestUpdate) : new Date();
 
-  const staticRoutes: MetadataRoute.Sitemap = [
-    "",
-    "/tienda",
-    "/buscar",
-    "/ayuda",
-    "/ayuda/contacto",
-    "/ayuda/faq",
-    "/ayuda/envios-devoluciones",
-    "/carrito",
-    "/registro",
-    "/login",
-  ].map((path) => ({
-    url: `${siteUrl}${path}`,
-    lastModified: new Date(),
-    changeFrequency: "weekly",
-    priority: path === "" ? 1 : 0.7,
+  const pages: Array<{ path: string; priority: number; changeFrequency: "daily" | "weekly" | "monthly" }> = [
+    { path: "", priority: 1, changeFrequency: "daily" },
+    { path: "/tienda", priority: 0.9, changeFrequency: "daily" },
+    ...CATEGORY_PAGES.map((page) => ({ path: `/tienda/${page.slug}`, priority: 0.8, changeFrequency: "daily" as const })),
+    { path: "/digital/ambarcastro", priority: 0.6, changeFrequency: "monthly" },
+    { path: "/ayuda", priority: 0.5, changeFrequency: "monthly" },
+    { path: "/ayuda/faq", priority: 0.6, changeFrequency: "monthly" },
+    { path: "/ayuda/envios-devoluciones", priority: 0.6, changeFrequency: "monthly" },
+    { path: "/ayuda/contacto", priority: 0.5, changeFrequency: "monthly" },
+  ];
+
+  const staticRoutes: MetadataRoute.Sitemap = pages.map((page) => ({
+    url: `${siteUrl}${page.path}`,
+    lastModified: page.changeFrequency === "daily" ? catalogLastModified : undefined,
+    changeFrequency: page.changeFrequency,
+    priority: page.priority,
   }));
 
-  const productRoutes: MetadataRoute.Sitemap = products.map((product) => ({
+  const productRoutes: MetadataRoute.Sitemap = realProducts.map((product) => ({
     url: `${siteUrl}${getProductUrl(product)}`,
-    lastModified: new Date(),
-    changeFrequency: "daily",
-    priority: 0.8,
+    lastModified: product.updatedAt ? new Date(product.updatedAt) : undefined,
+    changeFrequency: "weekly",
+    priority: 0.7,
+    images: product.images.filter((src) => /^https?:\/\//.test(src)).slice(0, 3),
   }));
 
   return [...staticRoutes, ...productRoutes];

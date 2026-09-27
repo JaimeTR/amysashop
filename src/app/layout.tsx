@@ -40,9 +40,35 @@ export const metadata: Metadata = {
     default: "AMYSA SHOP",
     template: "%s | AMYSA SHOP",
   },
-  description: "AMYSA SHOP: tienda online de perfumes, maquillaje, cuidado personal, accesorios y marcas seleccionadas.",
-  keywords: ["AMYSA SHOP", "tienda online", "perfumes", "maquillaje", "cuidado personal", "accesorios", "marcas de belleza", "catálogo"],
+  description:
+    "AMYSA SHOP: tienda online en Perú de perfumes, maquillaje, cuidado personal y accesorios de Ésika, L'Bel, Cyzone y Yanbal. Envío a Lima y provincias.",
+  keywords: [
+    "AMYSA SHOP",
+    "tienda online Perú",
+    "perfumes",
+    "maquillaje",
+    "cuidado personal",
+    "accesorios",
+    "Ésika",
+    "L'Bel",
+    "Cyzone",
+    "Yanbal",
+    "productos de catálogo",
+  ],
   metadataBase: new URL(getSiteUrl()),
+  openGraph: {
+    type: "website",
+    siteName: "AMYSA SHOP",
+    locale: "es_PE",
+    url: "/",
+    images: [{ url: "/logos/amysa-horizontal-primary.png", alt: "AMYSA SHOP" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+  },
+  formatDetection: {
+    telephone: false,
+  },
   manifest: "/manifest.json",
   icons: {
     icon: [
@@ -85,7 +111,7 @@ export default async function RootLayout({
   }
 
   return (
-    <html lang="es">
+    <html lang="es-PE">
       <body className={`${manrope.variable} ${playfair.variable} min-h-screen flex flex-col antialiased`} data-app-version={APP_VERSION}>
         {!supabaseOk ? (
           <MaintenanceScreen />
@@ -96,17 +122,30 @@ export default async function RootLayout({
               dangerouslySetInnerHTML={{
                 __html: JSON.stringify({
                   "@context": "https://schema.org",
-                  "@type": "Organization",
+                  "@type": ["Organization", "OnlineStore"],
+                  "@id": `${getSiteUrl()}/#organization`,
                   name: "AMYSA SHOP",
                   url: getSiteUrl(),
                   logo: `${getSiteUrl()}/logos/amysa%20shop.png`,
-                  description: "Tienda online de perfumes, maquillaje, cuidado personal, accesorios y marcas seleccionadas.",
+                  image: `${getSiteUrl()}/logos/amysa-horizontal-primary.png`,
+                  description:
+                    "Tienda online peruana de perfumes, maquillaje, cuidado personal y accesorios de marcas de catálogo (Ésika, L'Bel, Cyzone, Yanbal). Envíos a Lima y provincias; pagos con Yape, Plin y transferencia bancaria.",
+                  areaServed: { "@type": "Country", name: "Perú" },
+                  currenciesAccepted: "PEN",
+                  paymentAccepted: "Yape, Plin, Transferencia bancaria",
+                  address: { "@type": "PostalAddress", addressLocality: "Lima", addressCountry: "PE" },
                   contactPoint: [
-                    { "@type": "ContactPoint", telephone: "+51 965 312 386", contactType: "customer service", areaServed: "PE" },
+                    {
+                      "@type": "ContactPoint",
+                      telephone: "+51 965 312 386",
+                      contactType: "customer service",
+                      areaServed: "PE",
+                      availableLanguage: "es",
+                    },
                   ],
                   sameAs: [
                     "https://www.instagram.com/amysa.shop/",
-                    "http://tiktok.com/@amysa.shop",
+                    "https://www.tiktok.com/@amysa.shop",
                   ],
                 }),
               }}

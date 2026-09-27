@@ -1,7 +1,8 @@
 import { cache } from "react";
+import { unstable_cache } from "next/cache";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { landingSamples, productSamples } from "@/lib/mock-data";
 import { canonicalizeBrandName } from "@/lib/brands";
-import { createClient } from "@/lib/supabase/server";
 import { LandingPage, NavProduct, Product } from "@/lib/types";
 import { slugifyProductName } from "@/lib/product-url";
 
@@ -20,6 +21,8 @@ type ProductRow = {
   gender?: string | null;
   age_group?: string | null;
   sub_brand?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
 
   categories: { name: string }[] | { name: string } | null;
 };
@@ -59,6 +62,7 @@ function mapProductRow(row: ProductRow): Product {
     brand: brand || (row.brand ?? undefined),
     gender: row.gender ?? undefined,
     ageGroup: row.age_group ?? undefined,
+    updatedAt: row.updated_at || row.created_at || undefined,
 
     stock: row.stock,
     active: row.active,
@@ -84,7 +88,7 @@ function normalizeLabel(value: string) {
     .trim()
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
+    .replace(/[̀-ͯ]/g, "");
 }
 
 function uniqueLabels(values: string[]) {
@@ -105,48 +109,81 @@ function uniqueLabels(values: string[]) {
 
 const NAV_PRODUCT_LIMIT = 200;
 const FULL_PRODUCT_LIMIT = 500;
+const PRODUCT_SELECT =
+  "id,name,description,resumen,contenido,price,price_before,images,stock,active,brand,gender,age_group,created_at,updated_at,categories(name)";
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Tag de caché del catálogo público. Las acciones del admin llaman a revalidateTag(CATALOG_TAG)
+// para que los cambios se vean al instante; si no, se refresca solo cada CATALOG_REVALIDATE segundos.
+export const CATALOG_TAG = "catalog";
+const CATALOG_REVALIDATE = 300;
+
+// El catálogo es público: se consulta con la clave anónima y SIN cookies,
+// así Next puede cachearlo entre visitas (antes se consultaba Supabase en cada request).
+function createPublicClient() {
+  return createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL || "", process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "", {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
+// Si la consulta falla se lanza el error para que NO quede cacheado; el fallback se aplica afuera.
+const getCachedActiveProductRows = unstable_cache(
+  async (): Promise<ProductRow[]> => {
+    const { data, error } = await createPublicClient()
+      .from("products")
+      .select(PRODUCT_SELECT)
+      .eq("active", true)
+      .gt("stock", 0)
+      .order("created_at", { ascending: false })
+      .limit(FULL_PRODUCT_LIMIT);
+
+    if (error || !data) {
+      throw new Error(error?.message || "No se pudieron cargar los productos");
+    }
+
+    return data as ProductRow[];
+  },
+  ["catalog-active-products"],
+  { revalidate: CATALOG_REVALIDATE, tags: [CATALOG_TAG] }
+);
+
+const getCachedCategoryRows = unstable_cache(
+  async () => {
+    const { data, error } = await createPublicClient().from("categories").select("id,name").order("name", { ascending: true });
+    if (error || !data) {
+      throw new Error(error?.message || "No se pudieron cargar las categorías");
+    }
+    return data as Array<{ id: string; name: string | null }>;
+  },
+  ["catalog-categories"],
+  { revalidate: CATALOG_REVALIDATE, tags: [CATALOG_TAG] }
+);
+
+const loadActiveProducts = cache(async (): Promise<Product[] | null> => {
+  try {
+    const rows = await getCachedActiveProductRows();
+    return rows.map(mapProductRow);
+  } catch {
+    return null;
+  }
+});
 
 export const getActiveProducts = cache(async (): Promise<Product[]> => {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("products")
-    .select("id,name,description,resumen,contenido,price,price_before,images,stock,active,brand,gender,age_group,categories(name)")
-    .eq("active", true)
-    .gt("stock", 0)
-    .order("created_at", { ascending: false })
-    .limit(FULL_PRODUCT_LIMIT);
-
-  if (error || !data || data.length === 0) {
-    return productSamples;
-  }
-
-  return (data as ProductRow[]).map(mapProductRow);
+  const products = await loadActiveProducts();
+  return products && products.length > 0 ? products : productSamples;
 });
 
 export const getActiveProductsForNav = cache(async (): Promise<NavProduct[]> => {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("products")
-    .select("id,name,description,price,images,brand,gender,categories(name)")
-    .eq("active", true)
-    .gt("stock", 0)
-    .order("created_at", { ascending: false })
-    .limit(NAV_PRODUCT_LIMIT);
-
-  if (error || !data || data.length === 0) {
-    return productSamples.map(mapNavProduct);
-  }
-
-  return (data as ProductRow[]).map(mapProductRow).map(mapNavProduct);
+  const products = await getActiveProducts();
+  return products.slice(0, NAV_PRODUCT_LIMIT).map(mapNavProduct);
 });
 
 export const getRegisteredCategories = cache(async (): Promise<string[]> => {
-  const supabase = createClient();
-  const { data, error } = await supabase.from("categories").select("id,name").order("name", { ascending: true });
+  const data = await getCachedCategoryRows().catch(() => null);
 
-  if (!error && data) {
+  if (data) {
     const categories = uniqueLabels(
-      (data as Array<{ id: string; name: string | null }>).flatMap((item) => {
+      data.flatMap((item) => {
         const name = String(item.name || "").trim();
         return name ? [name] : [];
       })
@@ -164,73 +201,44 @@ export const getProductsPage = cache(async (
   page = 1,
   pageSize = 20
 ): Promise<{ products: Product[]; total: number }> => {
-  const supabase = createClient();
   const start = Math.max(0, (page - 1) * pageSize);
-  const end = start + pageSize - 1;
+  const products = await loadActiveProducts();
 
-  const { data, error, count } = await supabase
-    .from("products")
-    .select("id,name,description,resumen,contenido,price,price_before,images,stock,active,brand,gender,age_group,categories(name)", { count: "exact" })
-    .eq("active", true)
-    .gt("stock", 0)
-    .order("created_at", { ascending: false })
-    .range(start, end);
-
-  if (error || !data) {
-    const startSample = start;
-    const sliced = productSamples.slice(startSample, startSample + pageSize);
+  if (!products) {
+    const sliced = productSamples.slice(start, start + pageSize);
     return { products: sliced, total: productSamples.length };
   }
 
-  const products = (data as ProductRow[]).map(mapProductRow);
-  return { products, total: typeof count === "number" ? count : products.length };
+  return { products: products.slice(start, start + pageSize), total: products.length };
 });
 
 export const getProductById = cache(async (id: string): Promise<Product | null> => {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("products")
-    .select("id,name,description,resumen,contenido,price,price_before,images,stock,active,brand,gender,age_group,categories(name)")
-    .eq("id", id)
-    .eq("active", true)
-    .gt("stock", 0)
-    .maybeSingle();
+  // Evita una consulta inútil cuando llega un slug (p. ej. /producto/mini-chic-desenredante).
+  if (!UUID_REGEX.test(id)) {
+    return productSamples.find((item) => item.id === id) ?? null;
+  }
 
-  if (!error && data) {
-    try {
-      return mapProductRow(data as ProductRow);
-    } catch (err) {
-      console.error("Error mapeando producto", { id, error: err, row: data });
-      return null;
-    }
+  const products = await loadActiveProducts();
+  if (products) {
+    return products.find((item) => item.id === id) ?? null;
   }
 
   return productSamples.find((item) => item.id === id) ?? null;
 });
 
 export const getProductBySlug = cache(async (slug: string): Promise<Product | null> => {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("products")
-    .select("id,name,description,resumen,contenido,price,price_before,images,stock,active,brand,gender,age_group,categories(name)")
-    .eq("active", true)
-    .gt("stock", 0)
-    .order("created_at", { ascending: false })
-    .limit(FULL_PRODUCT_LIMIT);
+  const normalizedSlug = String(slug || "").trim().toLowerCase();
+  const products = await loadActiveProducts();
 
-  if (!error && data) {
-    const products = (data as ProductRow[]).map(mapProductRow);
-    const normalizedSlug = String(slug || "").trim().toLowerCase();
-    const matched = products.find((p) => slugifyProductName(p.name) === normalizedSlug);
-    return matched ?? null;
+  if (products) {
+    return products.find((p) => slugifyProductName(p.name) === normalizedSlug) ?? null;
   }
 
-  const normalizedSlug = String(slug || "").trim().toLowerCase();
   return productSamples.find((item) => slugifyProductName(item.name) === normalizedSlug) ?? null;
 });
 
 export const getActiveLandingBySlug = cache(async (slug: string): Promise<LandingPage | null> => {
-  const supabase = createClient();
+  const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("landing_pages")
     .select("id,slug,title,image,product_id,active")
@@ -252,17 +260,27 @@ export const getActiveLandingBySlug = cache(async (slug: string): Promise<Landin
   return landingSamples.find((item) => item.slug === slug && item.active) ?? null;
 });
 
-export async function checkSupabase(): Promise<boolean> {
-  try {
-    const supabase = createClient();
-    const { error } = await supabase.from("categories").select("id", { count: "exact", head: true });
+// Chequeo de disponibilidad cacheado 60 s (antes era una consulta extra en cada visita).
+// Solo un error de cuota/restricción de Supabase activa la pantalla de mantenimiento.
+const getCachedSupabaseStatus = unstable_cache(
+  async () => {
+    const { error } = await createPublicClient().from("categories").select("id", { count: "exact", head: true });
     if (error) {
       const msg = String(error.message || "").toLowerCase();
       if (msg.includes("restricted") || msg.includes("quota") || msg.includes("402")) {
         return false;
       }
+      throw new Error(error.message);
     }
-    return !error;
+    return true;
+  },
+  ["supabase-status"],
+  { revalidate: 60 }
+);
+
+export async function checkSupabase(): Promise<boolean> {
+  try {
+    return await getCachedSupabaseStatus();
   } catch {
     return false;
   }

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { TiendaClientGrid } from "@/components/store/tienda-client-grid";
 import { getActiveProducts, getRegisteredCategories } from "@/lib/catalog";
 import { canonicalizeBrandName } from "@/lib/brands";
+import { getCategoryPageByName } from "@/lib/category-pages";
 
 type Props = {
   searchParams?: {
@@ -49,10 +50,21 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
     showFeatured ? "destacados" : null,
   ].filter((value): value is string => Boolean(value));
 
+  // URL canónica: una categoría con página propia apunta a /tienda/<slug>; el resto conserva sus filtros.
+  const categoryPage = category ? getCategoryPageByName(category) : null;
+  const params = new URLSearchParams();
+  if (category && !categoryPage) params.set("categoria", category);
+  if (brand) params.set("marca", brand);
+  if (showFeatured) params.set("destacados", "true");
+  const query = params.toString();
+  const canonical = categoryPage && !brand && !showFeatured ? `/tienda/${categoryPage.slug}` : `/tienda${query ? `?${query}` : ""}`;
+
   return {
     title,
     description,
     keywords,
+    alternates: { canonical },
+    openGraph: { title: `${title} | AMYSA SHOP`, description, url: canonical, type: "website" },
   };
 }
 
@@ -74,7 +86,6 @@ export default async function TiendaPage({ searchParams }: Props) {
       </div>
       <TiendaClientGrid
         products={products}
-        allProducts={products}
         categories={categories}
         initialCategory={initialCategory}
         initialBrand={initialBrand}

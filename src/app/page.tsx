@@ -10,7 +10,7 @@ import { ToggleFavoriteButton } from "@/components/product/toggle-favorite-butto
 import { getActiveProducts, getRegisteredCategories } from "@/lib/catalog";
 import { DiscountCarouselClient } from "@/components/store/discount-carousel-client";
 import { HomeHeroTypingSlogan } from "@/components/store/home-hero-typing-slogan";
-import { getSafeProductImageSrc } from "@/lib/product-images";
+import { getSafeProductImageSrc, isOptimizableImageSrc } from "@/lib/product-images";
 import { getProductUrl } from "@/lib/product-url";
 import { getSiteUrl } from "@/lib/site-url";
 
@@ -128,12 +128,15 @@ function getDiscountPercent(priceBefore: number | null | undefined, price: numbe
 }
 
 export const metadata: Metadata = {
-  title: "Inicio",
-  description: "AMYSA SHOP: Tienda online de perfumes, maquillaje, cuidado personal y accesorios. Descubre nuestras marcas y las mejores ofertas en productos de belleza.",
+  title: { absolute: "AMYSA SHOP | Perfumes, maquillaje y cuidado personal en Perú" },
+  description:
+    "Tienda online en Perú de perfumes, maquillaje, cuidado personal y accesorios de Ésika, L'Bel, Cyzone y Yanbal. Ofertas, envío a Lima y provincias, pago con Yape, Plin o transferencia.",
+  alternates: { canonical: "/" },
   openGraph: {
-    title: "AMYSA SHOP - Perfumes, Maquillaje y Cuidado Personal",
-    description: "Descubre nuestra colección de perfumes, maquillaje y cuidado personal. Las mejores marcas en un solo lugar.",
+    title: "AMYSA SHOP | Perfumes, maquillaje y cuidado personal en Perú",
+    description: "Perfumes, maquillaje y cuidado personal de las mejores marcas de catálogo. Envío a Lima y provincias.",
     type: "website",
+    url: "/",
   },
 };
 
@@ -143,7 +146,9 @@ export default async function Home() {
 
   const discountedProducts = products
     .filter((product) => Number(product.priceBefore || 0) > Number(product.price || 0))
-    .sort((a, b) => getDiscountPercent(b.priceBefore, b.price) - getDiscountPercent(a.priceBefore, a.price));
+    .sort((a, b) => getDiscountPercent(b.priceBefore, b.price) - getDiscountPercent(a.priceBefore, a.price))
+    // El carrusel duplica la lista para el efecto infinito: limitar reduce mucho el HTML.
+    .slice(0, 12);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -325,6 +330,8 @@ export default async function Home() {
                   alt={product.name}
                   width={600}
                   height={600}
+                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 300px"
+                  unoptimized={!isOptimizableImageSrc(getSafeImageSrc(product.images))}
                   className="aspect-square w-full object-cover transition-transform duration-300 transform group-hover:scale-105"
                 />
               </Link>

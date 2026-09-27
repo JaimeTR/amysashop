@@ -1,4 +1,5 @@
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { CATALOG_TAG } from "@/lib/catalog";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { InventoryTable } from "../../../components/admin/inventory-table";
@@ -270,6 +271,7 @@ async function updateInventoryAction(formData: FormData) {
 
   // Revalidate admin inventory and public product pages so store shows updated price
   revalidatePath("/admin/inventario");
+  revalidateTag(CATALOG_TAG);
   try {
     // revalidate listing and home
     revalidatePath("/tienda");

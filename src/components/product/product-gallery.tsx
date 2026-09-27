@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useMemo, useState } from "react";
 import { Play } from "lucide-react";
-import { DEFAULT_PRODUCT_IMAGE } from "@/lib/product-images";
+import { DEFAULT_PRODUCT_IMAGE, isOptimizableImageSrc } from "@/lib/product-images";
 
 type Props = {
   images: string[];
@@ -55,6 +55,8 @@ export function ProductGallery({ images, name }: Props) {
                 alt={`${name} ${index + 1}`}
                 width={240}
                 height={240}
+                sizes="96px"
+                unoptimized={!isOptimizableImageSrc(item.src)}
                 className="h-16 w-full object-cover"
               />
             )}
@@ -80,6 +82,7 @@ export function ProductGallery({ images, name }: Props) {
             width={1200}
             height={1200}
             sizes="(max-width: 768px) 100vw, 600px"
+            unoptimized={!isOptimizableImageSrc(activeImage.src)}
             className="h-[360px] w-full object-cover md:h-[460px]"
           />
         )}

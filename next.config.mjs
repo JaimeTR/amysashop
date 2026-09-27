@@ -54,6 +54,10 @@ const nextConfig = {
 				protocol: "https",
 				hostname: "images.unsplash.com",
 			},
+			{
+				protocol: "https",
+				hostname: "**.vtexassets.com",
+			},
 		],
 		formats: ["image/avif", "image/webp"],
 		minimumCacheTTL: 2592000,

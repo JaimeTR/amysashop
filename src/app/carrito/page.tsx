@@ -10,7 +10,7 @@ import { deliveryOptions, getDeliveryFee, getDeliveryLabel, type DeliveryMethod 
 import { useCartStore } from "@/store/cart-store";
 import { useNotify } from "@/components/feedback/notification-center";
 import { createClient } from "@/lib/supabase/client";
-import { DEFAULT_PRODUCT_IMAGE } from "@/lib/product-images";
+import { DEFAULT_PRODUCT_IMAGE, isOptimizableImageSrc } from "@/lib/product-images";
 
 type CouponRow = {
   code: string;
@@ -226,7 +226,7 @@ export default function CarritoPage() {
                       alt={item.name}
                       width={88}
                       height={88}
-                      unoptimized
+                      unoptimized={!isOptimizableImageSrc(item.image || DEFAULT_PRODUCT_IMAGE)}
                       className="size-20 shrink-0 rounded-xl object-cover md:size-[88px]"
                     />
 

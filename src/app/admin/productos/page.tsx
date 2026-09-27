@@ -1,4 +1,5 @@
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { CATALOG_TAG } from "@/lib/catalog";
 import { redirect } from "next/navigation";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -637,6 +638,7 @@ async function createProductAction(formData: FormData) {
   }
 
   revalidatePath("/admin");
+  revalidateTag(CATALOG_TAG);
   revalidatePath("/admin/productos");
   revalidatePath("/tienda");
   revalidatePath("/");
@@ -766,6 +768,7 @@ async function importProductsAction(formData: FormData) {
   }
 
   revalidatePath("/admin");
+  revalidateTag(CATALOG_TAG);
   revalidatePath("/admin/productos");
   revalidatePath("/tienda");
   revalidatePath("/");
@@ -886,6 +889,7 @@ async function updateProductAction(formData: FormData) {
   });
 
   revalidatePath("/admin/productos");
+  revalidateTag(CATALOG_TAG);
   revalidatePath("/tienda");
   revalidatePath("/");
 }
@@ -1024,6 +1028,7 @@ async function cloneProductAction(formData: FormData) {
   }
 
   revalidatePath("/admin/productos");
+  revalidateTag(CATALOG_TAG);
   revalidatePath("/tienda");
   revalidatePath("/");
 }
@@ -1051,6 +1056,7 @@ async function deleteProductAction(formData: FormData) {
   }
 
   revalidatePath("/admin/productos");
+  revalidateTag(CATALOG_TAG);
   revalidatePath("/tienda");
   revalidatePath("/");
   redirect("/admin/productos?ok=Producto+eliminado");

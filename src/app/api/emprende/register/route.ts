@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
+import { CATALOG_TAG } from "@/lib/catalog";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { canAccessAdmin } from "@/lib/access-control";
@@ -241,7 +243,8 @@ export async function POST(req: Request) {
       createdSales.push({ saleId: newSaleId, productId: line.productId, previousStock: currentStock });
     }
 
-    // revalidate paths via a simple ping (optional) - omitted here
+    // La venta descuenta stock: refrescar el catálogo público cacheado.
+    revalidateTag(CATALOG_TAG);
     return NextResponse.json({ ok: true });
   } catch (err) {
     // eslint-disable-next-line no-console

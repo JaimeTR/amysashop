@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight, Tag } from "lucide-react";
 import { useRef, useEffect, useState } from "react";
 import { AddToCartButton } from "@/components/product/add-to-cart-button";
 import { ToggleFavoriteButton } from "@/components/product/toggle-favorite-button";
-import { getSafeProductImageSrc, DEFAULT_PRODUCT_IMAGE } from "@/lib/product-images";
+import { getSafeProductImageSrc, DEFAULT_PRODUCT_IMAGE, isOptimizableImageSrc } from "@/lib/product-images";
 import { getProductUrl } from "@/lib/product-url";
 
 type Product = {
@@ -156,8 +156,9 @@ export function DiscountCarouselClient({ products }: { products: Product[] }) {
                           src={imageSrc}
                           alt={product.name}
                           fill
+                          sizes="(max-width: 640px) 75vw, 300px"
                           className="object-cover"
-                          unoptimized
+                          unoptimized={!isOptimizableImageSrc(imageSrc)}
                           onError={() => handleImgError(product.id)}
                         />
                       </div>

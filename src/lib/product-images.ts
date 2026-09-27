@@ -9,3 +9,15 @@ export function getSafeProductImageSrc(images: string[]) {
   const candidate = (images || []).find((value) => isSafeProductImageSrc(value) && !/\.(mp4|webm|ogg|mov|m4v)(?:$|\?)/i.test(value));
   return candidate || DEFAULT_PRODUCT_IMAGE;
 }
+// next/image solo puede optimizar hosts configurados en next.config (Supabase y archivos locales).
+// Para URLs pegadas de otros sitios se usa la imagen original para no romperla.
+export function isOptimizableImageSrc(value: string) {
+  const src = String(value || "").trim();
+  if (src.startsWith("/")) return true;
+  try {
+    const { hostname } = new URL(src);
+    return hostname.endsWith(".supabase.co") || hostname.endsWith(".vtexassets.com");
+  } catch {
+    return false;
+  }
+}

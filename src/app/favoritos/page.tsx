@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useFavoritesStore } from "@/store/favorites-store";
 import { useCartStore } from "@/store/cart-store";
-import { DEFAULT_PRODUCT_IMAGE } from "@/lib/product-images";
+import { DEFAULT_PRODUCT_IMAGE, isOptimizableImageSrc } from "@/lib/product-images";
 import { getProductUrl } from "@/lib/product-url";
 
 function getSafeImageSrc(image?: string) {
@@ -112,7 +112,7 @@ export default function FavoritosPage() {
                     alt={item.name}
                     width={700}
                     height={700}
-                    unoptimized
+                    unoptimized={!isOptimizableImageSrc(getFavoriteCover(item.productId, item.image))}
                     className="aspect-square w-full object-cover"
                   />
                 </Link>

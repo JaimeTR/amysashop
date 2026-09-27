@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { canonicalizeBrandName, getRegisteredBrandNames } from "@/lib/brands";
-import { getSafeProductImageSrc } from "@/lib/product-images";
+import { getSafeProductImageSrc, isOptimizableImageSrc } from "@/lib/product-images";
 import { getProductUrl } from "@/lib/product-url";
 import { useRegisteredTaxonomies } from "@/lib/use-registered-taxonomies";
 import { useHierarchicalTaxonomies } from "@/lib/use-hierarchical-taxonomies";
@@ -781,7 +781,8 @@ export function TiendaClientGrid({ products, allProducts, categories = [], initi
                     alt={product.name}
                     width={800}
                     height={800}
-                    unoptimized
+                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 300px"
+                    unoptimized={!isOptimizableImageSrc(getSafeImageSrc(product.images))}
                     className="aspect-square w-full object-cover transition-transform duration-300 transform group-hover:scale-105"
                   />
                 </Link>

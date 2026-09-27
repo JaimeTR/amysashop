@@ -32,7 +32,7 @@ import {
   resolveRoleFromContext,
   type AccessRole,
 } from "@/lib/access-control";
-import { DEFAULT_PRODUCT_IMAGE, getSafeProductImageSrc } from "@/lib/product-images";
+import { DEFAULT_PRODUCT_IMAGE, getSafeProductImageSrc, isOptimizableImageSrc } from "@/lib/product-images";
 import { getProductSearchText, normalizeSearchText } from "@/lib/product-search";
 import { compressImageFile } from "@/lib/image-compression";
 import type { NavProduct } from "@/lib/types";
@@ -994,7 +994,7 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
                               alt={item.name}
                               width={56}
                               height={56}
-                              unoptimized
+                              unoptimized={!isOptimizableImageSrc(liveCoverById[item.productId] || item.image || DEFAULT_PRODUCT_IMAGE)}
                               className="size-14 rounded-xl object-cover"
                             />
                             <div className="min-w-0 flex-1">
@@ -1073,7 +1073,7 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
                             alt={product.name}
                             width={56}
                             height={56}
-                            unoptimized
+                            unoptimized={!isOptimizableImageSrc(getProductImage(product))}
                             className="size-14 rounded-xl object-cover"
                           />
                           <div className="min-w-0 flex-1">

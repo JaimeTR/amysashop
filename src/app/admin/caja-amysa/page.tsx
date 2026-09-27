@@ -1,4 +1,5 @@
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { CATALOG_TAG } from "@/lib/catalog";
 import { redirect } from "next/navigation";
 import { HandCoins, Wallet } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -164,6 +165,7 @@ async function createIncomeAction(formData: FormData) {
   }
 
   revalidatePath("/admin/caja-amysa");
+  revalidateTag(CATALOG_TAG);
   redirect("/admin/caja-amysa?ok=Ingreso+registrado");
 }
 
@@ -241,6 +243,7 @@ async function updateIncomeAction(formData: FormData) {
   }
 
   revalidatePath("/admin/caja-amysa");
+  revalidateTag(CATALOG_TAG);
   redirect("/admin/caja-amysa?ok=Ingreso+actualizado");
 }
 
@@ -265,6 +268,7 @@ async function deleteIncomeAction(formData: FormData) {
   }
 
   revalidatePath("/admin/caja-amysa");
+  revalidateTag(CATALOG_TAG);
   redirect("/admin/caja-amysa?ok=Ingreso+eliminado");
 }
 
@@ -307,6 +311,7 @@ async function createExpenseAction(formData: FormData) {
   }
 
   revalidatePath("/admin/caja-amysa");
+  revalidateTag(CATALOG_TAG);
   redirect("/admin/caja-amysa?ok=Egreso+registrado");
 }
 
@@ -352,6 +357,7 @@ async function updateExpenseAction(formData: FormData) {
   }
 
   revalidatePath("/admin/caja-amysa");
+  revalidateTag(CATALOG_TAG);
   redirect("/admin/caja-amysa?ok=Egreso+actualizado");
 }
 
@@ -376,6 +382,7 @@ async function deleteExpenseAction(formData: FormData) {
   }
 
   revalidatePath("/admin/caja-amysa");
+  revalidateTag(CATALOG_TAG);
   redirect("/admin/caja-amysa?ok=Egreso+eliminado");
 }
 

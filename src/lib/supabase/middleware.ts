@@ -24,6 +24,22 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
+  const isProtectedPath = ["/perfil", "/favoritos", "/admin"].some((path) =>
+    request.nextUrl.pathname.startsWith(path)
+  );
+
+  // Visitante sin sesión (la mayoría del tráfico): no hay token que refrescar,
+  // así que evitamos la llamada de red a Supabase Auth en cada página.
+  const hasAuthCookie = request.cookies.getAll().some((cookie) => cookie.name.startsWith("sb-") && cookie.name.includes("-auth-token"));
+  if (!hasAuthCookie) {
+    if (isProtectedPath) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      return NextResponse.redirect(url);
+    }
+    return response;
+  }
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || "",
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
@@ -57,10 +73,6 @@ export async function updateSession(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  const isProtectedPath = ["/perfil", "/favoritos", "/admin"].some((path) =>
-    request.nextUrl.pathname.startsWith(path)
-  );
 
   if (!user && isProtectedPath) {
     const url = request.nextUrl.clone();

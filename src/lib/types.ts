@@ -20,6 +20,7 @@ export type Product = {
   brand?: string;
   gender?: string;
   ageGroup?: string;
+  updatedAt?: string;
   stock?: number;
   active?: boolean;
   cost?: number;

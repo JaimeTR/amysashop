@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { isOptimizableImageSrc } from "@/lib/product-images";
 import { useState } from "react";
 
 type Props = {
@@ -45,7 +46,7 @@ export function ProductImageZoom({ src, name }: Props) {
       onMouseMove={handleMove}
       onMouseLeave={handleLeave}
     >
-      <Image src={src} alt={name} width={1200} height={1200} unoptimized className="h-full w-full object-cover" />
+      <Image src={src} alt={name} width={1200} height={1200} sizes="(max-width: 768px) 100vw, 600px" unoptimized={!isOptimizableImageSrc(src)} className="h-full w-full object-cover" />
 
       <div className="pointer-events-none absolute inset-0 border-2 border-white/0 transition group-hover:border-white/40" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/35 to-transparent p-3 text-xs font-medium text-white/90">
@@ -62,7 +63,8 @@ export function ProductImageZoom({ src, name }: Props) {
             alt={`${name} zoom`}
             width={900}
             height={900}
-            unoptimized
+            sizes="1200px"
+            unoptimized={!isOptimizableImageSrc(src)}
             className="h-full w-full object-cover transition-transform duration-150"
             style={{
               transformOrigin: `${zoom.x}% ${zoom.y}%`,

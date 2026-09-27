@@ -1,4 +1,5 @@
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { CATALOG_TAG } from "@/lib/catalog";
 import { redirect } from "next/navigation";
 import { Pencil, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -54,6 +55,7 @@ async function createCategoryAction(formData: FormData) {
   }
 
   revalidatePath("/admin/tienda");
+  revalidateTag(CATALOG_TAG);
   redirect("/admin/tienda?ok=Categoría+creada+correctamente");
 }
 
@@ -75,6 +77,7 @@ async function updateCategoryAction(formData: FormData) {
   }
 
   revalidatePath("/admin/tienda");
+  revalidateTag(CATALOG_TAG);
   redirect(`/admin/tienda?ok=Categoría+actualizada+correctamente&t=${Date.now()}#category-${id}`);
 }
 
@@ -95,6 +98,7 @@ async function deleteCategoryAction(formData: FormData) {
   }
 
   revalidatePath("/admin/tienda");
+  revalidateTag(CATALOG_TAG);
   redirect("/admin/tienda?ok=Categoría+eliminada+correctamente");
 }
 
@@ -115,6 +119,7 @@ async function createBrandAction(formData: FormData) {
   }
 
   revalidatePath("/admin/tienda");
+  revalidateTag(CATALOG_TAG);
   redirect("/admin/tienda?ok=Marca+registrada+correctamente");
 }
 
@@ -136,6 +141,7 @@ async function updateBrandAction(formData: FormData) {
   }
 
   revalidatePath("/admin/tienda");
+  revalidateTag(CATALOG_TAG);
   redirect(`/admin/tienda?ok=Marca+actualizada+correctamente&t=${Date.now()}#brand-${id}`);
 }
 
@@ -156,6 +162,7 @@ async function deleteBrandAction(formData: FormData) {
   }
 
   revalidatePath("/admin/tienda");
+  revalidateTag(CATALOG_TAG);
   redirect("/admin/tienda?ok=Marca+eliminada+correctamente");
 }
 
@@ -179,6 +186,7 @@ async function createSubBrandAction(formData: FormData) {
   }
 
   revalidatePath("/admin/tienda");
+  revalidateTag(CATALOG_TAG);
   redirect("/admin/tienda?ok=Submarca+registrada+correctamente");
 }
 
@@ -200,6 +208,7 @@ async function updateSubBrandAction(formData: FormData) {
   }
 
   revalidatePath("/admin/tienda");
+  revalidateTag(CATALOG_TAG);
   redirect(`/admin/tienda?ok=Submarca+actualizada+correctamente&t=${Date.now()}#subbrand-${id}`);
 }
 
@@ -220,6 +229,7 @@ async function deleteSubBrandAction(formData: FormData) {
   }
 
   revalidatePath("/admin/tienda");
+  revalidateTag(CATALOG_TAG);
   redirect("/admin/tienda?ok=Submarca+eliminada+correctamente");
 }
 
@@ -243,6 +253,7 @@ async function createSubCategoryAction(formData: FormData) {
   }
 
   revalidatePath("/admin/tienda");
+  revalidateTag(CATALOG_TAG);
   redirect("/admin/tienda?ok=Subcategoría+registrada+correctamente");
 }
 
@@ -264,6 +275,7 @@ async function updateSubCategoryAction(formData: FormData) {
   }
 
   revalidatePath("/admin/tienda");
+  revalidateTag(CATALOG_TAG);
   redirect(`/admin/tienda?ok=Subcategoría+actualizada+correctamente&t=${Date.now()}#subcategory-${id}`);
 }
 
@@ -284,6 +296,7 @@ async function deleteSubCategoryAction(formData: FormData) {
   }
 
   revalidatePath("/admin/tienda");
+  revalidateTag(CATALOG_TAG);
   redirect("/admin/tienda?ok=Subcategoría+eliminada+correctamente");
 }
 
@@ -304,6 +317,7 @@ async function createGenderAction(formData: FormData) {
   }
 
   revalidatePath("/admin/tienda");
+  revalidateTag(CATALOG_TAG);
   redirect("/admin/tienda?ok=Género+registrado+correctamente");
 }
 
@@ -325,6 +339,7 @@ async function updateGenderAction(formData: FormData) {
   }
 
   revalidatePath("/admin/tienda");
+  revalidateTag(CATALOG_TAG);
   redirect(`/admin/tienda?ok=Género+actualizado+correctamente&t=${Date.now()}#gender-${id}`);
 }
 
@@ -345,6 +360,7 @@ async function deleteGenderAction(formData: FormData) {
   }
 
   revalidatePath("/admin/tienda");
+  revalidateTag(CATALOG_TAG);
   redirect("/admin/tienda?ok=Género+eliminado+correctamente");
 }
 
@@ -365,6 +381,7 @@ async function createAgeGroupAction(formData: FormData) {
   }
 
   revalidatePath("/admin/tienda");
+  revalidateTag(CATALOG_TAG);
   redirect("/admin/tienda?ok=Grupo+de+edad+registrado+correctamente");
 }
 
@@ -386,6 +403,7 @@ async function updateAgeGroupAction(formData: FormData) {
   }
 
   revalidatePath("/admin/tienda");
+  revalidateTag(CATALOG_TAG);
   redirect(`/admin/tienda?ok=Grupo+de+edad+actualizado+correctamente&t=${Date.now()}#agegroup-${id}`);
 }
 
@@ -406,6 +424,7 @@ async function deleteAgeGroupAction(formData: FormData) {
   }
 
   revalidatePath("/admin/tienda");
+  revalidateTag(CATALOG_TAG);
   redirect("/admin/tienda?ok=Grupo+de+edad+eliminado+correctamente");
 }
 

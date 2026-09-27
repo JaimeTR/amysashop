@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { getSafeProductImageSrc } from "@/lib/product-images";
+import { getSafeProductImageSrc, isOptimizableImageSrc } from "@/lib/product-images";
 import { getProductUrl } from "@/lib/product-url";
 
 type ProductShort = {
@@ -41,7 +41,7 @@ export default function DiscountSlider({ products }: { products: ProductShort[] 
           <div key={p.id} className="w-64 flex-shrink-0">
             <div className="rounded-lg border bg-white/5">
               <Link href={getProductUrl(p)} className="block">
-                <Image src={getSafeProductImageSrc(p.images)} alt={p.name} width={400} height={400} className="aspect-square w-full object-cover rounded-t-lg" unoptimized />
+                <Image src={getSafeProductImageSrc(p.images)} alt={p.name} width={400} height={400} sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 300px" className="aspect-square w-full object-cover rounded-t-lg" unoptimized={!isOptimizableImageSrc(getSafeProductImageSrc(p.images))} />
               </Link>
               <div className="p-3">
                 <p className="text-xs text-muted-foreground">{p.category}</p>

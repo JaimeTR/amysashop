@@ -8,7 +8,7 @@ import { AddToCartButton } from "@/components/product/add-to-cart-button";
 import { ToggleFavoriteButton } from "@/components/product/toggle-favorite-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { getSafeProductImageSrc } from "@/lib/product-images";
+import { getSafeProductImageSrc, isOptimizableImageSrc } from "@/lib/product-images";
 import { getProductUrl } from "@/lib/product-url";
 import type { Product } from "@/lib/types";
 
@@ -108,7 +108,8 @@ export function RelatedProductsCarousel({ products }: Props) {
                 alt={item.name}
                 width={700}
                 height={700}
-                unoptimized
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 300px"
+                unoptimized={!isOptimizableImageSrc(getSafeImageSrc(item.images))}
                 className="aspect-square w-full object-cover"
               />
             </Link>

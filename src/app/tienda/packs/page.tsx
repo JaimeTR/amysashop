@@ -1,7 +1,7 @@
 import { buildCategoryMetadata, CategoryCatalogPage } from "@/components/store/category-catalog-page";
 
-export const metadata = buildCategoryMetadata("maquillaje");
+export const metadata = buildCategoryMetadata("packs");
 
 export default function Page() {
-  return <CategoryCatalogPage slug="maquillaje" />;
+  return <CategoryCatalogPage slug="packs" />;
 }

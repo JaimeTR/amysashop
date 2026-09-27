@@ -1,6 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { CATALOG_TAG } from "@/lib/catalog";
 import { redirect } from "next/navigation";
 import { requireAdminUser } from "@/lib/admin";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
@@ -156,8 +157,11 @@ export async function updateSaleAction(formData: FormData) {
   }
 
   revalidatePath("/admin/emprende");
+  revalidateTag(CATALOG_TAG);
   revalidatePath("/admin");
+  revalidateTag(CATALOG_TAG);
   revalidatePath("/admin/vendedora");
+  revalidateTag(CATALOG_TAG);
   redirect("/admin/emprende?ok=Venta+actualizada+correctamente");
 }
 
@@ -189,8 +193,11 @@ export async function deleteSaleAction(formData: FormData) {
   await restoreProductStock(serviceClient, sale.product_id, Number(sale.quantity || 0));
 
   revalidatePath("/admin/emprende");
+  revalidateTag(CATALOG_TAG);
   revalidatePath("/admin");
+  revalidateTag(CATALOG_TAG);
   revalidatePath("/admin/vendedora");
+  revalidateTag(CATALOG_TAG);
   redirect("/admin/emprende?ok=Venta+eliminada+correctamente");
 }
 
@@ -407,7 +414,10 @@ export async function registerSaleAction(formData: FormData) {
   }
 
   revalidatePath("/admin/emprende");
+  revalidateTag(CATALOG_TAG);
   revalidatePath("/admin");
+  revalidateTag(CATALOG_TAG);
   revalidatePath("/admin/vendedora");
+  revalidateTag(CATALOG_TAG);
   redirect("/admin/emprende?ok=Venta+registrada+correctamente");
 }

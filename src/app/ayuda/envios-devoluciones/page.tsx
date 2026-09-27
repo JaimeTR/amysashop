@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Envíos y devoluciones",
-  description: "Conoce los tiempos de entrega, cobertura, costos de envío y política de devoluciones de AMYSA SHOP.",
+  description: "Envíos a Lima (S/ 10) y provincias por Shalom (S/ 15), tiempos de entrega y política de cambios y devoluciones de AMYSA SHOP.",
+  alternates: { canonical: "/ayuda/envios-devoluciones" },
 };
 
 export default function EnviosDevolucionesPage() {
@@ -30,7 +31,7 @@ export default function EnviosDevolucionesPage() {
             <article className="rounded-2xl border border-white/60 bg-white/60 p-5 shadow-sm backdrop-blur-md">
               <h2 className="text-lg font-semibold">Cobertura y costos</h2>
               <p className="mt-2 text-sm text-muted-foreground">
-                El costo de envío se calcula según el destino, el tamaño del paquete y el método de entrega seleccionado. En campañas especiales podemos ofrecer envío gratis o tarifas promocionales.
+                Envío a Lima Metropolitana: S/ 10.00. Envío a provincias por Shalom: S/ 15.00. También puedes elegir entrega a coordinar con AMYSA en Lima, sin costo de envío. En campañas especiales podemos ofrecer envío gratis o tarifas promocionales.
               </p>
               <p className="mt-3 text-sm text-muted-foreground">
                 Si tu pedido requiere una confirmación adicional, te escribiremos por WhatsApp o correo antes de despachar.
