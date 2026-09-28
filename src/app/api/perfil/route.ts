@@ -1,7 +1,6 @@
 import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { compressFileToBuffer } from "@/lib/image-compression-server";
 
 function isMissingColumnError(error: { message?: string } | null | undefined, column: string) {
@@ -24,14 +23,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Debes iniciar sesión para actualizar tu perfil." }, { status: 401 });
   }
 
-  const service = createServiceRoleClient();
-
-  if (!service) {
-    return NextResponse.json(
-      { error: "Falta configurar SUPABASE_SERVICE_ROLE_KEY o SUPABASE_SECRET_KEY." },
-      { status: 500 }
-    );
-  }
+  // Se usa la sesión del propio usuario (no la clave secreta): las políticas RLS ya permiten
+  // editar el propio perfil (profiles_update_self/insert_self) y subir a la carpeta propia del
+  // bucket de avatares. Así no depende de SUPABASE_SECRET_KEY y aplica el mínimo privilegio.
+  const service = authClient;
 
   try {
     const formData = await request.formData();
@@ -67,7 +62,8 @@ export async function POST(request: NextRequest) {
       });
 
       if (upload.error) {
-        return NextResponse.json({ error: upload.error.message || "No se pudo subir la imagen." }, { status: 500 });
+        console.error("/api/perfil avatar:", upload.error);
+        return NextResponse.json({ error: "No se pudo subir la imagen. Intenta con otra foto." }, { status: 500 });
       }
 
       const { data } = service.storage.from(bucketName).getPublicUrl(objectPath);
@@ -81,10 +77,10 @@ export async function POST(request: NextRequest) {
 
     const basePayload: Record<string, string | null> = {
       id: user.id,
-      nombre: nombre || null,
+      nombre: nombre || user.email || "Usuario",
       telefono: telefono || null,
       direccion: direccion || null,
-      gender: gender || null,
+      gender: ["masculino", "femenino"].includes(gender.toLowerCase()) ? gender.toLowerCase() : null,
       img_avatar: avatarUrl || null,
       avatar_url: avatarUrl || null,
     };
@@ -97,7 +93,12 @@ export async function POST(request: NextRequest) {
     }
 
     if (saveResult.error) {
-      return NextResponse.json({ error: saveResult.error.message || "No se pudo guardar el perfil." }, { status: 500 });
+      console.error("/api/perfil:", saveResult.error);
+      const message = String(saveResult.error.message || "");
+      const friendly = message.includes("profiles_gender_check")
+        ? "Selecciona un género válido."
+        : "No se pudo guardar el perfil. Intenta nuevamente.";
+      return NextResponse.json({ error: friendly }, { status: 500 });
     }
 
     revalidatePath("/perfil");

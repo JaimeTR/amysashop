@@ -24,6 +24,7 @@ import { AmysaAssistantWidget } from "@/components/chat/amysa-assistant-widget";
 import { DEFAULT_WHATSAPP_DISPLAY_PHONE, DEFAULT_WHATSAPP_PHONE } from "@/lib/whatsapp";
 import { getProductUrl } from "@/lib/product-url";
 import { getCategoryHref } from "@/lib/category-pages";
+import { useNotify } from "@/components/feedback/notification-center";
 import { useCartStore } from "@/store/cart-store";
 import { useFavoritesStore } from "@/store/favorites-store";
 import {
@@ -164,6 +165,7 @@ function WhatsAppIcon({ className }: { className?: string }) {
 }
 
 export function MainNav({ products, categories = [] }: MainNavProps) {
+  const notify = useNotify();
   const router = useRouter();
   const pathname = usePathname();
   const navSearchParams = useSearchParams();
@@ -555,7 +557,9 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
       nombre: profileDraft.nombre.trim(),
       telefono: profileDraft.telefono.trim(),
       direccion: profileDraft.direccion.trim(),
-      gender: profileDraft.gender.trim() || null,
+      gender: ["masculino", "femenino"].includes(profileDraft.gender.trim().toLowerCase())
+        ? profileDraft.gender.trim().toLowerCase()
+        : null,
     };
 
     const upsertResult = await supabase
@@ -583,8 +587,10 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
       setEditingProfile(false);
       setProfileOpen(false);
       router.refresh();
+      notify.success("Perfil actualizado", "Tus datos se guardaron correctamente.");
     } else {
       console.error("[MainNav] Profile save failed:", upsertResult.error);
+      notify.error("No se pudo guardar tu perfil", "Revisa los datos e intenta nuevamente.");
     }
 
     setSavingProfile(false);
@@ -603,10 +609,12 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
     }
 
     if (!file.type.startsWith("image/")) {
+      notify.warning("Archivo no válido", "Selecciona una imagen (JPG, PNG o WebP).");
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
+      notify.warning("Imagen muy pesada", "La foto debe pesar menos de 5 MB.");
       return;
     }
 
@@ -671,9 +679,10 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
       setEditingProfile(false);
       setProfileOpen(false);
       router.refresh();
+      notify.success("Foto actualizada", "Tu foto de perfil se cambió correctamente.");
     } catch (error) {
       console.error("[MainNav] Avatar upload/save error:", error);
-      // Aquí podrías mostrar un toast de error si tienes acceso a notify
+      notify.error("No se pudo actualizar tu foto", "Intenta nuevamente con otra imagen.");
     } finally {
       setUploadingAvatar(false);
     }

@@ -11,6 +11,7 @@ Ejecuta solo las migraciones que aún no hayas aplicado, **en orden por fecha**.
 | `20260927_protect_profiles_role.sql` | Impide que un usuario cambie su propio `role` / `is_admin` en `profiles` (seguridad) |
 | `20260928_digital_store.sql` | Tienda digital: `digital_products`, `digital_product_files`, `digital_pack_items`, `digital_orders`, buckets `digital-files` (privado) y `digital-public`, y las 3 plantillas iniciales |
 | `20260929_libro_reclamaciones.sql` | Libro de Reclamaciones: tabla `complaints` con número correlativo |
+| `20260930_performance_indexes.sql` | Índices para claves foráneas, listados por fecha y búsqueda por nombre; RLS de `profiles` optimizada |
 
 Para comprobar si una migración ya está aplicada, busca en *Table Editor* la tabla que crea (por ejemplo `digital_orders` o `complaints`).
 
@@ -21,6 +22,7 @@ Para comprobar si una migración ya está aplicada, busca en *Table Editor* la t
 3. `supabase/migrations/20260927_protect_profiles_role.sql`
 4. `supabase/migrations/20260928_digital_store.sql`
 5. `supabase/migrations/20260929_libro_reclamaciones.sql`
+6. `supabase/migrations/20260930_performance_indexes.sql`
 
 `20260614_create_digital_products.sql` está vacía a propósito: pertenecía al proyecto Supabase separado que usaba antes el módulo digital y fue reemplazada por `20260928_digital_store.sql`.
 

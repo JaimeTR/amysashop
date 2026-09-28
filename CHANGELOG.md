@@ -1,5 +1,12 @@
 # Cambios
 
+## 2026-09-30
+
+Requiere ejecutar en Supabase: `20260930_performance_indexes.sql`.
+
+- Perfil: guardar datos y foto ya no depende de `SUPABASE_SECRET_KEY` (usa la sesión del usuario con RLS); mensajes de error y éxito visibles en el menú; género normalizado.
+- Base de datos: índices para claves foráneas (ventas, comisiones, clientes, pedidos por usuario, productos por categoría, pedidos digitales), listados por fecha y búsqueda por nombre (pg_trgm); políticas RLS de `profiles` con `(select auth.uid())`.
+
 ## 2026-09-28
 
 Requiere ejecutar en Supabase: `20260927_protect_profiles_role.sql`, `20260928_digital_store.sql` y `20260929_libro_reclamaciones.sql` (ver [MIGRATION_INSTRUCTIONS.md](MIGRATION_INSTRUCTIONS.md)).

@@ -83,6 +83,7 @@ Guía completa en [MIGRATION_INSTRUCTIONS.md](MIGRATION_INSTRUCTIONS.md). Resume
 3. `supabase/migrations/20260927_protect_profiles_role.sql`
 4. `supabase/migrations/20260928_digital_store.sql`
 5. `supabase/migrations/20260929_libro_reclamaciones.sql`
+6. `supabase/migrations/20260930_performance_indexes.sql`
 
 ## Scripts
 
