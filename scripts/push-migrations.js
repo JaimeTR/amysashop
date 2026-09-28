@@ -3,7 +3,13 @@ const { Client } = require("pg");
 const fs = require("fs");
 const path = require("path");
 
-const DB_URL = "postgresql://postgres:Tarazona1309.%20@db.unsgnjrojkyfuhgzhwzp.supabase.co:5432/postgres";
+// Cadena de conexión desde el entorno (nunca escribir contraseñas en el código).
+require("dotenv").config({ path: path.resolve(__dirname, "..", ".env.local") });
+const DB_URL = process.env.SUPABASE_DB_URL;
+if (!DB_URL) {
+  console.error("Define SUPABASE_DB_URL en .env.local (Supabase → Project Settings → Database → Connection string).");
+  process.exit(1);
+}
 const MIGRATIONS_DIR = path.resolve(__dirname, "..", "supabase", "migrations");
 
 async function runMigrations() {

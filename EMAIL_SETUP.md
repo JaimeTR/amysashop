@@ -1,61 +1,59 @@
-Guía: Configurar correo (SMTP) y verificación de dominio para AMYSA
+# Correos de AMYSA SHOP
 
-Resumen rápido
-- Objetivo: asegurar que los correos de confirmación y recuperación lleguen correctamente usando `amysashop.com`.
-- Requisitos: acceso al panel DNS de tu dominio y a la consola de Supabase (o al proveedor SMTP que elijas: SendGrid, Mailgun, SES, etc.).
+La web envía correos por tres vías distintas:
 
-1) Variables y site URL
-- Asegúrate de tener en `.env` (o en variables del hosting):
-  - `NEXT_PUBLIC_SITE_URL=https://amysashop.com`
-  - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY`
+| Correo | Servicio | Configuración |
+|---|---|---|
+| Confirmación de cuenta y recuperación de contraseña | **Supabase Auth** (SMTP propio) | Supabase → Authentication → SMTP y Email Templates |
+| Descarga de productos digitales y Libro de Reclamaciones | **Resend** | `RESEND_API_KEY`, `CONTACT_FROM_EMAIL` |
+| Formulario de contacto (`/ayuda/contacto`) | **SMTP** (Titan de Hostinger) vía nodemailer | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `CONTACT_TO_EMAIL` |
 
-2) Configurar `Site URL` en Supabase
-- En Supabase → Authentication → Settings → Site URL, pon `https://amysashop.com`.
-- Esto hace que los enlaces que Supabase genera (confirmación, restauración) usen tu dominio.
+> Las contraseñas y API keys van solo en las variables de entorno del hosting y en `.env.local`. Nunca en archivos del repositorio.
 
-3) Configurar proveedor de correo (SMTP)
-- Recomiendo SendGrid, Mailgun o Amazon SES.
-- Crea una cuenta en el proveedor y genera credenciales SMTP (host, port, user, pass) o una API key.
+## 1. Supabase Auth
 
-4) Configurar SMTP en Supabase
-- Supabase → Authentication → Settings → SMTP:
-  - Host: tu host SMTP (ej. smtp.sendgrid.net)
-  - Port: 587 o 465 (según tu proveedor)
-  - User: usuario SMTP
-  - Password: contraseña SMTP
-  - From email: `no-reply@amysashop.com` (usa un mailbox válido o un forwarding)
+1. Authentication → URL Configuration: Site URL `https://amysashop.com` y las Redirect URLs de [DEPLOYMENT.md](DEPLOYMENT.md#2-supabase).
+2. Authentication → SMTP Settings → activa SMTP propio (el de Supabase tiene límite muy bajo de envíos):
+   - Titan: host `smtp.titan.email`, puerto `465`, usuario `contacto@amysashop.com`, contraseña del buzón.
+   - O Resend SMTP: host `smtp.resend.com`, puerto `465`, usuario `resend`, contraseña = tu API key.
+   - Remitente: `contacto@amysashop.com`, nombre `AMYSA SHOP`.
+3. Authentication → Email Templates: copia las plantillas de `supabase/email-templates/` (confirmación y restablecer contraseña).
 
-5) Verificación de dominio (SPF/DKIM/DMARC)
-- En tu panel DNS añade los registros que te de tu proveedor (SendGrid/Mailgun/SES). Ejemplos:
-  - SPF (TXT): "v=spf1 include:sendgrid.net ~all" (ajusta al proveedor)
-  - DKIM: varios registros TXT tipo `s1._domainkey` con el valor que entregue el proveedor.
-  - DMARC (opcional): `_dmarc.amysashop.com TXT "v=DMARC1; p=quarantine; rua=mailto:postmaster@amysashop.com"`
-- Espera la propagación y verifica en el panel del proveedor hasta que el dominio quede verificado.
+## 2. Resend (descargas y reclamos)
 
-6) From address y remitente verificado
-- En el proveedor SMTP verifica `no-reply@amysashop.com` o configura un mailbox (ej. en tu hosting o G Suite) y crea el forward.
+1. Crea una cuenta en https://resend.com y agrega el dominio `amysashop.com`.
+2. Agrega en el DNS de Hostinger los registros que muestra Resend (SPF/`TXT`, DKIM y, si lo pide, `MX` del subdominio de envío) y espera a que el dominio figure como *Verified*.
+3. Crea una API key y configúrala:
 
-7) Probar envío
-- En Supabase → Authentication → Templates → Email templates puedes enviar un correo de prueba.
-- O usa la consola del proveedor SMTP para ver logs.
+```
+RESEND_API_KEY=re_...
+CONTACT_FROM_EMAIL=contacto@amysashop.com
+```
 
-8) Plantillas y enlaces
-- Las plantillas en `supabase/email-templates/` ya usan `{{ .ConfirmationURL }}`. No es necesario cambiarlas si el `Site URL` en Supabase está correcto.
-- Si quieres que los correos muestren enlaces visibles al dominio, puedes dejar las plantillas (ya están bien) o añadir texto con `{{ .ConfirmationURL }}`.
+Sin `RESEND_API_KEY` la web sigue funcionando: los pedidos y reclamos se guardan igual y el admin muestra el aviso "no se pudo enviar el correo" con la opción de copiar el enlace de descarga para enviarlo por WhatsApp.
 
-9) Pasos post-configuración
-- Envía un correo de prueba a una dirección externa (Gmail/Outlook).
-- Revisa carpeta de spam; si cae ahí, vuelve a revisar SPF/DKIM.
-- Ajusta `Return-Path`/envelope-from en proveedor si es necesario.
+## 3. SMTP del formulario de contacto
 
-10) Notas de seguridad
-- No pongas claves privadas en repositorio. Usa variables en tu hosting o secrets en Vercel.
+```
+SMTP_HOST=smtp.titan.email
+SMTP_PORT=465
+SMTP_USER=contacto@amysashop.com
+SMTP_PASS=<contraseña del buzón>
+CONTACT_TO_EMAIL=contacto@amysashop.com
+```
 
-11) Soporte y debugging
-- Si los correos no salen: revisa logs de Supabase (Authentication → Logs) y logs del proveedor SMTP.
-- Comprueba que Supabase no esté bloqueando por límites de envío.
+## 4. DNS recomendado para `amysashop.com`
 
-Si quieres, puedo:
-- Generar un `.env.example` con valores de ejemplo ya incluido (ya creado). 
-- Probar envío con una cuenta SendGrid usando credenciales (si me las das aquí, no las subas al repo; configúralas en el hosting).
-- Verificar y editar las plantillas si quieres textos distintos.
+- SPF (un solo registro TXT en `@` que combine los servicios que uses), por ejemplo: `v=spf1 include:titan.email include:amazonses.com ~all` (Resend envía mediante Amazon SES; usa exactamente lo que indique Resend).
+- DKIM: el de Titan (Hostinger) y el de Resend.
+- DMARC (opcional, recomendado): `TXT _dmarc` → `v=DMARC1; p=none; rua=mailto:contacto@amysashop.com`.
+
+## 5. Prueba
+
+- Registro de un correo nuevo → llega la confirmación.
+- `/recuperar` → llega el enlace y abre `/restablecer`.
+- Compra digital de prueba → confirmar en *Admin → Digitales → Pedidos* → llega el correo con la descarga.
+- `/libro-de-reclamaciones` → llega la copia del reclamo.
+- `/ayuda/contacto` → llega el mensaje a `CONTACT_TO_EMAIL`.
+
+Si un correo no llega: revisa spam, los logs de Resend / Supabase (Authentication → Logs) y que el dominio esté verificado.
