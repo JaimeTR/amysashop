@@ -2,7 +2,10 @@
 
 ## 2026-09-30
 
-Requiere ejecutar en Supabase: `20260930_performance_indexes.sql`.
+Requiere ejecutar en Supabase: `20260930_performance_indexes.sql` y `20261001_orders_contact_items.sql`.
+
+- Pedidos: `orders.user_id` era obligatorio (los pedidos sin cuenta fallaban) y faltaban columnas, por lo que se guardaban sin contacto ni productos. Ahora se guardan completos y el admin muestra el detalle (contacto, dirección, entrega, cupón y productos).
+- Borrar usuarios desde el admin ya no falla si tienen pedidos, favoritos o chats.
 
 - Perfil: guardar datos y foto ya no depende de `SUPABASE_SECRET_KEY` (usa la sesión del usuario con RLS); mensajes de error y éxito visibles en el menú; género normalizado.
 - Base de datos: índices para claves foráneas (ventas, comisiones, clientes, pedidos por usuario, productos por categoría, pedidos digitales), listados por fecha y búsqueda por nombre (pg_trgm); políticas RLS de `profiles` con `(select auth.uid())`.

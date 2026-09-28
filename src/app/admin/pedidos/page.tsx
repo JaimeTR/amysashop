@@ -27,6 +27,18 @@ type OrderRow = {
   channel?: string | null;
   payment_method?: string | null;
   customer_name?: string | null;
+  customer_email?: string | null;
+  customer_phone?: string | null;
+  customer_address?: string | null;
+  customer_note?: string | null;
+  customer_document_type?: string | null;
+  customer_document_number?: string | null;
+  payment_reference?: string | null;
+  delivery_method?: string | null;
+  shipping_amount?: number | null;
+  discount_amount?: number | null;
+  coupon_code?: string | null;
+  items_json?: unknown;
 };
 
 async function getProfileNameMap(userIds: string[]) {
@@ -113,6 +125,8 @@ export default async function AdminPedidosPage({ searchParams }: PageProps) {
   const { supabase } = await requireAdminUser("orders.manage");
 
   const queryCandidates = [
+    // Requiere la migración 20261001_orders_contact_items.sql; si falta, se usan las consultas siguientes.
+    "id,status,payment_status,total,total_amount,user_id,created_at,channel,payment_method,customer_name,customer_email,customer_phone,customer_address,customer_note,customer_document_type,customer_document_number,payment_reference,delivery_method,shipping_amount,discount_amount,coupon_code,items_json",
     "id,status,payment_status,total,total_amount,user_id,created_at,channel,payment_method,customer_name",
     "id,status,total,total_amount,user_id,created_at,channel,payment_method,customer_name",
     "id,status,total,total_amount,user_id,created_at,payment_method,customer_name",
@@ -140,6 +154,17 @@ export default async function AdminPedidosPage({ searchParams }: PageProps) {
     channel: order.channel || "web",
     paymentMethod: order.payment_method || "no definido",
     customerName: String(order.customer_name || "").trim() || profileNameMap.get(String(order.user_id || "")) || "",
+    customerEmail: order.customer_email || "",
+    customerPhone: order.customer_phone || "",
+    customerAddress: order.customer_address || "",
+    customerNote: order.customer_note || "",
+    customerDocument: [order.customer_document_type, order.customer_document_number].filter(Boolean).join(" ").toUpperCase(),
+    paymentReference: order.payment_reference || "",
+    deliveryMethod: order.delivery_method || "",
+    shippingAmount: order.shipping_amount ?? null,
+    discountAmount: order.discount_amount ?? null,
+    couponCode: order.coupon_code || "",
+    items: Array.isArray(order.items_json) ? (order.items_json as NonNullable<Parameters<typeof OrdersInventoryTable>[0]["rows"][number]["items"]>) : [],
   }));
 
   const counters = statuses.reduce<Record<string, number>>((acc, status) => {

@@ -84,6 +84,7 @@ Guía completa en [MIGRATION_INSTRUCTIONS.md](MIGRATION_INSTRUCTIONS.md). Resume
 4. `supabase/migrations/20260928_digital_store.sql`
 5. `supabase/migrations/20260929_libro_reclamaciones.sql`
 6. `supabase/migrations/20260930_performance_indexes.sql`
+7. `supabase/migrations/20261001_orders_contact_items.sql`
 
 ## Scripts
 
