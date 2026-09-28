@@ -28,8 +28,25 @@ create index if not exists idx_sales_created_at on public.sales(created_at desc)
 -- ============================================================
 -- 3. Búsqueda de productos por nombre (ILIKE '%texto%' en el admin y el buscador)
 -- ============================================================
+-- pg_trgm puede estar instalada en "public" o en "extensions" según el proyecto:
+-- se usa el esquema donde realmente está.
 create extension if not exists pg_trgm with schema extensions;
-create index if not exists idx_products_name_trgm on public.products using gin (name extensions.gin_trgm_ops);
+
+do $$
+declare
+  trgm_schema text;
+begin
+  select n.nspname into trgm_schema
+  from pg_extension e
+  join pg_namespace n on n.oid = e.extnamespace
+  where e.extname = 'pg_trgm';
+
+  execute format(
+    'create index if not exists idx_products_name_trgm on public.products using gin (name %I.gin_trgm_ops)',
+    trgm_schema
+  );
+end
+$$;
 
 -- ============================================================
 -- 4. RLS de profiles: (select auth.uid()) se evalúa una vez por consulta en vez de por fila
