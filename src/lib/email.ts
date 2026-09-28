@@ -144,3 +144,88 @@ export async function sendPurchaseConfirmationEmail(input: {
     return { ok: false, error: "send_failed" };
   }
 }
+
+// ============================================================
+// Libro de Reclamaciones: copia de la hoja al consumidor (y al negocio) y respuesta del proveedor.
+// ============================================================
+
+function complaintEmailHtml(title: string, intro: string, rows: Array<[string, string]>, footer: string) {
+  const body = rows
+    .map(
+      ([label, value]) =>
+        `<tr><td style="padding:8px 12px;border-bottom:1px solid #f0ebe7;font-size:13px;color:#7A5542;font-weight:600;width:38%;vertical-align:top;">${escapeHtml(label)}</td><td style="padding:8px 12px;border-bottom:1px solid #f0ebe7;font-size:13px;color:#1a1a1a;white-space:pre-wrap;">${escapeHtml(value)}</td></tr>`
+    )
+    .join("");
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
+<body style="margin:0;padding:24px 12px;background:#f5f0ec;font-family:Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
+    <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#fff;border-radius:16px;overflow:hidden;">
+      <tr><td style="background:#503525;padding:24px;color:#fff;">
+        <h1 style="margin:0;font-size:20px;">${escapeHtml(title)}</h1>
+        <p style="margin:8px 0 0;font-size:13px;opacity:.9;">${escapeHtml(intro)}</p>
+      </td></tr>
+      <tr><td style="padding:12px;"><table width="100%" cellpadding="0" cellspacing="0">${body}</table></td></tr>
+      <tr><td style="padding:16px 24px 24px;font-size:12px;color:#777;">${escapeHtml(footer)}</td></tr>
+    </table>
+  </td></tr></table>
+</body></html>`;
+}
+
+export async function sendComplaintEmails(input: {
+  consumerEmail: string;
+  businessEmail?: string;
+  code: string;
+  rows: Array<[string, string]>;
+}): Promise<{ ok: boolean; error?: string }> {
+  if (!resendApiKey) return { ok: false, error: "RESEND_API_KEY no configurado" };
+  try {
+    const resend = new Resend(resendApiKey);
+    const html = complaintEmailHtml(
+      `Libro de Reclamaciones · Hoja ${input.code}`,
+      "Copia de tu reclamo/queja registrado en AMYSA SHOP. Te responderemos en un plazo máximo de 15 días hábiles.",
+      input.rows,
+      "Conserva este correo como constancia. La formulación del reclamo no impide acudir a otras vías de solución de controversias ni es requisito previo para interponer una denuncia ante el INDECOPI."
+    );
+    const { error } = await resend.emails.send({
+      from: `AMYSA SHOP <${fromEmail}>`,
+      to: input.consumerEmail,
+      bcc: input.businessEmail ? [input.businessEmail] : undefined,
+      subject: `Libro de Reclamaciones - Hoja ${input.code} - AMYSA SHOP`,
+      html,
+    });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true };
+  } catch (err) {
+    console.error("sendComplaintEmails error:", err);
+    return { ok: false, error: "send_failed" };
+  }
+}
+
+export async function sendComplaintResponseEmail(input: {
+  to: string;
+  code: string;
+  consumerName: string;
+  response: string;
+}): Promise<{ ok: boolean; error?: string }> {
+  if (!resendApiKey) return { ok: false, error: "RESEND_API_KEY no configurado" };
+  try {
+    const resend = new Resend(resendApiKey);
+    const html = complaintEmailHtml(
+      `Respuesta a tu reclamo · Hoja ${input.code}`,
+      `Hola ${input.consumerName}, esta es la respuesta de AMYSA SHOP a tu reclamo/queja.`,
+      [["Respuesta del proveedor", input.response]],
+      "Si no estás conforme con la respuesta, puedes acudir al INDECOPI."
+    );
+    const { error } = await resend.emails.send({
+      from: `AMYSA SHOP <${fromEmail}>`,
+      to: input.to,
+      subject: `Respuesta a tu reclamo ${input.code} - AMYSA SHOP`,
+      html,
+    });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true };
+  } catch (err) {
+    console.error("sendComplaintResponseEmail error:", err);
+    return { ok: false, error: "send_failed" };
+  }
+}

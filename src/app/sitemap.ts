@@ -29,6 +29,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/ayuda/faq", priority: 0.6, changeFrequency: "monthly" },
     { path: "/ayuda/envios-devoluciones", priority: 0.6, changeFrequency: "monthly" },
     { path: "/ayuda/contacto", priority: 0.5, changeFrequency: "monthly" },
+    { path: "/legal/terminos", priority: 0.3, changeFrequency: "monthly" },
+    { path: "/legal/privacidad", priority: 0.3, changeFrequency: "monthly" },
+    { path: "/legal/cookies", priority: 0.2, changeFrequency: "monthly" },
+    { path: "/libro-de-reclamaciones", priority: 0.3, changeFrequency: "monthly" },
   ];
 
   const staticRoutes: MetadataRoute.Sitemap = pages.map((page) => ({

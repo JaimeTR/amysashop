@@ -1,7 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Heart } from "lucide-react";
+import { BookOpen, Heart } from "lucide-react";
 import { CATEGORY_PAGES } from "@/lib/category-pages";
+import { LEGAL_LINKS } from "@/lib/legal-info";
 
 const columns: Array<{ title: string; links: Array<{ href: string; label: string }> }> = [
   {
@@ -41,7 +42,8 @@ const columns: Array<{ title: string; links: Array<{ href: string; label: string
 export default function Footer() {
   return (
     <footer className="mt-auto w-full bg-[#503525] text-white">
-      <div className="mx-auto max-w-[1200px] px-6 py-10">
+      {/* pb extra en celular: la barra de navegación inferior es fija y tapaba el final del pie. */}
+      <div className="mx-auto max-w-[1200px] px-6 pb-28 pt-10 md:pb-10">
         <div className="flex flex-col gap-8 lg:flex-row lg:justify-between">
           <div className="flex flex-col items-center gap-3 text-center lg:max-w-[240px] lg:items-start lg:text-left">
             <Image src="/logos/amysa-square-primary.png" alt="AMYSA SHOP" width={140} height={48} className="h-12 w-auto object-contain" />
@@ -68,7 +70,24 @@ export default function Footer() {
           </nav>
         </div>
 
-        <div className="mt-8 flex flex-col items-center justify-between gap-2 border-t border-white/10 pt-6 text-sm opacity-90 sm:flex-row">
+        <div className="mt-8 flex flex-col items-center gap-4 border-t border-white/10 pt-6 lg:flex-row lg:justify-between">
+          <nav aria-label="Legal" className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs opacity-90">
+            {LEGAL_LINKS.filter((link) => link.href !== "/libro-de-reclamaciones").map((link) => (
+              <Link key={link.href} href={link.href} className="hover:underline">
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+          {/* El Libro de Reclamaciones debe estar visible (Ley N.° 29571). */}
+          <Link
+            href="/libro-de-reclamaciones"
+            className="inline-flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-3 py-2 text-xs font-semibold transition hover:bg-white/20"
+          >
+            <BookOpen className="size-4" aria-hidden="true" /> Libro de Reclamaciones
+          </Link>
+        </div>
+
+        <div className="mt-4 flex flex-col items-center justify-between gap-2 text-sm opacity-90 sm:flex-row">
           <p>© {new Date().getFullYear()} AMYSA SHOP. Todos los derechos reservados.</p>
           <p className="flex items-center gap-1.5">
             <Heart className="size-3.5" aria-hidden="true" /> By Ambar Castro
