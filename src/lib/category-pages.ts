@@ -79,3 +79,9 @@ export function matchCategoryName(config: CategoryPageConfig, categories: string
   const key = normalize(config.category);
   return categories.find((name) => normalize(name) === key) ?? config.category;
 }
+
+// Enlace preferido para una categoría: su página propia si existe, si no el filtro de /tienda.
+export function getCategoryHref(categoryName: string) {
+  const page = getCategoryPageByName(categoryName);
+  return page ? `/tienda/${page.slug}` : `/tienda?categoria=${encodeURIComponent(categoryName)}`;
+}

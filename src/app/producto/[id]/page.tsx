@@ -189,8 +189,6 @@ export default async function ProductoPage({ params }: Props) {
 
   return (
     <main className="space-y-5 pb-8">
-      {/* JSON-LD schema.org: Product (con envío y devoluciones) + BreadcrumbList */}
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }} />
       <section className="grid gap-3 px-3 lg:px-0 lg:grid-cols-[minmax(0,600px)_minmax(0,600px)] lg:items-start lg:justify-center">
         <article className="rounded-3xl p-0">
           <ProductGallery images={product.images} name={product.name} />
@@ -236,6 +234,8 @@ export default async function ProductoPage({ params }: Props) {
       </section>
 
       <RelatedProductsCarousel products={carouselProducts} />
+      {/* JSON-LD schema.org: Product (con envío y devoluciones) + BreadcrumbList */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }} />
     </main>
   );
 }

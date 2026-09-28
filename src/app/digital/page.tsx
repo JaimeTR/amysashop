@@ -47,7 +47,6 @@ export default async function DigitalCatalogPage({ searchParams }: Props) {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-4 py-8">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <header className="space-y-2">
         <p className="text-xs font-semibold uppercase tracking-[0.25em] text-primary/80">AMYSA SHOP</p>
         <h1 className="font-[var(--font-display)] text-3xl sm:text-4xl">Productos digitales</h1>
@@ -57,6 +56,7 @@ export default async function DigitalCatalogPage({ searchParams }: Props) {
         </p>
       </header>
       <DigitalCatalog products={products} basePath="/digital" activeType={activeType} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
     </div>
   );
 }

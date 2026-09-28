@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
-import { ArrowRight, Droplets, Gem, Package, Palette, ShoppingBag, Sparkles, Star, Tag, Store } from "lucide-react";
+import { ArrowRight, Droplets, Gem, MessageCircle, Package, Palette, ShoppingBag, Smartphone, Sparkles, Tag, Store, Truck } from "lucide-react";
 import { AddToCartButton } from "@/components/product/add-to-cart-button";
 import { BrandShowcase } from "@/components/store/brand-showcase";
 import { Button } from "@/components/ui/button";
@@ -10,8 +10,11 @@ import { ToggleFavoriteButton } from "@/components/product/toggle-favorite-butto
 import { getActiveProducts, getRegisteredCategories } from "@/lib/catalog";
 import { DiscountCarouselClient } from "@/components/store/discount-carousel-client";
 import { HomeHeroTypingSlogan } from "@/components/store/home-hero-typing-slogan";
-import { getSafeProductImageSrc, isOptimizableImageSrc } from "@/lib/product-images";
+import { DEFAULT_PRODUCT_IMAGE, getSafeProductImageSrc, isOptimizableImageSrc } from "@/lib/product-images";
 import { getProductUrl } from "@/lib/product-url";
+import { getCategoryHref } from "@/lib/category-pages";
+import { DigitalProductCard } from "@/components/digital/digital-product-card";
+import { getPublicDigitalProducts } from "@/lib/digital-store";
 import { getSiteUrl, DEFAULT_OG_IMAGE } from "@/lib/site-url";
 
 function extractTagValue(description: string, key: string) {
@@ -142,14 +145,27 @@ export const metadata: Metadata = {
 };
 
 export default async function Home() {
-  const [products, categories] = await Promise.all([getActiveProducts(), getRegisteredCategories()]);
+  const [products, categories, digitalProducts] = await Promise.all([
+    getActiveProducts(),
+    getRegisteredCategories(),
+    getPublicDigitalProducts(),
+  ]);
   const featuredProducts = products.slice(0, 15);
+  const homeDigitalProducts = [...digitalProducts]
+    .sort((a, b) => Number(b.featured) - Number(a.featured) || a.sortOrder - b.sortOrder)
+    .slice(0, 4);
 
   const discountedProducts = products
     .filter((product) => Number(product.priceBefore || 0) > Number(product.price || 0))
     .sort((a, b) => getDiscountPercent(b.priceBefore, b.price) - getDiscountPercent(a.priceBefore, a.price))
     // El carrusel duplica la lista para el efecto infinito: limitar reduce mucho el HTML.
     .slice(0, 12);
+
+  // Collage del hero: productos reales (ofertas primero) en lugar de una ilustración genérica.
+  const heroProducts = [...discountedProducts, ...featuredProducts]
+    .filter((product, index, list) => list.findIndex((item) => item.id === product.id) === index)
+    .filter((product) => getSafeImageSrc(product.images) !== DEFAULT_PRODUCT_IMAGE)
+    .slice(0, 3);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -168,89 +184,108 @@ export default async function Home() {
 
   return (
     <main className="space-y-8 pb-10 pt-2">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-      <section className="glass-card animate-in fade-in duration-700 rounded-3xl p-6 text-center md:text-left">
-        <div className="flex flex-col md:flex-row items-center md:items-center justify-between gap-8">
-          {/* Contenido de texto */}
-          <div className="flex-1">
-            <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">AMYSA SHOP</p>
+      <section className="glass-card animate-in fade-in duration-700 overflow-hidden rounded-3xl p-5 sm:p-8 lg:p-10">
+        <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+          <div className="text-center lg:text-left">
+            <Link
+              href="/digital"
+              className="group mb-4 inline-flex max-w-full items-center gap-2 rounded-full border border-primary/20 bg-white/80 py-1 pl-1 pr-3 text-xs font-semibold text-foreground shadow-sm transition hover:border-primary/40 hover:bg-white"
+            >
+              <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-foreground">Nuevo</span>
+              <span className="truncate">Plantillas, libros y cursos digitales</span>
+              <ArrowRight className="size-3.5 shrink-0 text-primary transition group-hover:translate-x-0.5" />
+            </Link>
 
-            {/* Desktop: título grande (visible en md+) */}
-            <h1 className="hidden md:block font-[var(--font-display)] text-4xl leading-tight text-foreground">
-              AMYSA SHOP,
-              <HomeHeroTypingSlogan />
-            </h1>
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary/80">Tienda online en Perú</p>
 
-            {/* Mobile: mostrar solo texto en movimiento en tamaño más pequeño */}
-            <h1 className="block md:hidden">
-              <span className="sr-only">AMYSA SHOP</span>
-              <span className="block text-primary text-xl md:text-2xl lg:text-3xl mx-auto font-normal whitespace-normal break-words leading-tight">
+            <h1 className="mt-3 font-[var(--font-display)] text-3xl leading-tight text-foreground sm:text-4xl lg:text-5xl">
+              Perfumes, maquillaje y cuidado personal
+              <span className="mt-2 block min-h-[1.3em] text-2xl text-primary sm:text-3xl lg:text-4xl">
+                <span className="sr-only">AMYSA SHOP, </span>
                 <HomeHeroTypingSlogan />
               </span>
             </h1>
 
-            {/* Imagen en móvil, antes del párrafo descriptivo */}
-            <div className="flex md:hidden justify-center mt-4 mb-4 flex-shrink-0">
+            <p className="mx-auto mt-4 max-w-xl text-sm text-muted-foreground sm:text-base lg:mx-0">
+              Las marcas de catálogo que te encantan —Ésika, L&apos;Bel, Cyzone, Yanbal y más— con ofertas cada semana y envío a
+              todo el Perú. Y para emprender: plantillas, libros y cursos digitales que recibes por correo.
+            </p>
+
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center lg:justify-start">
+              <Button asChild size="lg" className="w-full sm:w-auto">
+                <Link href="/tienda">
+                  Ver catálogo <Store className="ml-2 size-4" />
+                </Link>
+              </Button>
+              <Button asChild size="lg" variant="outline" className="w-full sm:w-auto">
+                <Link href="/tienda?descuento=true">
+                  Ver ofertas <Tag className="ml-2 size-4" />
+                </Link>
+              </Button>
+            </div>
+
+            <ul className="mt-6 grid grid-cols-3 gap-2 text-[11px] leading-tight text-foreground sm:text-sm">
+              <li className="flex flex-col items-center gap-1.5 rounded-2xl bg-white/60 px-2 py-2.5 text-center sm:flex-row sm:gap-2 sm:px-3 sm:text-left">
+                <Truck className="size-4 shrink-0 text-primary" /> Envío a todo el Perú
+              </li>
+              <li className="flex flex-col items-center gap-1.5 rounded-2xl bg-white/60 px-2 py-2.5 text-center sm:flex-row sm:gap-2 sm:px-3 sm:text-left">
+                <Smartphone className="size-4 shrink-0 text-primary" /> Yape, Plin o transferencia
+              </li>
+              <li className="flex flex-col items-center gap-1.5 rounded-2xl bg-white/60 px-2 py-2.5 text-center sm:flex-row sm:gap-2 sm:px-3 sm:text-left">
+                <MessageCircle className="size-4 shrink-0 text-primary" /> Atención por WhatsApp
+              </li>
+            </ul>
+          </div>
+
+          {heroProducts.length >= 3 ? (
+            <div className="hidden grid-cols-2 gap-3 lg:grid" aria-label="Productos destacados">
+              {heroProducts.map((product, index) => {
+                const src = getSafeImageSrc(product.images);
+                const discount = getDiscountPercent(product.priceBefore, product.price);
+                return (
+                  <Link
+                    key={product.id}
+                    href={getProductUrl(product)}
+                    className={`group relative overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-white/70 transition hover:shadow-xl ${
+                      index === 0 ? "row-span-2 aspect-[3/4] sm:aspect-auto" : "aspect-square"
+                    }`}
+                  >
+                    <Image
+                      src={src}
+                      alt={product.name}
+                      fill
+                      priority={index === 0}
+                      sizes="(max-width: 768px) 50vw, 25vw"
+                      unoptimized={!isOptimizableImageSrc(src)}
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <span className="absolute inset-x-2 bottom-2 flex items-center justify-between gap-2 rounded-2xl bg-white/90 px-3 py-1.5 text-xs shadow-sm backdrop-blur">
+                      <span className="line-clamp-1 font-semibold text-foreground">{product.name}</span>
+                      <span className="shrink-0 font-bold text-primary">S/ {product.price.toFixed(2)}</span>
+                    </span>
+                    {discount > 0 ? (
+                      <span className="absolute left-2 top-2 rounded-full bg-primary px-2 py-0.5 text-[11px] font-bold text-primary-foreground">
+                        -{discount}%
+                      </span>
+                    ) : null}
+                  </Link>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="hidden justify-center lg:flex">
               <Image
                 src="/logos/tiendaaperturasinfondo.png"
                 alt="Tienda AMYSA"
-                width={200}
-                height={200}
-                unoptimized
-                className="object-contain size-40"
+                width={320}
+                height={320}
+                className="size-72 object-contain lg:size-80"
                 priority
               />
             </div>
-
-            <p className="mt-3 text-sm text-muted-foreground text-center md:text-left mx-auto md:mx-0 max-w-xl">
-              Explora el catálogo de productos seleccionados por AMYSA.
-            </p>
-
-            <div className="mt-5 flex flex-col md:flex-row items-center md:items-center gap-3">
-              <div className="w-full md:w-auto">
-                <Button asChild className="w-full">
-                  <Link href="/tienda" className="inline-flex items-center justify-center w-full uppercase font-light md:font-semibold">
-                    VER CATÁLOGO <Store className="ml-2 size-4" />
-                  </Link>
-                </Button>
-              </div>
-
-              <div className="w-full md:w-auto">
-                <Button variant="outline" asChild className="w-full">
-                  <Link href="/favoritos" className="inline-flex items-center justify-center w-full uppercase font-light md:font-semibold">
-                    FAVORITOS <Star className="ml-2 size-4" />
-                  </Link>
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* Imagen al lado derecho en desktop */}
-          <div className="hidden md:flex justify-end flex-shrink-0">
-            <Image
-              src="/logos/tiendaaperturasinfondo.png"
-              alt="Tienda AMYSA"
-              width={200}
-              height={200}
-              unoptimized
-              className="object-contain size-80"
-              priority
-            />
-          </div>
+          )}
         </div>
       </section>
-
-      {/* Flecha indicadora solo en móvil, fuera del contenedor hero: desplaza hacia la sección de marcas */}
-      <div className="-mt-2 flex justify-center md:hidden">
-        <a href="#brands" className="inline-flex items-center justify-center rounded-full bg-white/10 p-2 text-primary shadow-sm">
-          <svg xmlns="http://www.w3.org/2000/svg" className="size-6 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-          </svg>
-        </a>
-      </div>
 
       <BrandShowcase />
 
@@ -286,15 +321,15 @@ export default async function Home() {
                 return (
                   <Link
                     key={category}
-                    href={`/tienda?categoria=${encodeURIComponent(category)}`}
-                    className="group flex min-w-[4.5rem] shrink-0 flex-col items-center gap-2 rounded-2xl border border-transparent px-2 py-2 transition hover:border-primary/30 hover:bg-white/50 md:min-w-0 md:px-2 md:py-3"
+                    href={getCategoryHref(category)}
+                    className="group flex w-20 shrink-0 flex-col items-center gap-2 rounded-2xl border border-transparent px-2 py-2 transition hover:border-primary/30 hover:bg-white/50 md:min-w-0 md:px-2 md:py-3"
                   >
                     <span
                       className={`flex size-12 items-center justify-center rounded-full border border-white/70 bg-gradient-to-br shadow-sm transition group-hover:scale-105 md:size-14 ${getPaletteClass(category)}`}
                     >
                       <CategoryIcon className="size-5 md:size-6" />
                     </span>
-                    <span className="hidden line-clamp-2 text-center text-xs font-semibold text-foreground md:block">{category}</span>
+                    <span className="line-clamp-2 text-center text-[11px] font-semibold leading-tight text-foreground md:text-xs">{category}</span>
                   </Link>
                 );
               })
@@ -317,9 +352,9 @@ export default async function Home() {
           ) : null}
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
           {featuredProducts.map((product) => (
-            <article key={product.id} className="glass-card overflow-hidden rounded-2xl group transition-transform duration-300 hover:scale-102 hover:shadow-lg">
+            <article key={product.id} className="glass-card group flex flex-col overflow-hidden rounded-2xl transition duration-300 hover:-translate-y-0.5 hover:shadow-lg">
               {(() => {
                 const discountPercent = getDiscountPercent(product.priceBefore, product.price);
 
@@ -340,7 +375,7 @@ export default async function Home() {
               <div className="space-y-2 p-3">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">{product.category}</p>
                 <Link href={getProductUrl(product)} className="block">
-                  <h3 className="line-clamp-1 truncate font-semibold text-foreground hover:text-primary">{product.name}</h3>
+                  <h3 className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold text-foreground hover:text-primary">{product.name}</h3>
                 </Link>
 
                 <div className="space-y-0.5">
@@ -371,11 +406,6 @@ export default async function Home() {
                   />
                 </div>
 
-                <Button asChild size="sm" variant="outline" className="w-full">
-                  <Link href={getProductUrl(product)}>
-                    Ver producto <ShoppingBag className="ml-2 size-4" />
-                  </Link>
-                </Button>
               </div>
                   </>
                 );
@@ -384,6 +414,29 @@ export default async function Home() {
           ))}
         </div>
       </section>
+
+      {homeDigitalProducts.length > 0 ? (
+        <section className="glass-card space-y-5 rounded-3xl p-5 sm:p-8">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div className="space-y-1">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary/80">Nuevo · Productos digitales</p>
+              <h2 className="font-[var(--font-display)] text-2xl sm:text-3xl">Plantillas, libros y cursos para tu negocio</h2>
+              <p className="max-w-2xl text-sm text-muted-foreground">
+                Te llegan por correo en cuanto confirmamos tu pago. Ideales para organizar tus ventas por catálogo y emprender.
+              </p>
+            </div>
+            <Link href="/digital" className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline">
+              Ver todos <ArrowRight className="size-4" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+            {homeDigitalProducts.map((product) => (
+              <DigitalProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        </section>
+      ) : null}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
     </main>
   );
 }

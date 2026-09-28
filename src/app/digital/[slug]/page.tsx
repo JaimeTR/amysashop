@@ -120,7 +120,6 @@ export default async function DigitalProductPage({ params }: Props) {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-4 py-6">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
       <Link href="/digital" className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline">
         <ChevronLeft className="size-4" /> Productos digitales
@@ -208,6 +207,7 @@ export default async function DigitalProductPage({ params }: Props) {
           ) : null}
         </div>
       </div>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
     </div>
   );
 }

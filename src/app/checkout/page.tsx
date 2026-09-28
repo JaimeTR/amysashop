@@ -487,7 +487,7 @@ export default function CheckoutPage() {
       </header>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
-        <section className="glass-card rounded-3xl p-4 sm:p-5">
+        <section className="glass-card min-w-0 rounded-3xl p-4 sm:p-5">
           <h2 className="mb-3 text-center font-semibold lg:text-left">Datos del cliente</h2>
           <form id="checkout-form" className="space-y-3" onSubmit={handleSubmit}>
             <div className="grid gap-3 md:grid-cols-2">
@@ -738,7 +738,7 @@ export default function CheckoutPage() {
           </form>
         </section>
 
-        <section className="glass-card rounded-3xl p-4 sm:p-5 lg:sticky lg:top-4 lg:self-start">
+        <section className="glass-card min-w-0 rounded-3xl p-4 sm:p-5 lg:sticky lg:top-4 lg:self-start">
           <h2 className="mb-3 text-center font-semibold lg:text-left">Resumen</h2>
           <div className="space-y-3">
             {items.map((item) => (

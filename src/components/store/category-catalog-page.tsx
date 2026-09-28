@@ -62,12 +62,12 @@ export async function CategoryCatalogPage({ slug }: { slug: string }) {
 
   return (
     <main className="space-y-5 pb-8">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <header className="space-y-2 px-3 text-center sm:px-0 sm:text-left">
         <h1 className="font-[var(--font-display)] text-3xl">{config.title}</h1>
         <p className="max-w-3xl text-sm text-muted-foreground">{config.intro}</p>
       </header>
       <TiendaClientGrid products={products} categories={categories} initialCategory={categoryName} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
     </main>
   );
 }

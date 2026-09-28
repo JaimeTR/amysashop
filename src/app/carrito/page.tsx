@@ -219,7 +219,7 @@ export default function CarritoPage() {
               const itemFinal = Math.max(0, itemSubtotal - itemCouponDiscount);
 
               return (
-                <article key={item.id} className="glass-card rounded-2xl p-4">
+                <article key={item.id} className="glass-card min-w-0 rounded-2xl p-3 sm:p-4">
                   <div className="flex items-start gap-3 md:grid md:grid-cols-[88px_minmax(0,1fr)_auto] md:items-center">
                     <Image
                       src={item.image || DEFAULT_PRODUCT_IMAGE}
@@ -227,7 +227,7 @@ export default function CarritoPage() {
                       width={88}
                       height={88}
                       unoptimized={!isOptimizableImageSrc(item.image || DEFAULT_PRODUCT_IMAGE)}
-                      className="size-20 shrink-0 rounded-xl object-cover md:size-[88px]"
+                      className="size-16 shrink-0 rounded-xl object-cover sm:size-20 md:size-[88px]"
                     />
 
                     <div className="min-w-0 flex-1">

@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { AmysaAssistantWidget } from "@/components/chat/amysa-assistant-widget";
 import { DEFAULT_WHATSAPP_DISPLAY_PHONE, DEFAULT_WHATSAPP_PHONE } from "@/lib/whatsapp";
 import { getProductUrl } from "@/lib/product-url";
+import { getCategoryHref } from "@/lib/category-pages";
 import { useCartStore } from "@/store/cart-store";
 import { useFavoritesStore } from "@/store/favorites-store";
 import {
@@ -886,9 +887,10 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
 
       <header className="sticky top-3 md:top-4 z-[180] mb-5 md:mb-6">
       <div className="glass-card relative z-[130] overflow-visible rounded-[28px] border border-white/40 bg-[linear-gradient(135deg,rgba(255,255,255,0.88),rgba(255,248,242,0.9))] px-4 py-4 shadow-[0_18px_55px_rgba(110,71,49,0.08)] backdrop-blur-xl md:px-5 lg:px-6">
-        <div className="flex flex-col gap-0 lg:gap-4 lg:flex-row lg:items-center lg:justify-between xl:flex-row xl:items-center xl:justify-between">
-          <div className="flex flex-col items-center gap-3 xl:flex-row xl:items-center">
-            <Link href="/" className="inline-flex items-center justify-center" onClick={closeMenus}>
+        {/* Fila única y flexible: logo · navegación · buscador · carrito · cuenta.
+            Por debajo de xl la navegación baja a una segunda fila para que nada se salga del marco. */}
+        <div className="flex flex-wrap items-center gap-3 xl:flex-nowrap">
+            <Link href="/" className="inline-flex shrink-0 items-center justify-center" onClick={closeMenus}>
               {logoError ? (
                 <span className="font-[var(--font-display)] text-2xl text-primary">AMYSA</span>
               ) : (
@@ -897,14 +899,14 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
                   alt="AMYSA SHOP"
                   width={190}
                   height={62}
-                  className="h-11 w-auto block"
+                  className="block h-9 w-auto md:h-11"
                   priority
                   onError={() => setLogoError(true)}
                 />
               )}
             </Link>
 
-            <div className="hidden items-center gap-2 lg:flex">
+            <nav aria-label="Principal" className="order-last hidden w-full items-center gap-2 md:flex xl:order-none xl:w-auto">
               <Link
                 href="/tienda"
                 className="rounded-full border border-primary/15 bg-white/75 px-4 py-2 text-sm font-semibold text-foreground transition hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
@@ -940,7 +942,7 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
                         availableCategories.map((category) => (
                           <Link
                             key={category}
-                            href={`/tienda?categoria=${encodeURIComponent(category)}`}
+                            href={getCategoryHref(category)}
                             className="rounded-2xl border border-white/40 bg-white/80 px-3 py-2 text-sm font-medium text-foreground transition hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
                             onClick={closeMenus}
                           >
@@ -968,7 +970,7 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
                   aria-controls="favorites-dropdown"
                   className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-white/75 px-4 py-2 text-sm font-semibold text-foreground transition hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
                 >
-                  <Heart className="size-3.5 text-destructive-foreground" />
+                  <Heart className="size-3.5 text-primary" />
                   Favoritos <span className="text-xs text-muted-foreground">({favoriteItems.length})</span>
                 </button>
 
@@ -1020,11 +1022,42 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
                   </div>
                 ) : null}
               </div>
-            </div>
-          </div>
 
-          <div className="flex flex-1 flex-col gap-3 lg:flex-row lg:items-center lg:justify-end">
-            <div className="relative z-[250] hidden md:flex md:w-[320px] lg:w-[360px] xl:w-[420px]">
+              <Link
+                href="/digital"
+                className="rounded-full border border-primary/15 bg-white/75 px-4 py-2 text-sm font-semibold text-foreground transition hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
+                onClick={closeMenus}
+              >
+                Digitales
+              </Link>
+            </nav>
+
+            {/* Celular: buscar y carrito a la mano (la barra inferior mantiene el resto). */}
+            <div className="ml-auto flex items-center gap-2 md:hidden">
+              <Link
+                href="/buscar"
+                aria-label="Buscar productos"
+                className="grid size-10 place-content-center rounded-full border border-primary/15 bg-white/85 text-primary"
+                onClick={closeMenus}
+              >
+                <Search className="size-4" />
+              </Link>
+              <Link
+                href="/carrito"
+                aria-label={`Carrito: ${cartSummary.count} productos`}
+                className="relative grid size-10 place-content-center rounded-full border border-primary/15 bg-white/85 text-primary"
+                onClick={closeMenus}
+              >
+                <ShoppingCart className="size-4" />
+                {cartSummary.count > 0 ? (
+                  <span className="absolute -right-1 -top-1 grid min-w-5 place-content-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+                    {cartSummary.count}
+                  </span>
+                ) : null}
+              </Link>
+            </div>
+
+            <div className="relative z-[250] hidden min-w-0 flex-1 md:flex xl:ml-auto xl:max-w-[440px]">
               <div className="relative w-full">
                 <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <input
@@ -1095,13 +1128,14 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
 
             <Link
               href="/carrito"
-              className="hidden items-center gap-3 rounded-full border border-primary/15 bg-white/85 px-4 py-2.5 text-foreground shadow-sm transition hover:border-primary/30 hover:bg-primary/5 hover:text-primary md:inline-flex"
+              aria-label={`Carrito: ${cartSummary.count} productos`}
+              className="hidden shrink-0 items-center gap-2 rounded-full border border-primary/15 bg-white/85 py-1.5 pl-1.5 pr-3 text-foreground shadow-sm transition hover:border-primary/30 hover:bg-primary/5 hover:text-primary md:inline-flex xl:gap-3 xl:py-2.5 xl:pl-2.5 xl:pr-4"
               onClick={closeMenus}
             >
               <span className="grid size-9 place-content-center rounded-full bg-primary/10 text-primary">
                 <ShoppingCart className="size-4" />
               </span>
-              <span className="flex flex-col items-start leading-tight">
+              <span className="hidden flex-col items-start leading-tight 2xl:flex">
                 <span className="text-xs font-semibold text-muted-foreground">Carrito</span>
                 <span className="text-sm font-semibold">{formatPrice(cartSummary.total)}</span>
               </span>
@@ -1111,8 +1145,8 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
             </Link>
 
             {loadingUser ? null : user ? (
-              <div className="relative hidden items-center gap-2 sm:flex">
-                <div className="text-right leading-tight">
+              <div className="relative hidden shrink-0 items-center gap-2 md:flex">
+                <div className="hidden text-right leading-tight 2xl:block">
                   <p className="max-w-[160px] truncate text-xs font-semibold text-foreground">
                     {displayUserName}
                   </p>
@@ -1185,11 +1219,10 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
             )}
 
             {!user && !loadingUser ? (
-              <Button size="sm" asChild className="hidden sm:inline-flex">
+              <Button size="sm" asChild className="hidden shrink-0 md:inline-flex">
                 <Link href="/login">Ingresar</Link>
               </Button>
             ) : null}
-          </div>
         </div>
       </div>
 
