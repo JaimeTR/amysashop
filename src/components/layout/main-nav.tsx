@@ -640,10 +640,13 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
         "profile-avatars";
 
       const compressed = await compressImageFile(selectedAvatarFile, 400, 400, 0.8);
-      const objectPath = `${user.id}/${Date.now()}-${compressed.name}`;
+      // Nombre seguro: Storage rechaza tildes, ñ y otros caracteres del nombre original.
+      const extension = (compressed.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+      const objectPath = `${user.id}/avatar-${Date.now()}.${extension}`;
 
       const upload = await supabase.storage.from(bucketName).upload(objectPath, compressed, {
-        upsert: true,
+        // Sin upsert: el nombre es único y upsert exige además permiso SELECT en Storage (RLS).
+        upsert: false,
         cacheControl: "31536000",
         contentType: compressed.type || undefined,
       });

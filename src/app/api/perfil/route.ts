@@ -53,17 +53,23 @@ export async function POST(request: NextRequest) {
       }
 
       const { buffer, contentType, fileName } = await compressFileToBuffer(avatarFile);
-      const objectPath = `${user.id}/${Date.now()}-${fileName}`;
+      // Nombre seguro: Storage rechaza tildes, ñ y otros caracteres del nombre original.
+      const extension = (fileName.split(".").pop() || "webp").toLowerCase().replace(/[^a-z0-9]/g, "") || "webp";
+      const objectPath = `${user.id}/avatar-${Date.now()}.${extension}`;
 
       const upload = await service.storage.from(bucketName).upload(objectPath, buffer, {
-        upsert: true,
+        // Sin upsert: el nombre es único y upsert exige además permiso SELECT en Storage (RLS).
+        upsert: false,
         cacheControl: "31536000",
         contentType,
       });
 
       if (upload.error) {
         console.error("/api/perfil avatar:", upload.error);
-        return NextResponse.json({ error: "No se pudo subir la imagen. Intenta con otra foto." }, { status: 500 });
+        return NextResponse.json(
+          { error: `No se pudo subir la imagen (${upload.error.message || "error de almacenamiento"}).` },
+          { status: 500 }
+        );
       }
 
       const { data } = service.storage.from(bucketName).getPublicUrl(objectPath);
