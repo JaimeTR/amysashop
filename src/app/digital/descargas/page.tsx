@@ -138,11 +138,11 @@ export default function DigitalDescargasPage() {
                       </p>
                     </div>
                     {purchase.status === "completed" ? (
-                      <span className="inline-flex w-fit items-center gap-1 rounded-full bg-success/10 px-3 py-1 text-xs font-semibold text-success">
+                      <span className="inline-flex w-fit items-center gap-1 rounded-full bg-success/10 px-3 py-1 text-xs font-semibold text-success-strong">
                         <CheckCircle2 className="size-3" /> Pagado
                       </span>
                     ) : purchase.status === "pending" ? (
-                      <span className="inline-flex w-fit items-center gap-1 rounded-full bg-warning/10 px-3 py-1 text-xs font-semibold text-warning">
+                      <span className="inline-flex w-fit items-center gap-1 rounded-full bg-warning/10 px-3 py-1 text-xs font-semibold text-warning-strong">
                         <Clock className="size-3" /> Pendiente de pago
                       </span>
                     ) : (

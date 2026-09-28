@@ -1190,7 +1190,7 @@ export function MainNav({ products, categories = [] }: MainNavProps) {
                   <div className="mt-3 border-t border-white/20 pt-3">
                     <button
                       onClick={handleSignOut}
-                      className="w-full rounded-lg bg-destructive/10 px-2 py-1.5 text-xs font-semibold text-destructive-foreground transition hover:bg-destructive/20"
+                      className="w-full rounded-lg bg-destructive/10 px-2 py-1.5 text-xs font-semibold text-destructive-strong transition hover:bg-destructive/20"
                     >
                       Cerrar sesión
                     </button>

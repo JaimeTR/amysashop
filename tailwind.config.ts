@@ -26,6 +26,7 @@ const config: Config = {
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
+          strong: "hsl(var(--destructive-strong))",
         },
         muted: {
           DEFAULT: "hsl(var(--muted))",
@@ -46,14 +47,20 @@ const config: Config = {
         success: {
           DEFAULT: "hsl(var(--success))",
           foreground: "hsl(var(--success-foreground))",
+          // Tono oscuro para texto sobre fondos claros (etiquetas, avisos).
+          strong: "hsl(var(--success-strong))",
         },
         info: {
           DEFAULT: "hsl(var(--info))",
           foreground: "hsl(var(--info-foreground))",
+          // Tono oscuro para texto sobre fondos claros (etiquetas, avisos).
+          strong: "hsl(var(--info-strong))",
         },
         warning: {
           DEFAULT: "hsl(var(--warning))",
           foreground: "hsl(var(--warning-foreground))",
+          // Tono oscuro para texto sobre fondos claros (etiquetas, avisos).
+          strong: "hsl(var(--warning-strong))",
         },
       },
       borderRadius: {

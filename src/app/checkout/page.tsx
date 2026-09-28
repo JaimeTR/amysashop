@@ -776,7 +776,7 @@ export default function CheckoutPage() {
                             {unitBasePrice > item.price ? <p className="text-muted-foreground line-through">Antes: S/ {unitBasePrice.toFixed(2)}</p> : null}
                             <p className="font-semibold text-foreground">Precio: S/ {item.price.toFixed(2)}</p>
                             <p className="text-muted-foreground">Subtotal: S/ {itemSubtotal.toFixed(2)}</p>
-                            {itemCouponDiscount > 0 ? <p className="text-success-foreground">Desc. cupón: - S/ {itemCouponDiscount.toFixed(2)}</p> : null}
+                            {itemCouponDiscount > 0 ? <p className="text-success-strong">Desc. cupón: - S/ {itemCouponDiscount.toFixed(2)}</p> : null}
                             <p className="font-semibold text-primary">Total: S/ {itemTotal.toFixed(2)}</p>
                           </div>
                         </div>
@@ -813,7 +813,7 @@ export default function CheckoutPage() {
                 Aplicar cupón
               </Button>
             </div>
-            {activeCoupon ? <p className="mt-2 text-xs text-success-foreground">Cupón activo: {activeCoupon.code}</p> : null}
+            {activeCoupon ? <p className="mt-2 text-xs text-success-strong">Cupón activo: {activeCoupon.code}</p> : null}
           </div>
 
           <div className="mt-4 space-y-2 rounded-2xl border border-white/70 bg-white/70 p-3 text-sm">
@@ -821,7 +821,7 @@ export default function CheckoutPage() {
               <span>Subtotal base</span>
               <span className="font-semibold">S/ {subtotalBase.toFixed(2)}</span>
             </p>
-            <p className="flex items-center justify-between gap-3 text-success-foreground">
+            <p className="flex items-center justify-between gap-3 text-success-strong">
               <span>Descuento por precio</span>
               <span className="font-semibold">- S/ {productDiscountAmount.toFixed(2)}</span>
             </p>
@@ -829,11 +829,11 @@ export default function CheckoutPage() {
               <span>Subtotal</span>
               <span className="font-semibold">S/ {subtotal.toFixed(2)}</span>
             </p>
-            <p className="flex items-center justify-between gap-3 text-success-foreground">
+            <p className="flex items-center justify-between gap-3 text-success-strong">
               <span>Descuento cupón</span>
               <span className="font-semibold">- S/ {discountAmount.toFixed(2)}</span>
             </p>
-            <p className="flex items-center justify-between gap-3 text-success-foreground">
+            <p className="flex items-center justify-between gap-3 text-success-strong">
               <span>Monto total ahorrado</span>
               <span className="font-semibold">S/ {totalSavings.toFixed(2)}</span>
             </p>

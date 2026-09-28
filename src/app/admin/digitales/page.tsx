@@ -20,7 +20,7 @@ export default async function AdminDigitalesPage({ searchParams }: Props) {
     return (
       <main className="glass-card rounded-3xl p-6">
         <h1 className="font-[var(--font-display)] text-3xl">Productos digitales</h1>
-        <p className="mt-2 text-sm text-destructive-foreground">Falta configurar SUPABASE_SECRET_KEY para este módulo.</p>
+        <p className="mt-2 text-sm text-destructive-strong">Falta configurar SUPABASE_SECRET_KEY para este módulo.</p>
       </main>
     );
   }
@@ -126,7 +126,7 @@ export default async function AdminDigitalesPage({ searchParams }: Props) {
                       <td className="px-4 py-3">
                         <span
                           className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-                            product.active ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"
+                            product.active ? "bg-success/10 text-success-strong" : "bg-muted text-muted-foreground"
                           }`}
                         >
                           {product.active ? "Publicado" : "Oculto"}

@@ -758,7 +758,7 @@ export function AdminChatLivePanel({ sessionId, initialMessages, initiallyJoined
         </Button>
       </form>
 
-      {errorMsg ? <p className="text-xs text-destructive-foreground">{errorMsg}</p> : null}
+      {errorMsg ? <p className="text-xs text-destructive-strong">{errorMsg}</p> : null}
 
       {mounted && showSwitchChatModal
         ? createPortal(

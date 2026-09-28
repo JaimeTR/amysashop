@@ -257,7 +257,7 @@ export function ProductCreateModal({ categories, brands, subBrands, subCategorie
             </div>
             <div>
               <p className="mb-1 block text-xs font-semibold text-black">SKU</p>
-              <div className="rounded-lg border border-info/40 bg-info/10 px-3 py-2 text-xs text-info-foreground">
+              <div className="rounded-lg border border-info/40 bg-info/10 px-3 py-2 text-xs text-info-strong">
                 El SKU será generado automáticamente con formato AS000001 y no será editable.
               </div>
             </div>

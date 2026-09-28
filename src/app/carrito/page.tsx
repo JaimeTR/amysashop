@@ -289,7 +289,7 @@ export default function CarritoPage() {
                   </Button>
                 </div>
                 {activeCoupon ? (
-                  <p className="mt-1 text-xs font-semibold text-success-foreground">
+                  <p className="mt-1 text-xs font-semibold text-success-strong">
                     Cupón activo: {activeCoupon.code} ({activeCoupon.description || "Descuento aplicado"})
                   </p>
                 ) : null}
@@ -323,15 +323,15 @@ export default function CarritoPage() {
                 <span>Subtotal productos</span>
                 <span className="font-semibold">S/ {subtotal.toFixed(2)}</span>
               </p>
-              <p className="flex items-center justify-between text-success-foreground">
+              <p className="flex items-center justify-between text-success-strong">
                 <span>Descuento por precio</span>
                 <span className="font-semibold">- S/ {productDiscount.toFixed(2)}</span>
               </p>
-              <p className="flex items-center justify-between text-success-foreground">
+              <p className="flex items-center justify-between text-success-strong">
                 <span>Descuento cupón</span>
                 <span className="font-semibold">- S/ {couponDiscount.toFixed(2)}</span>
               </p>
-              <p className="flex items-center justify-between text-success-foreground/90">
+              <p className="flex items-center justify-between text-success-strong/90">
                 <span>Monto total ahorrado</span>
                 <span className="font-semibold">S/ {totalSavings.toFixed(2)}</span>
               </p>

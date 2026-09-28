@@ -41,7 +41,7 @@ export function EmprendeSaleRowActions({ sale, updateSaleAction, deleteSaleActio
 
   const editModal = openEdit ? (
     <div className="fixed inset-0 z-[180] flex items-center justify-center bg-black/55 p-4">
-      <div className="w-full max-w-xl rounded-3xl border border-white/20 bg-[#f7f3ef] p-5 shadow-2xl backdrop-blur-md">
+      <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-3xl border border-white/20 bg-[#f7f3ef] p-5 shadow-2xl backdrop-blur-md">
         <div className="mb-4 flex items-start justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary/70">Acciones</p>

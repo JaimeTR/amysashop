@@ -82,7 +82,7 @@ export function AdminShell({ role, children }: Props) {
                 }`}
               >
                 <Icon className="size-4" />
-                <span>{link.label}</span>
+                <span className="max-w-full truncate">{link.label}</span>
               </Link>
             );
           })}

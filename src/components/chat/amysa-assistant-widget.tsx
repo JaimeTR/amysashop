@@ -507,7 +507,7 @@ export function AmysaAssistantWidget({ userId, userName }: Props) {
                   <div className="mr-2 mt-1">
                       {msg.sender === "admin" ? (
                       <div className="grid size-7 place-content-center rounded-full border border-success/70 bg-success/90">
-                        <UserRound className="size-4 text-success-foreground" />
+                        <UserRound className="size-4 text-success-strong" />
                       </div>
                     ) : (
                       <div className="grid size-7 place-content-center rounded-full bg-gradient-to-br from-[#c49a82] to-[#a6785c]">

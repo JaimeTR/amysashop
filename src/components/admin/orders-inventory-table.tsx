@@ -130,9 +130,9 @@ export function OrdersInventoryTable({ rows, statuses, paymentStatuses, updateSt
                     <span
                       className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
                           order.paymentStatus === "completo"
-                            ? "bg-success/10 text-success-foreground"
+                            ? "bg-success/10 text-success-strong"
                             : order.paymentStatus === "adelanto" || order.paymentStatus === "cuotas"
-                              ? "bg-warning/10 text-warning-foreground"
+                              ? "bg-warning/10 text-warning-strong"
                               : "bg-muted/10 text-muted-foreground"
                         }`}
                     >
@@ -144,10 +144,10 @@ export function OrdersInventoryTable({ rows, statuses, paymentStatuses, updateSt
                     <span
                       className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
                           order.status === "entregado"
-                            ? "bg-success/10 text-success-foreground"
+                            ? "bg-success/10 text-success-strong"
                             : order.status === "cancelado"
-                              ? "bg-destructive/10 text-destructive-foreground"
-                              : "bg-warning/10 text-warning-foreground"
+                              ? "bg-destructive/10 text-destructive-strong"
+                              : "bg-warning/10 text-warning-strong"
                         }`}
                     >
                       {humanizeStatus(order.status)}

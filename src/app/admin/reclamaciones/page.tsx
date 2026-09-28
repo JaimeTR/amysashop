@@ -89,7 +89,7 @@ export default async function AdminReclamacionesPage({ searchParams }: { searchP
         <p className="mt-1 text-sm text-muted-foreground">
           {pending} pendiente(s). Plazo legal de respuesta: 15 días hábiles. Conserva los registros al menos 2 años.
         </p>
-        {error ? <p className="mt-2 text-sm text-destructive-foreground">No se pudo cargar: {error.message}. ¿Ejecutaste la migración 20260929_libro_reclamaciones.sql?</p> : null}
+        {error ? <p className="mt-2 text-sm text-destructive-strong">No se pudo cargar: {error.message}. ¿Ejecutaste la migración 20260929_libro_reclamaciones.sql?</p> : null}
       </header>
 
       {complaints.length === 0 && !error ? (
@@ -105,9 +105,9 @@ export default async function AdminReclamacionesPage({ searchParams }: { searchP
                 <span className="font-mono text-sm font-bold">{item.code}</span>
                 <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold capitalize text-primary">{item.complaint_type}</span>
                 {item.status === "answered" ? (
-                  <span className="rounded-full bg-success/10 px-2 py-0.5 text-xs font-semibold text-success">Respondido</span>
+                  <span className="rounded-full bg-success/10 px-2 py-0.5 text-xs font-semibold text-success-strong">Respondido</span>
                 ) : (
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${overdue ? "bg-destructive/15 text-destructive" : "bg-warning/15 text-warning-foreground"}`}>
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${overdue ? "bg-destructive/15 text-destructive" : "bg-warning/15 text-warning-strong"}`}>
                     {overdue ? "Fuera de plazo" : `Responder antes del ${deadline.toLocaleDateString("es-PE")}`}
                   </span>
                 )}

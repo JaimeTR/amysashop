@@ -51,7 +51,7 @@ export function ComplaintForm() {
   if (result) {
     return (
       <section className="glass-card space-y-3 rounded-3xl p-6 text-center sm:p-8">
-        <CheckCircle2 className="mx-auto size-10 text-success" />
+        <CheckCircle2 className="mx-auto size-10 text-success-strong" />
         <h2 className="font-[var(--font-display)] text-2xl">Reclamo registrado</h2>
         <p className="text-sm text-muted-foreground">
           Número de hoja: <strong className="text-foreground">{result.code}</strong> · {result.createdAt}

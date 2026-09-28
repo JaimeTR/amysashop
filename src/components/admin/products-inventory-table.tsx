@@ -624,7 +624,7 @@ export function ProductsInventoryTable({
                   <td className="px-3 py-2 hidden lg:table-cell">
                     <span
                       className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                        row.active ? "bg-success/20 text-emerald-800" : "bg-destructive/10 text-destructive-foreground"
+                        row.active ? "bg-success/20 text-emerald-800" : "bg-destructive/10 text-destructive-strong"
                       }`}
                     >
                       {row.active ? "Sí" : "No"}

@@ -67,7 +67,7 @@ function getStatePresentation(session: Pick<ChatSessionRow, "status" | "lead_sta
   if (session.joined_by_admin_id) {
     return {
       label: "Asesor se unió",
-      className: "bg-success/10 text-success-foreground border border-success/40",
+      className: "bg-success/10 text-success-strong border border-success/40",
       alert: false,
     };
   }
@@ -75,7 +75,7 @@ function getStatePresentation(session: Pick<ChatSessionRow, "status" | "lead_sta
   if (stage === "en_seguimiento") {
     return {
       label: "En seguimiento",
-      className: "bg-warning/10 text-warning-foreground border border-warning/40",
+      className: "bg-warning/10 text-warning-strong border border-warning/40",
       alert: false,
     };
   }
@@ -83,7 +83,7 @@ function getStatePresentation(session: Pick<ChatSessionRow, "status" | "lead_sta
   if (stage === "contactado" || status === "active" || status === "contactado") {
     return {
       label: "Asesor contactó",
-      className: "bg-info/10 text-info-foreground border border-info/40",
+      className: "bg-info/10 text-info-strong border border-info/40",
       alert: false,
     };
   }
@@ -91,7 +91,7 @@ function getStatePresentation(session: Pick<ChatSessionRow, "status" | "lead_sta
   if (status === "lead") {
     return {
       label: "Lead nuevo",
-      className: "bg-destructive/10 text-destructive-foreground border border-destructive/40",
+      className: "bg-destructive/10 text-destructive-strong border border-destructive/40",
       alert: true,
     };
   }

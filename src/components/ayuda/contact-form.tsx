@@ -123,8 +123,8 @@ export default function ContactForm() {
           {state.loading ? "Enviando..." : "Enviar mensaje"}
         </button>
 
-        {state.status === "ok" && <span className="text-sm text-success-foreground">Mensaje enviado correctamente.</span>}
-        {state.status === "error" && <span className="text-sm text-destructive-foreground">Error al enviar, intenta nuevamente.</span>}
+        {state.status === "ok" && <span className="text-sm text-success-strong">Mensaje enviado correctamente.</span>}
+        {state.status === "error" && <span className="text-sm text-destructive-strong">Error al enviar, intenta nuevamente.</span>}
       </div>
 
       {state.status === "ok" && (

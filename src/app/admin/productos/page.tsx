@@ -1071,7 +1071,7 @@ export default async function AdminProductosPage({ searchParams }: PageProps) {
       <main className="space-y-5 pb-8">
         <header className="glass-card rounded-3xl p-5">
           <h1 className="font-[var(--font-display)] text-3xl">Gestión de productos</h1>
-          <p className="mt-2 text-sm text-destructive-foreground">Falta configurar SUPABASE_SECRET_KEY para el módulo admin.</p>
+          <p className="mt-2 text-sm text-destructive-strong">Falta configurar SUPABASE_SECRET_KEY para el módulo admin.</p>
         </header>
       </main>
     );
@@ -1241,7 +1241,7 @@ export default async function AdminProductosPage({ searchParams }: PageProps) {
       <Card className="glass-card">
         <CardContent className="pt-6">
           {productsError ? (
-            <p className="mb-3 rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive-foreground">
+            <p className="mb-3 rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive-strong">
               No se pudo cargar inventario: {productsError.message}
             </p>
           ) : null}

@@ -281,7 +281,7 @@ export function ProductCloneModal({
                           {mainUploadedFiles.map((file, index) => (
                             <div key={`${file.name}-${index}`} className="flex items-center justify-between rounded-lg border border-[#e3d7cd] bg-white px-3 py-2">
                               <span className="text-sm">{file.name}</span>
-                              <button type="button" onClick={() => removeMainUploadedFile(index)} className="text-destructive-foreground hover:text-destructive-foreground/80">
+                              <button type="button" onClick={() => removeMainUploadedFile(index)} className="text-destructive-strong hover:text-destructive-strong/80">
                                 <X className="size-4" />
                               </button>
                             </div>
@@ -323,7 +323,7 @@ export function ProductCloneModal({
                           {galleryUploadedFiles.map((file, index) => (
                             <div key={`${file.name}-${index}`} className="flex items-center justify-between rounded-lg border border-[#e3d7cd] bg-white px-3 py-2">
                               <span className="text-sm">{file.name}</span>
-                              <button type="button" onClick={() => removeGalleryUploadedFile(index)} className="text-destructive-foreground hover:text-destructive-foreground/80">
+                              <button type="button" onClick={() => removeGalleryUploadedFile(index)} className="text-destructive-strong hover:text-destructive-strong/80">
                                 <X className="size-4" />
                               </button>
                             </div>

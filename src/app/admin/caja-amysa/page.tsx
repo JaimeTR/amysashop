@@ -541,7 +541,7 @@ export default async function AdminCajaAmysaPage({ searchParams }: PageProps) {
       {missingTables ? (
         <Card className="glass-card border-warning/40">
           <CardHeader>
-            <CardTitle className="text-base text-warning-foreground">Falta aplicar migracion de Caja AMYSA</CardTitle>
+            <CardTitle className="text-base text-warning-strong">Falta aplicar migracion de Caja AMYSA</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
@@ -558,18 +558,18 @@ export default async function AdminCajaAmysaPage({ searchParams }: PageProps) {
             <Card className="glass-card">
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-sm">
-                  <HandCoins className="size-4 text-success-foreground" /> Ingresos
+                  <HandCoins className="size-4 text-success-strong" /> Ingresos
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-2xl font-semibold text-success-foreground">{toMoney(incomeTotal)}</p>
+                <p className="text-2xl font-semibold text-success-strong">{toMoney(incomeTotal)}</p>
               </CardContent>
             </Card>
 
             <Card className="glass-card">
               <CardHeader className="pb-2">
                   <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-                  <Wallet className="size-4 text-destructive-foreground" /> Egresos
+                  <Wallet className="size-4 text-destructive-strong" /> Egresos
                 </CardTitle>
               </CardHeader>
               <CardContent>

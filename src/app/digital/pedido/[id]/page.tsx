@@ -42,7 +42,7 @@ export default async function DigitalOrderPage({ params }: { params: { id: strin
       <div className="glass-card space-y-6 rounded-3xl p-6 sm:p-8">
         <header className="space-y-2 text-center">
           {order.status === "completed" ? (
-            <CheckCircle2 className="mx-auto size-10 text-success" />
+            <CheckCircle2 className="mx-auto size-10 text-success-strong" />
           ) : order.status === "cancelled" ? (
             <XCircle className="mx-auto size-10 text-destructive" />
           ) : (

@@ -73,7 +73,7 @@ export function InventoryImportModal({ importInventoryAction }: Props) {
         ? createPortal(
             <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/45 p-4" onClick={() => setOpen(false)}>
               <div
-                className="w-full max-w-xl rounded-3xl border border-white/30 bg-white/95 p-6 shadow-2xl backdrop-blur-md"
+                className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-3xl border border-white/30 bg-white/95 p-6 shadow-2xl backdrop-blur-md"
                 onClick={(event) => event.stopPropagation()}
               >
                 <div className="mb-5 flex items-start justify-between">
@@ -108,8 +108,8 @@ export function InventoryImportModal({ importInventoryAction }: Props) {
                         required
                         className="absolute inset-0 cursor-pointer opacity-0"
                       />
-                      <div className={`flex h-11 items-center justify-center gap-2 rounded-xl border-2 border-dashed ${fileName ? "border-success/40 bg-success/10" : "border-primary/35 bg-[#fcf8f5]"} text-sm ${fileName ? "font-medium text-success-foreground" : "text-foreground/80"}`}>
-                        <Upload className={`size-4 ${fileName ? "text-success-foreground" : "text-primary"}`} />
+                      <div className={`flex h-11 items-center justify-center gap-2 rounded-xl border-2 border-dashed ${fileName ? "border-success/40 bg-success/10" : "border-primary/35 bg-[#fcf8f5]"} text-sm ${fileName ? "font-medium text-success-strong" : "text-foreground/80"}`}>
+                        <Upload className={`size-4 ${fileName ? "text-success-strong" : "text-primary"}`} />
                         {fileName ? `✓ ${fileName}` : "Seleccionar archivo CSV"}
                       </div>
                     </div>

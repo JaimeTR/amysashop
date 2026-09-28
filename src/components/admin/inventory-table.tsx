@@ -353,7 +353,7 @@ export function InventoryTable({
                     </button>
                   </td>
                   <td className="px-3 py-2">
-                    <span className="inline-flex rounded-full px-2 py-1 text-xs font-semibold bg-info/10 text-info-foreground">
+                    <span className="inline-flex rounded-full px-2 py-1 text-xs font-semibold bg-info/10 text-info-strong">
                       {item.stock}
                     </span>
                   </td>

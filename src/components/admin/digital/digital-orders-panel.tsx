@@ -28,8 +28,8 @@ const STATUS_FILTERS = [
 ];
 
 const STATUS_BADGES: Record<DigitalOrder["status"], { label: string; className: string }> = {
-  pending: { label: "Pendiente", className: "bg-warning/15 text-warning-foreground" },
-  completed: { label: "Pagado", className: "bg-success/10 text-success" },
+  pending: { label: "Pendiente", className: "bg-warning/15 text-warning-strong" },
+  completed: { label: "Pagado", className: "bg-success/10 text-success-strong" },
   cancelled: { label: "Cancelado", className: "bg-muted text-muted-foreground" },
 };
 

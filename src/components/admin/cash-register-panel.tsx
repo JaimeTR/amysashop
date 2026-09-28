@@ -197,7 +197,7 @@ function IncomeEditModal({ income, products, sellers, paymentMethods, onClose, o
 
         {selectedProduct ? (
           <div className="rounded-md border border-success/40 bg-success/90 p-3">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-success-foreground">Vista previa</p>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-success-strong">Vista previa</p>
             <div className="flex items-center gap-3">
               <Image
                 src={selectedProduct.imageUrl || "/logos/amysa%20shop.png"}
@@ -207,9 +207,9 @@ function IncomeEditModal({ income, products, sellers, paymentMethods, onClose, o
                 className="size-16 rounded-md object-cover"
               />
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-success-foreground">{selectedProduct.name}</p>
-                <p className="text-xs text-success-foreground">SKU: {selectedProduct.sku || "SIN SKU"}</p>
-                <p className="text-sm font-semibold text-success-foreground">Precio base: {toMoney(selectedProduct.price)}</p>
+                <p className="truncate text-sm font-semibold text-success-strong">{selectedProduct.name}</p>
+                <p className="text-xs text-success-strong">SKU: {selectedProduct.sku || "SIN SKU"}</p>
+                <p className="text-sm font-semibold text-success-strong">Precio base: {toMoney(selectedProduct.price)}</p>
               </div>
             </div>
           </div>
@@ -471,7 +471,7 @@ export function CashRegisterPanel({
 
               {selectedProduct ? (
                 <div className="rounded-md border border-success/40 bg-success/90 p-3">
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-success-foreground">Vista previa</p>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-success-strong">Vista previa</p>
                   <div className="flex items-center gap-3">
                     <Image
                       src={selectedProduct.imageUrl || "/logos/amysa%20shop.png"}
@@ -481,14 +481,14 @@ export function CashRegisterPanel({
                       className="size-16 rounded-md object-cover"
                     />
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-success-foreground">{selectedProduct.name}</p>
-                      <p className="text-xs text-success-foreground">SKU: {selectedProduct.sku || "SIN SKU"}</p>
-                      <p className="text-sm font-semibold text-success-foreground">Precio base: {toMoney(selectedProduct.price)}</p>
+                      <p className="truncate text-sm font-semibold text-success-strong">{selectedProduct.name}</p>
+                      <p className="text-xs text-success-strong">SKU: {selectedProduct.sku || "SIN SKU"}</p>
+                      <p className="text-sm font-semibold text-success-strong">Precio base: {toMoney(selectedProduct.price)}</p>
                     </div>
                   </div>
                 </div>
               ) : (
-                <p className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-warning-foreground">Selecciona un producto desde la lista mientras escribes.</p>
+                <p className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-warning-strong">Selecciona un producto desde la lista mientras escribes.</p>
               )}
 
                 <div className="grid gap-3 md:grid-cols-2">

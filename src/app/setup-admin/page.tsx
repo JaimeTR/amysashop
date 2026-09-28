@@ -61,7 +61,7 @@ export default function SetAdminPage() {
   if (!user) {
     return (
       <div className="p-8">
-        <h1 className="text-warning-foreground font-bold">⏳ Cargando...</h1>
+        <h1 className="text-warning-strong font-bold">⏳ Cargando...</h1>
       </div>
     );
   }
@@ -74,7 +74,7 @@ export default function SetAdminPage() {
       </p>
 
       {error && (
-        <div className="bg-destructive/10 border border-destructive/80 text-destructive-foreground px-4 py-2 rounded mb-4">
+        <div className="bg-destructive/10 border border-destructive/80 text-destructive-strong px-4 py-2 rounded mb-4">
           {error}
         </div>
       )}

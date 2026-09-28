@@ -286,8 +286,8 @@ export default function LoginPage() {
 
             {emailNotConfirmed ? (
               <div className="rounded-xl border border-warning/40 bg-warning/95 p-3">
-                <p className="text-sm font-semibold text-warning-foreground">Email no confirmado</p>
-                <p className="mt-1 text-xs text-warning-foreground">
+                <p className="text-sm font-semibold text-warning-strong">Email no confirmado</p>
+                <p className="mt-1 text-xs text-warning-strong">
                   Debes confirmar tu cuenta por correo para poder iniciar sesión.
                 </p>
                 <div className="mt-3 grid gap-2 sm:grid-cols-2">
@@ -296,7 +296,7 @@ export default function LoginPage() {
                     variant="outline"
                     onClick={handleResendConfirmation}
                     disabled={resendLoading}
-                    className="border-warning/40 bg-white/90 text-warning-foreground hover:bg-white"
+                    className="border-warning/40 bg-white/90 text-warning-strong hover:bg-white"
                   >
                     {resendLoading ? "Reenviando..." : "Reenviar confirmación"}
                   </Button>

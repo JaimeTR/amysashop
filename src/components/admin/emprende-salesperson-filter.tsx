@@ -62,7 +62,7 @@ export function EmprendeSalespersonFilter({
         value={selectedSalespersonId}
         onChange={(event) => handleChange(event.target.value)}
         disabled={isPending}
-        className="flex h-10 min-w-[240px] rounded-md border border-input bg-background px-3 py-2 text-sm"
+        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm sm:w-auto sm:min-w-[240px]"
       >
         <option value="">Todas las ventas</option>
         {salespeople.map((salesperson) => (
